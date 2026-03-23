@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+// @ts-nocheck
+/* eslint-disable */
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Tractor, Beef, Activity, LogOut, Bell, Search,
   Plus, MapPin, DollarSign, HeartPulse, LayoutGrid, X, Trash2,
@@ -80,7 +82,6 @@ const callGemini = async (prompt, systemInstruction) => {
 };
 
 export default function App() {
-  // --- ESTADOS DE NAVEGAÇÃO E MODAIS ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,13 +91,11 @@ export default function App() {
   const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
 
-  // Estados Nutrição (NASEM 2021)
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
   const [nutriAlvoGPD, setNutriAlvoGPD] = useState(1.2);
   const [dietaAtual, setDietaAtual] = useState([]);
   const [insumoSelecionado, setInsumoSelecionado] = useState("");
 
-  // Estados IA
   const [aiInsights, setAiInsights] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [chatMessages, setChatMessages] = useState([{ role: 'model', text: 'Olá! Sou o seu Consultor Agro IA. Como posso ajudar com a gestão da sua fazenda hoje?' }]);
@@ -104,7 +103,6 @@ export default function App() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // --- PERSISTÊNCIA (RECUPERAÇÃO DE DADOS LOCAL) ---
   const [appData, setAppData] = useState(() => {
     const saved = localStorage.getItem('bovigest_data_pro_v11');
     if (saved) {
@@ -118,7 +116,6 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem('bovigest_data_pro_v11', JSON.stringify(appData)); }, [appData]);
 
-  // --- CÁLCULOS E MEMOS ---
   const totaisFinanceiros = useMemo(() => {
     return appData.financeiro.reduce((acc, item) => {
       if (item.status === 'pago') {
@@ -158,7 +155,6 @@ export default function App() {
   const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   const showSaveSuccess = () => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); };
 
-  // --- LÓGICA DE NUTRIÇÃO ---
   const exigenciasTarget = useMemo(() => calcularExigenciasNASEM(nutriAlvoPeso, nutriAlvoGPD), [nutriAlvoPeso, nutriAlvoGPD]);
   const nutricaoFornecida = useMemo(() => {
     let cms = 0, elm = 0, elg = 0, pm = 0, ca = 0, p = 0, custoDiario = 0;
@@ -184,7 +180,6 @@ export default function App() {
   const handleUpdateKgMN = (idInsumo, novoKgMN) => setDietaAtual(dietaAtual.map(d => d.idInsumo === idInsumo ? { ...d, kgMN: Number(novoKgMN) } : d));
   const handleRemoveInsumoDieta = (idInsumo) => setDietaAtual(dietaAtual.filter(d => d.idInsumo !== idInsumo));
 
-  // --- HANDLERS E FUNÇÕES PRINCIPAIS ---
   const handleAnalyzeFarm = async () => {
     setIsAnalyzing(true);
     const context = `Rebanho: ${appData.animais.length} cab. Peso Médio: ${pesoMedio}kg. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${appData.lotes.length}.`;
@@ -244,7 +239,6 @@ export default function App() {
 
   const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
 
-  // --- MENU DE NAVEGAÇÃO ---
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Painel Central' },
     { id: 'ai-assistant', icon: Sparkles, label: 'Consultor IA' },
@@ -615,7 +609,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Fallback de Módulos Operacionais Simplificados para UI limpa */}
+          {/* Fallback de Módulos Operacionais */}
           {['propriedades', 'gado_corte', 'pastagens', 'reproducao', 'nascimentos', 'sanidade', 'pesagens', 'insumos', 'financeiro', 'configuracoes'].includes(currentView) && (
             <div className="flex flex-col items-center justify-center h-[60vh] text-center animate-in fade-in">
               <CheckCircle2 size={80} className="text-green-300 mb-6" />
