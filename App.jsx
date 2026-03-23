@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Tractor, Beef, Activity, LogOut, Bell, Search,
   Plus, MapPin, DollarSign, HeartPulse, LayoutGrid, X, Trash2,
-  Edit, PieChart, Baby, LayoutDashboard, Scale, Settings, BarChart,
-  Sparkles, Bot, Send, Loader2, CheckCircle2, Info,
+  Edit, Baby, LayoutDashboard, Scale, Settings,
+  Sparkles, Bot, Send, Loader2, CheckCircle2,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
   Wheat, Calculator
 } from 'lucide-react';
@@ -89,15 +89,6 @@ export default function App() {
   const [isAnimalFormOpen, setIsAnimalFormOpen] = useState(false);
   const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
-
-  // Estados dos Módulos Ocultos
-  const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
-  const [isVaccineFormOpen, setIsVaccineFormOpen] = useState(false);
-  const [isLoteFormOpen, setIsLoteFormOpen] = useState(false);
-  const [isReproducaoFormOpen, setIsReproducaoFormOpen] = useState(false);
-  const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
-  const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
-  const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
 
   // Estados Nutrição (NASEM 2021)
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
@@ -250,15 +241,6 @@ export default function App() {
     setAppData(prev => ({ ...prev, animais: [...novosAnimais, ...prev.animais] }));
     setIsBatchAnimalFormOpen(false); showSaveSuccess();
   };
-  
-  // Handlers para modais ocultos (evitam erro do ESLint de variáveis não usadas)
-  const handleAddPesagem = () => setIsPesagemFormOpen(false);
-  const handleAddNascimento = () => setIsNascimentoFormOpen(false);
-  const handleAddVaccine = () => setIsVaccineFormOpen(false);
-  const handleAddFinance = () => setIsFinanceFormOpen(false);
-  const handleAddLote = () => setIsLoteFormOpen(false);
-  const handleAddInsumo = () => setIsInsumoFormOpen(false);
-  const handleAddReproducao = () => setIsReproducaoFormOpen(false);
 
   const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
 
@@ -439,10 +421,15 @@ export default function App() {
                           <div key={idx}>
                             <div className="flex justify-between items-end mb-2">
                               <h4 className="font-bold text-gray-900 text-sm">{bar.label}</h4>
-                              <div className="text-right"><span className={`text-xl font-black ${isIdeal ? 'text-green-600' : `text-${bar.col}-500`}`}>{bar.val.toFixed(bar.val > 100 ? 0 : 2)}</span><span className="text-sm font-bold text-gray-400"> / {bar.target.toFixed(bar.target > 100 ? 0 : 2)} {bar.unit}</span></div>
+                              <div className="text-right">
+                                <span className={`text-xl font-black ${isIdeal ? 'text-green-600' : bar.col === 'orange' ? 'text-orange-500' : bar.col === 'red' ? 'text-red-500' : 'text-blue-500'}`}>
+                                  {bar.val.toFixed(bar.val > 100 ? 0 : 2)}
+                                </span>
+                                <span className="text-sm font-bold text-gray-400"> / {bar.target.toFixed(bar.target > 100 ? 0 : 2)} {bar.unit}</span>
+                              </div>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200 relative">
-                              <div className={`h-full transition-all duration-500 ${isIdeal ? 'bg-green-500' : `bg-${bar.col}-500`}`} style={{ width: `${pct}%` }}></div>
+                              <div className={`h-full transition-all duration-500 ${isIdeal ? 'bg-green-500' : bar.col === 'orange' ? 'bg-orange-500' : bar.col === 'red' ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${pct}%` }}></div>
                               <div className="absolute top-0 bottom-0 border-l-2 border-black opacity-50" style={{ left: '100%' }}></div>
                             </div>
                           </div>
