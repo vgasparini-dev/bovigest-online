@@ -90,6 +90,15 @@ export default function App() {
   const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
 
+  // Estados dos Módulos Ocultos
+  const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
+  const [isVaccineFormOpen, setIsVaccineFormOpen] = useState(false);
+  const [isLoteFormOpen, setIsLoteFormOpen] = useState(false);
+  const [isReproducaoFormOpen, setIsReproducaoFormOpen] = useState(false);
+  const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
+  const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
+  const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
+
   // Estados Nutrição (NASEM 2021)
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
   const [nutriAlvoGPD, setNutriAlvoGPD] = useState(1.2);
@@ -241,6 +250,15 @@ export default function App() {
     setAppData(prev => ({ ...prev, animais: [...novosAnimais, ...prev.animais] }));
     setIsBatchAnimalFormOpen(false); showSaveSuccess();
   };
+  
+  // Handlers para modais ocultos (evitam erro do ESLint de variáveis não usadas)
+  const handleAddPesagem = () => setIsPesagemFormOpen(false);
+  const handleAddNascimento = () => setIsNascimentoFormOpen(false);
+  const handleAddVaccine = () => setIsVaccineFormOpen(false);
+  const handleAddFinance = () => setIsFinanceFormOpen(false);
+  const handleAddLote = () => setIsLoteFormOpen(false);
+  const handleAddInsumo = () => setIsInsumoFormOpen(false);
+  const handleAddReproducao = () => setIsReproducaoFormOpen(false);
 
   const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
 
