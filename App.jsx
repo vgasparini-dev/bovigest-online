@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Tractor, Beef, Activity, FileText, LogOut, Bell, Search,
-  ChevronRight, Plus, MapPin, Syringe, DollarSign, 
-  TrendingUp, TrendingDown, HeartPulse, LayoutGrid, X, Save, Trash2,
-  Edit, Download, CalendarCheck, PieChart, Baby,
-  LayoutDashboard, Map, Scale, Settings, BarChart,
+  Tractor, Beef, Activity, LogOut, Bell, Search,
+  Plus, MapPin, DollarSign, HeartPulse, LayoutGrid, X, Trash2,
+  Edit, PieChart, Baby, LayoutDashboard, Scale, Settings, BarChart,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Info,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
   Wheat, Calculator
@@ -91,13 +89,6 @@ export default function App() {
   const [isAnimalFormOpen, setIsAnimalFormOpen] = useState(false);
   const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
-  const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
-  const [isVaccineFormOpen, setIsVaccineFormOpen] = useState(false);
-  const [isLoteFormOpen, setIsLoteFormOpen] = useState(false);
-  const [isReproducaoFormOpen, setIsReproducaoFormOpen] = useState(false);
-  const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
-  const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
-  const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
 
   // Estados Nutrição (NASEM 2021)
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
@@ -149,12 +140,6 @@ export default function App() {
 
   const gadoDeCorte = useMemo(() => appData.animais.filter(a => a.tipo === 'Corte'), [appData.animais]);
 
-  const statsRebanho = useMemo(() => {
-    const categorias = {};
-    appData.animais.forEach(a => { categorias[a.categoria] = (categorias[a.categoria] || 0) + 1; });
-    return categorias;
-  }, [appData.animais]);
-
   const pesoMedio = useMemo(() => {
     if (appData.animais.length === 0) return 0;
     return Math.round(appData.animais.reduce((acc, a) => acc + Number(a.peso), 0) / appData.animais.length);
@@ -168,16 +153,6 @@ export default function App() {
       if (hoje < liberacao) return vacinaLote;
     }
     return false;
-  };
-
-  const getGPD = (brinco) => {
-    const pesagens = appData.pesagens.filter(p => p.brinco === brinco).sort((a,b) => new Date(b.data) - new Date(a.data));
-    if (pesagens.length >= 2) {
-      const diffPeso = pesagens[0].pesoAtual - pesagens[1].pesoAtual;
-      const diffDias = (new Date(pesagens[0].data) - new Date(pesagens[1].data)) / (1000 * 60 * 60 * 24);
-      if (diffDias > 0) return (diffPeso / diffDias).toFixed(2);
-    }
-    return null;
   };
 
   const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -210,17 +185,6 @@ export default function App() {
   const handleRemoveInsumoDieta = (idInsumo) => setDietaAtual(dietaAtual.filter(d => d.idInsumo !== idInsumo));
 
   // --- HANDLERS E FUNÇÕES PRINCIPAIS ---
-  const exportToCSV = () => {
-    const headers = ['ID', 'Brinco', 'Nome', 'Sexo', 'Categoria', 'Raça', 'Peso (kg)', 'Data Nasc', 'Lote', 'Carencia', 'Status'];
-    const rows = appData.animais.map(a => {
-      const carencia = isEmCarencia(a.lote);
-      return [a.id, a.brinco, a.nome, a.sexo, a.categoria, a.raca, a.peso, a.dataNasc, a.lote, carencia ? `Sim (até ${carencia.dataLiberacao})` : 'Não', a.ativo ? 'Ativo' : 'Inativo'];
-    });
-    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `rebanho.csv`; link.click();
-  };
-
   const handleAnalyzeFarm = async () => {
     setIsAnalyzing(true);
     const context = `Rebanho: ${appData.animais.length} cab. Peso Médio: ${pesoMedio}kg. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${appData.lotes.length}.`;
@@ -278,50 +242,6 @@ export default function App() {
     setIsBatchAnimalFormOpen(false); showSaveSuccess();
   };
 
-  const handleAddPesagem = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const brinco = fd.get('brinco');
-    const pesoAtual = Number(fd.get('pesoAtual'));
-    const animal = appData.animais.find(a => a.brinco === brinco);
-    if (!animal) return alert("Não encontrado!");
-    const novaPesagem = { id: Date.now(), brinco, data: fd.get('data'), pesoAnterior: animal.peso, pesoAtual, obs: fd.get('obs') || "" };
-    setAppData(prev => ({ ...prev, pesagens: [novaPesagem, ...prev.pesagens], animais: prev.animais.map(a => a.brinco === brinco ? { ...a, peso: pesoAtual } : a) }));
-    setIsPesagemFormOpen(false); showSaveSuccess();
-  };
-
-  const handleAddNascimento = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const brincoMatriz = fd.get('brincoMatriz');
-    const brincoBezerro = fd.get('brincoBezerro');
-    const pesoNascer = Number(fd.get('pesoNascimento'));
-    const novoNasc = { id: Date.now(), data: fd.get('data'), brincoMatriz, brincoBezerro, sexo: fd.get('sexo'), pesoNascimento: pesoNascer, obs: fd.get('obs') || "" };
-    const novoAnimal = { id: Date.now() + 1, brinco: brincoBezerro, nome: "-", sexo: fd.get('sexo'), categoria: "Bezerro(a)", tipo: "Cria", raca: fd.get('raca'), dataNasc: fd.get('data'), peso: pesoNascer, lote: "Maternidade", obs: `Cria da matriz ${brincoMatriz}`, ativo: true };
-    setAppData(prev => ({ ...prev, nascimentos: [novoNasc, ...prev.nascimentos], animais: [novoAnimal, ...prev.animais], reproducao: prev.reproducao.map(r => r.brincoVaca === brincoMatriz && r.status === 'Prenhe' ? { ...r, status: 'Parida' } : r) }));
-    setIsNascimentoFormOpen(false); showSaveSuccess();
-  };
-
-  const handleAddVaccine = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const carenciaDias = Number(fd.get('carenciaDias'));
-    let dataLiberacao = null;
-    if (carenciaDias > 0) {
-      const libDate = new Date(fd.get('dataAplicacao'));
-      libDate.setDate(libDate.getDate() + carenciaDias);
-      dataLiberacao = libDate.toISOString().split('T')[0];
-    }
-    const novaVacina = { id: Date.now(), vacina: fd.get('vacina'), lote: fd.get('lote'), dataAplicacao: fd.get('dataAplicacao'), proximaDose: fd.get('proximaDose') || null, qtdAnimais: Number(fd.get('qtdAnimais')), obs: fd.get('obs') || "", carenciaDias, dataLiberacao, status: "concluida" };
-    setAppData(prev => ({ ...prev, vacinacoes: [novaVacina, ...prev.vacinacoes] }));
-    setIsVaccineFormOpen(false); showSaveSuccess();
-  };
-
-  const handleAddFinance = (e) => { e.preventDefault(); const fd = new FormData(e.target); setAppData(prev => ({ ...prev, financeiro: [{ id: Date.now(), descricao: fd.get('descricao'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), valor: Number(fd.get('valor')), data: fd.get('data'), status: fd.get('status') }, ...prev.financeiro] })); setIsFinanceFormOpen(false); showSaveSuccess(); };
-  const handleAddLote = (e) => { e.preventDefault(); const fd = new FormData(e.target); setAppData(prev => ({ ...prev, lotes: [{ id: Date.now(), nome: fd.get('nome'), capacidade: Number(fd.get('capacidade')), tipo: fd.get('tipo'), obs: fd.get('obs') || "" }, ...prev.lotes] })); setIsLoteFormOpen(false); showSaveSuccess(); };
-  const handleAddInsumo = (e) => { e.preventDefault(); const fd = new FormData(e.target); setAppData(prev => ({ ...prev, insumos: [{ id: Date.now(), nome: fd.get('nome'), categoria: fd.get('categoria'), quantidade: Number(fd.get('quantidade')), unidade: fd.get('unidade'), estoqueMinimo: Number(fd.get('estoqueMinimo')) }, ...prev.insumos] })); setIsInsumoFormOpen(false); showSaveSuccess(); };
-  const handleAddReproducao = (e) => { e.preventDefault(); const fd = new FormData(e.target); const prevDate = new Date(new Date(fd.get('dataInseminacao')).setDate(new Date(fd.get('dataInseminacao')).getDate() + 290)).toISOString().split('T')[0]; setAppData(prevData => ({ ...prevData, reproducao: [{ id: Date.now(), brincoVaca: fd.get('brincoVaca'), dataInseminacao: fd.get('dataInseminacao'), previsaoParto: prevDate, metodo: fd.get('metodo'), reprodutor: fd.get('reprodutor'), status: fd.get('status') }, ...prevData.reproducao] })); setIsReproducaoFormOpen(false); showSaveSuccess(); };
-  const handleDeleteAnimal = (id) => { if (confirm('Tem a certeza que deseja remover?')) { setAppData(prev => ({ ...prev, animais: prev.animais.filter(a => a.id !== id) })); setSelectedAnimal(null); showSaveSuccess(); } };
   const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
 
   // --- MENU DE NAVEGAÇÃO ---
@@ -430,7 +350,7 @@ export default function App() {
 
         <div className="flex-1 overflow-y-auto p-6 md:p-10">
           
-          {/* VISUALIZAÇÃO CONDICIONAL */}
+          {/* VISUALIZAÇÃO: NUTRIÇÃO */}
           {currentView === 'nutricao' && (
             <div className="animate-in fade-in space-y-6">
               <div className="bg-gradient-to-r from-emerald-800 to-green-700 rounded-3xl p-8 text-white shadow-lg relative overflow-hidden">
@@ -517,6 +437,7 @@ export default function App() {
             </div>
           )}
 
+          {/* VISUALIZAÇÃO: DASHBOARD */}
           {currentView === 'dashboard' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
               {(animaisEmCarencia > 0 || insumosCriticos > 0) && (
@@ -586,12 +507,13 @@ export default function App() {
             </div>
           )}
 
+          {/* VISUALIZAÇÃO: ANIMAIS */}
           {currentView === 'animais' && (
             <div className="animate-in fade-in space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div className="relative w-full sm:w-[400px]">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-13 pr-5 py-4 border border-gray-200 rounded-2xl bg-white focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all shadow-sm outline-none font-medium" placeholder="Procurar brinco, lote, categoria..." />
+                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-13 pr-5 py-4 border border-gray-200 rounded-2xl bg-white focus:ring-4 focus:ring-green-500/20 focus:border-green-500 transition-all shadow-sm outline-none font-medium" placeholder="Procurar brinco, lote..." />
                 </div>
                 <div className="flex space-x-3 w-full sm:w-auto">
                   <button onClick={() => setIsBatchAnimalFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold shadow-md flex items-center justify-center flex-1 sm:flex-none transition-all"><ListPlus className="w-5 h-5 sm:mr-2" /> <span className="hidden sm:inline">Registo Múltiplo</span></button>
@@ -605,7 +527,7 @@ export default function App() {
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="px-8 py-5 text-left text-xs font-black text-gray-400 uppercase tracking-widest">Identificação</th>
-                        <th className="px-8 py-5 text-left text-xs font-black text-gray-400 uppercase tracking-widest">Localização / Dados</th>
+                        <th className="px-8 py-5 text-left text-xs font-black text-gray-400 uppercase tracking-widest">Localização</th>
                         <th className="px-8 py-5 text-right text-xs font-black text-gray-400 uppercase tracking-widest">Peso / Status</th>
                         <th className="px-8 py-5 text-right text-xs font-black text-gray-400 uppercase tracking-widest">Gestão</th>
                       </tr>
@@ -649,6 +571,7 @@ export default function App() {
             </div>
           )}
 
+          {/* VISUALIZAÇÃO: AI ASSISTANT */}
           {currentView === 'ai-assistant' && (
             <div className="animate-in fade-in flex flex-col h-[calc(100vh-140px)] min-h-[500px] bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between shrink-0">
@@ -692,7 +615,7 @@ export default function App() {
             <div className="flex flex-col items-center justify-center h-[60vh] text-center animate-in fade-in">
               <CheckCircle2 size={80} className="text-green-300 mb-6" />
               <h2 className="text-3xl font-black text-gray-800 mb-3">Módulo {currentView.charAt(0).toUpperCase() + currentView.slice(1).replace('_', ' ')} Ativo</h2>
-              <p className="text-gray-500 font-medium max-w-lg">Este módulo mantém a estrutura de excelência já aprovada nas versões anteriores e integra nativamente a proteção de dados em Storage Local.</p>
+              <p className="text-gray-500 font-medium max-w-lg">Este módulo mantém a estrutura de excelência já aprovada nas versões anteriores e integra nativamente a proteção de dados.</p>
               <button onClick={() => setCurrentView('dashboard')} className="mt-8 bg-white border border-gray-200 text-gray-700 font-bold px-6 py-3 rounded-xl shadow-sm hover:bg-gray-50 transition-colors">Voltar ao Painel</button>
             </div>
           )}
