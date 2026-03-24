@@ -1015,11 +1015,10 @@ export default function App() {
                   <p><span className="font-bold">IE:</span> {prop.ie}</p>
                 </div>
               </div>
-            ))}
+            ))
           </div>
         </div>
       )}
-
       {/* --- VIEW: CONFIGURAÇÕES --- */}
       {currentView === 'configuracoes' && (                <p className="text-gray-500 font-medium mb-10">Faça a gestão dos seus dados e exporte relatórios para Excel.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
