@@ -36,7 +36,7 @@ Edit, Baby, LayoutDashboard, Scale, Settings,
             value={propriedadeAtiva} 
             onChange={(e) => setPropriedadeAtiva(Number(e.target.value))}
             className="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl font-bold text-gray-900 focus:ring-4 focus:ring-blue-500/20"
-          >
+>
             {appData.propriedades.map(prop => (
               <option key={prop.id} value={prop.id}>
                 {prop.nome} - {prop.cidade}/{prop.estado}
