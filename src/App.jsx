@@ -987,8 +987,41 @@ export default function App() {
             <div className="animate-in fade-in space-y-6 max-w-4xl mx-auto mt-10">
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-10 text-center">
                 <Settings size={64} className="mx-auto text-gray-300 mb-6" />
-                <h3 className="text-2xl font-black text-gray-900 mb-2">Definições do Sistema</h3>
-                <p className="text-gray-500 font-medium mb-10">Faça a gestão dos seus dados e exporte relatórios para Excel.</p>
+      {/* --- VIEW: PROPRIEDADES --- */}
+      {currentView === 'propriedades' && (
+        <div className="animate-in fade-in space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-2xl font-black text-gray-900">Minhas Propriedades</h3>
+            <button onClick={() => { setEditingPropriedade(null); setIsPropriedadeFormOpen(true); }} className="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-bold flex items-center shadow-md">
+              <Plus className="w-5 h-5 mr-2" /> Nova Propriedade
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {appData.propriedades.map(prop => (
+              <div key={prop.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="text-xl font-black text-gray-900">{prop.nome}</h4>
+                    <p className="text-sm text-gray-500 font-medium">{prop.cidade} / {prop.estado}</p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button onClick={() => { setEditingPropriedade(prop); setIsPropriedadeFormOpen(true); }} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg"><Edit size={18} /></button>
+                    <button onClick={() => handleDeletePropriedade(prop.id)} className="text-red-600 hover:bg-red-50 p-2 rounded-lg"><Trash2 size={18} /></button>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <p><span className="font-bold">Responsável:</span> {prop.responsavel}</p>
+                  <p><span className="font-bold">Área:</span> {prop.areaha} ha</p>
+                  <p><span className="font-bold">IE:</span> {prop.ie}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* --- VIEW: CONFIGURAÇÕES --- */}
+      {currentView === 'configuracoes' && (                <p className="text-gray-500 font-medium mb-10">Faça a gestão dos seus dados e exporte relatórios para Excel.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
                     <h4 className="font-black text-gray-900 mb-1">Exportar Rebanho</h4>
