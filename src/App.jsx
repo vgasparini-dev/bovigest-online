@@ -99,6 +99,10 @@ export default function App() {
   const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
   const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
   const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
+    const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
+    const [editingPropriedade, setEditingPropriedade] = useState(null);
+    const [isUserFormOpen, setIsUserFormOpen] = useState(false);
+    const [usuarios, setUsuarios] = useState([{ id: 1, nome: "Administrador", email: "gestor@bovigest.com", senha: "123456", tipo: "admin" }]);
 
   // Estados Nutrição
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
@@ -338,6 +342,65 @@ export default function App() {
   };
 
   const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
+
+    // --- HANDLERS PROPRIEDADES ---
+    const handleSavePropriedade = (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const propData = {
+                  id: editingPropriedade ? editingPropriedade.id : Date.now(),
+                  nome: fd.get('nome'),
+                  responsavel: fd.get('responsavel'),
+                  cidade: fd.get('cidade'),
+                  estado: fd.get('estado'),
+                  areaha: Number(fd.get('areaha')),
+                  ie: fd.get('ie')
+                        };
+          if (editingPropriedade) {
+                  setAppData(prev => ({ ...prev, propriedades: prev.propriedades.map(p => p.id === propData.id ? propData : p) }));
+                } else {
+                  setAppData(prev => ({ ...prev, propriedades: [propData, ...prev.propriedades] }));
+                }
+          setIsPropriedadeFormOpen(false); setEditingPropriedade(null); showSaveSuccess();
+        };
+
+    const handleDeletePropriedade = (id) => {
+          if (confirm('Tem certeza que deseja remover esta propriedade?')) {
+                  setAppData(prev => ({ ...prev, propriedades: prev.propriedades.filter(p => p.id !== id) }));
+                  showSaveSuccess();
+                }
+        };
+
+    // --- HANDLERS USUÁRIOS ---
+    const handleSaveUser = (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const userData = { id: Date.now(), nome: fd.get('nome'), email: fd.get('email'), senha: fd.get('senha'), tipo: fd.get('tipo') };
+          setUsuarios(prev => [userData, ...prev]);
+          setIsUserFormOpen(false); showSaveSuccess();
+        };
+
+    const handleDeleteUser = (id) => {
+          if (confirm('Remover este usuário?')) {
+                  setUsuarios(prev => prev.filter(u => u.id !== id));
+                  showSaveSuccess();
+                }
+        };
+
+    // --- HANDLER IMPORTAÇÃO ---
+    const handleImportData = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (event) => {
+                  try {
+                            const importedData = JSON.parse(event.target.result);
+                            setAppData(prev => ({ ...defaultData, ...prev, ...importedData }));
+                            alert('Dados importados com sucesso!');
+                          } catch (err) { alert('Erro ao importar dados: ' + err.message); }
+                };
+          reader.readAsText(file);
+        };
 
   // --- NAVEGAÇÃO ---
   const navItems = [
