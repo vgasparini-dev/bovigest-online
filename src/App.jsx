@@ -1015,7 +1015,7 @@ export default function App() {
                   <p><span className="font-bold">IE:</span> {prop.ie}</p>
                 </div>
               </div>
-            ))
+            )}
           </div>
         </div>
       )}
