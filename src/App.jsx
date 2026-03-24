@@ -1025,6 +1025,8 @@ export default function App() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
                     <h4 className="font-black text-gray-900 mb-1">Exportar Rebanho</h4>
+                          {currentView === 'configuracoes' && (
+        <div className="animate-in fade-in space-y-6 max-w-4xl mx-auto mt-10">
                     <p className="text-sm text-gray-500 mb-4">Gere um ficheiro CSV compatível com Excel com todos os dados dos animais.</p>
                     <button onClick={exportToCSV} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl flex items-center justify-center"><Download size={18} className="mr-2"/> Descarregar CSV</button>
                   </div>
@@ -1393,6 +1395,64 @@ export default function App() {
           </div>
         </div>
       )}
+
+            {/* MODALS */}
+            {/* Modal Nova Propriedade */}
+            {showPropriedadeModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                                        <h3 className="text-xl font-bold mb-4">{editingPropriedade ? 'Editar Propriedade' : 'Nova Propriedade'}</h3>
+                                        <div className="space-y-4">
+                                                        <div>
+                                                                          <label className="block text-sm font-bold mb-1">Nome</label>
+                                                                          <input type="text" value={propriedadeForm.nome} onChange={(e) => setPropriedadeForm({...propriedadeForm, nome: e.target.value})} className="w-full px-3 py-2 border rounded" />
+                                                                        </div>
+                                                        <div>
+                                                                          <label className="block text-sm font-bold mb-1">Área (hectares)</label>
+                                                                          <input type="number" value={propriedadeForm.area} onChange={(e) => setPropriedadeForm({...propriedadeForm, area: e.target.value})} className="w-full px-3 py-2 border rounded" />
+                                                                        </div>
+                                                        <div>
+                                                                          <label className="block text-sm font-bold mb-1">Localização</label>
+                                                                          <input type="text" value={propriedadeForm.localizacao} onChange={(e) => setPropriedadeForm({...propriedadeForm, localizacao: e.target.value})} className="w-full px-3 py-2 border rounded" />
+                                                                        </div>
+                                                      </div>
+                                        <div className="flex gap-2 mt-6">
+                                                        <button onClick={handleSavePropriedade} className="flex-1 bg-green-600 text-white py-2 rounded-xl font-bold">Salvar</button>
+                                                        <button onClick={() => { setShowPropriedadeModal(false); setEditingPropriedade(null); setPropriedadeForm({nome: '', area: '', localizacao: ''}); }} className="flex-1 bg-gray-200 py-2 rounded-xl font-bold">Cancelar</button>
+                                                      </div>
+                                      </div>
+                        </div>
+            )}
+
+            {/* Modal Novo Usuário */}
+            {showUserModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                                        <h3 className="text-xl font-bold mb-4">Novo Usuário</h3>
+                                        <div className="space-y-4">
+                                                        <div>
+                                                                          <label className="block text-sm font-bold mb-1">Nome</label>
+                                                                          <input type="text" value={userForm.nome} onChange={(e) => setUserForm({...userForm, nome: e.target.value})} className="w-full px-3 py-2 border rounded" />
+                                                                        </div>
+                                                        <div>
+                                                                          <label className="block text-sm font-bold mb-1">Email</label>
+                                                                          <input type="email" value={userForm.email} onChange={(e) => setUserForm({...userForm, email: e.target.value})} className="w-full px-3 py-2 border rounded" />
+                                                                        </div>
+                                                        <div>
+                                                                          <label className="block text-sm font-bold mb-1">Perfil</label>
+                                                                          <select value={userForm.role} onChange={(e) => setUserForm({...userForm, role: e.target.value})} className="w-full px-3 py-2 border rounded">
+                                                                                              <option value="usuario">Usuário</option>
+                                                                                              <option value="admin">Administrador</option>
+                                                                                            </select>
+                                                                        </div>
+                                                      </div>
+                                        <div className="flex gap-2 mt-6">
+                                                        <button onClick={handleSaveUser} className="flex-1 bg-green-600 text-white py-2 rounded-xl font-bold">Salvar</button>
+                                                        <button onClick={() => { setShowUserModal(false); setUserForm({nome: '', email: '', role: 'usuario'}); }} className="flex-1 bg-gray-200 py-2 rounded-xl font-bold">Cancelar</button>
+                                                      </div>
+                                      </div>
+                        </div>
+            )}
     </div>
   );
 }
