@@ -998,6 +998,21 @@ export default function App() {
           <h4 className="text-lg font-bold text-blue-900 mb-3">📍 Propriedade Ativa</h4>
           <select 
             value={propriedadeAtiva} 
+            <div className="bg-blue-50 p-6 rounded-2xl mb-6 border-2 border-blue-200">
+  <h4 className="text-lg font-bold text-blue-900 mb-3">Propriedade Ativa</h4>
+  <select 
+    value={propriedadeAtiva} 
+    onChange={(e) => setPropriedadeAtiva(Number(e.target.value))}
+    className="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl font-bold text-gray-900 focus:ring-4 focus:ring-blue-500/20"
+  >
+    {appData.propriedades.map(prop => (
+      <option key={prop.id} value={prop.id}>
+        {prop.nome} - {prop.cidade}/{prop.estado}
+      </option>
+    ))}
+  </select>
+</div>
+
             onChange={(e) => setPropriedadeAtiva(Number(e.target.value))}
             className="w-full px-4 py-3 bg-white border-2 border-blue-300 rounded-xl font-bold text-gray-900 focus:ring-4 focus:ring-blue-500/20"
 >
