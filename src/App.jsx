@@ -1,14 +1,7 @@
 // @ts-nocheck
 /* eslint-disable */
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Tractor, Beef, Activity, LogOut, Bell, Search, 
-  Plus, MapPin, DollarSign, HeartPulse, LayoutGrid, X, Trash2, 
-  Edit, Baby, LayoutDashboard, Scale, Settings, 
-  Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
-  Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, FileText, Syringe, CalendarCheck, Users, ChevronDown
-} from 'lucide-react';
+import { Tractor, Beef, Activity, LogOut, Bell, Search, Plus, MapPin, DollarSign, HeartPulse, LayoutGrid, X, Trash2, Edit, Baby, LayoutDashboard, Scale, Settings, Sparkles, Bot, Send, Loader2, CheckCircle2, Download, Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert, Wheat, Calculator, FileText, Syringe, CalendarCheck, Users, ChevronDown } from 'lucide-react';
 
 // --- BASE DE DADOS INICIAL ---
 const defaultData = {
@@ -49,9 +42,14 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedPropId, setSelectedPropId] = useState(1);
-  const [sanidadeTab, setSanidadeTab] = useState('historico'); // 'historico' ou 'calendario'
+  const [sanidadeTab, setSanidadeTab] = useState('historico');
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Modais de Estado
+  const [isAnimalFormOpen, setIsAnimalFormOpen] = useState(false);
+  const [isUserFormOpen, setIsUserFormOpen] = useState(false);
+  const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
+
   const [usuarios, setUsuarios] = useState([{ id: 1, nome: "Administrador", email: "gestor@bovigest.com", senha: "123456", tipo: "admin" }]);
   const [appData, setAppData] = useState(() => {
     const saved = localStorage.getItem('bovigest_data_pro_v12');
@@ -62,14 +60,12 @@ export default function App() {
     localStorage.setItem('bovigest_data_pro_v12', JSON.stringify(appData));
   }, [appData]);
 
-  // --- FILTROS POR PROPRIEDADE SELECIONADA ---
+  // Filtros
   const currentProp = useMemo(() => appData.propriedades.find(p => p.id === selectedPropId) || appData.propriedades[0], [selectedPropId, appData.propriedades]);
-  
   const animaisFiltrados = useMemo(() => appData.animais.filter(a => a.propId === selectedPropId), [selectedPropId, appData.animais]);
   const lotesFiltrados = useMemo(() => appData.lotes.filter(l => l.propId === selectedPropId), [selectedPropId, appData.lotes]);
   const financeiroFiltrado = useMemo(() => appData.financeiro.filter(f => f.propId === selectedPropId), [selectedPropId, appData.financeiro]);
 
-  // --- CÁLCULOS ---
   const totaisFinanceiros = useMemo(() => {
     return financeiroFiltrado.reduce((acc, item) => {
       if (item.status === 'pago') {
@@ -80,26 +76,18 @@ export default function App() {
     }, { receitas: 0, despesas: 0 });
   }, [financeiroFiltrado]);
 
-  const gastoPorArroba = useMemo(() => {
-    const despesasTotais = totaisFinanceiros.despesas;
-    const ganhoPesoTotal = animaisFiltrados.reduce((acc, a) => acc + (a.weight - (a.pesoInicial || a.peso)), 0);
-    // Nota: usei 'weight' por engano no pensamento anterior, corrigindo para 'peso'
-    const ganhoPesoTotalReal = animaisFiltrados.reduce((acc, a) => acc + (Number(a.peso) - (Number(a.pesoInicial) || Number(a.peso))), 0);
-    const arrobasProduzidas = ganhoPesoTotalReal / 15;
-    return arrobasProduzidas > 0 ? despesasTotais / arrobasProduzidas : 0;
-  }, [totaisFinanceiros, animaisFiltrados]);
-
   const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-        <div className="w-full max-w-md space-y-8 bg-slate-900 p-10 rounded-3xl border border-slate-800">
-          <div className="text-center"><h1 className="text-4xl font-black text-green-500">BoviGest</h1><p className="text-slate-400 mt-2">Gestão Inteligente de Rebanho</p></div>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 font-sans">
+        <div className="w-full max-w-md space-y-8 text-center">
+          <div className="flex justify-center"><Tractor size={64} className="text-green-500" /></div>
+          <h1 className="text-4xl font-black text-white tracking-tighter">BoviGest PRO</h1>
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setIsLoggedIn(true); }}>
-            <input type="email" placeholder="E-mail" className="w-full p-4 bg-slate-800 rounded-xl border-none text-white" defaultValue="gestor@bovigest.com" />
-            <input type="password" placeholder="Senha" className="w-full p-4 bg-slate-800 rounded-xl border-none text-white" defaultValue="123456" />
-            <button className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition">Entrar no Painel</button>
+            <input type="email" placeholder="E-mail" className="w-full p-4 bg-slate-800 rounded-xl border-none text-white outline-none ring-2 ring-transparent focus:ring-green-500" defaultValue="gestor@bovigest.com" />
+            <input type="password" placeholder="Senha" className="w-full p-4 bg-slate-800 rounded-xl border-none text-white outline-none ring-2 ring-transparent focus:ring-green-500" defaultValue="123456" />
+            <button className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition shadow-lg">Entrar no Painel</button>
           </form>
         </div>
       </div>
@@ -107,14 +95,16 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* SIDEBAR */}
-      <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col p-6">
-        <div className="mb-10"><h1 className="text-2xl font-black text-green-500 flex items-center gap-2"><Tractor size={28}/> BoviGest</h1></div>
-        
-        {/* SELEÇÃO DE PROPRIEDADE */}
-        <div className="mb-8 p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
-          <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Propriedade Ativa</label>
+      <aside className="w-72 bg-slate-900 flex flex-col p-6 space-y-8 fixed h-full">
+        <div className="flex items-center gap-3 px-2">
+          <Tractor className="text-green-500" size={32} />
+          <span className="text-2xl font-black text-white tracking-tighter uppercase">BoviGest</span>
+        </div>
+
+        <div className="bg-slate-800/50 p-4 rounded-2xl space-y-1">
+          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Propriedade Ativa</label>
           <select 
             value={selectedPropId} 
             onChange={(e) => setSelectedPropId(Number(e.target.value))}
@@ -136,101 +126,153 @@ export default function App() {
             const Icon = item.icon;
             return (
               <button 
-                key={item.id} 
+                key={item.id}
                 onClick={() => setCurrentView(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${currentView === item.id ? 'bg-green-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${currentView === item.id ? 'bg-green-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800'}`}
               >
-                <Icon size={20}/> {item.label}
+                <Icon size={20} />
+                <span className="font-bold text-sm">{item.label}</span>
               </button>
             );
           })}
         </nav>
       </aside>
 
-      {/* MAIN */}
-      <main className="flex-1 overflow-auto p-10">
+      {/* MAIN CONTENT */}
+      <main className="flex-1 ml-72 p-10">
         {currentView === 'dashboard' && (
-          <div className="space-y-8">
-            <div className="flex justify-between items-end">
-              <div><h2 className="text-3xl font-bold">Olá, Administrador</h2><p className="text-slate-400">Fazenda Atual: {currentProp.nome}</p></div>
-            </div>
-            <div className="grid grid-cols-4 gap-6">
-              <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                <p className="text-slate-500 text-xs font-bold uppercase">Gasto por @ Produzida</p>
-                <h3 className="text-2xl font-black mt-2 text-orange-400">{formatCurrency(gastoPorArroba)}</h3>
+          <div className="max-w-6xl space-y-10">
+            <header className="flex justify-between items-end">
+              <div>
+                <h1 className="text-4xl font-black tracking-tight">Olá, Administrador</h1>
+                <p className="text-slate-400 font-medium">Gestão ativa em <span className="text-slate-900 font-bold">{currentProp.nome}</span></p>
               </div>
-              <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                <p className="text-slate-500 text-xs font-bold uppercase">Total Animais</p>
-                <h3 className="text-2xl font-black mt-2">{animaisFiltrados.length}</h3>
+            </header>
+
+            <div className="grid grid-cols-3 gap-8">
+              <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm space-y-2">
+                <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Total Animais</p>
+                <h3 className="text-4xl font-black">{animaisFiltrados.length}</h3>
               </div>
-              <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
-                <p className="text-slate-500 text-xs font-bold uppercase">Saldo Global</p>
-                <h3 className="text-2xl font-black mt-2 text-green-400">{formatCurrency(totaisFinanceiros.receitas - totaisFinanceiros.despesas)}</h3>
+              <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm space-y-2">
+                <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Saldo Global</p>
+                <h3 className="text-4xl font-black text-green-600">{formatCurrency(totaisFinanceiros.receitas - totaisFinanceiros.despesas)}</h3>
+              </div>
+              <div className="bg-slate-900 p-8 rounded-[32px] text-white shadow-xl space-y-2">
+                <p className="text-xs font-black uppercase text-slate-500 tracking-widest">Receitas Totais</p>
+                <h3 className="text-4xl font-black">{formatCurrency(totaisFinanceiros.receitas)}</h3>
               </div>
             </div>
           </div>
         )}
 
         {currentView === 'sanidade' && (
-          <div className="space-y-6">
-            <div className="flex gap-4 border-b border-slate-800 pb-2">
-              <button onClick={() => setSanidadeTab('historico')} className={`px-4 py-2 font-bold ${sanidadeTab === 'historico' ? 'text-green-500 border-b-2 border-green-500' : 'text-slate-500'}`}>Histórico</button>
-              <button onClick={() => setSanidadeTab('calendario')} className={`px-4 py-2 font-bold ${sanidadeTab === 'calendario' ? 'text-green-500 border-b-2 border-green-500' : 'text-slate-500'}`}>Calendário RO</button>
+          <div className="max-w-6xl space-y-10">
+            <h2 className="text-3xl font-black tracking-tight">Sanidade & Calendário</h2>
+            <div className="flex gap-4 border-b border-slate-200">
+              <button onClick={() => setSanidadeTab('historico')} className={`px-6 py-3 font-bold transition ${sanidadeTab === 'historico' ? 'text-green-600 border-b-4 border-green-600' : 'text-slate-400'}`}>Histórico</button>
+              <button onClick={() => setSanidadeTab('calendario')} className={`px-6 py-3 font-bold transition ${sanidadeTab === 'calendario' ? 'text-green-600 border-b-4 border-green-600' : 'text-slate-400'}`}>Calendário RO</button>
             </div>
             
             {sanidadeTab === 'calendario' && (
-              <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
-                <div className="p-6 bg-slate-800/50 border-b border-slate-800">
-                  <h3 className="font-bold">Calendário Sanitário - Estado de Rondônia</h3>
-                  <p className="text-xs text-slate-400">Vacinações obrigatórias e recomendadas para a região.</p>
-                </div>
-                <div className="p-6">
-                  <table className="w-full text-left">
-                    <thead><tr className="text-slate-500 text-xs font-bold uppercase"><th className="pb-4">Mês</th><th className="pb-4">Vacina / Ação</th><th className="pb-4">Público Alvo</th><th className="pb-4">Status</th></tr></thead>
-                    <tbody className="divide-y divide-slate-800">
-                      {appData.calendarioRO.map(c => (
-                        <tr key={c.id}>
-                          <td className="py-4 font-bold">{c.mes}</td>
-                          <td className="py-4">{c.vacina}</td>
-                          <td className="py-4 text-slate-400">{c.categoria}</td>
-                          <td className="py-4"><span className={`px-2 py-1 rounded-md text-[10px] font-black ${c.obrigatoria ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>{c.obrigatoria ? 'OBRIGATÓRIA' : 'RECOMENDADA'}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+              <div className="bg-white rounded-[32px] border border-slate-200 overflow-hidden shadow-sm">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th className="p-6 font-black text-xs uppercase text-slate-400 tracking-widest">Mês</th>
+                      <th className="p-6 font-black text-xs uppercase text-slate-400 tracking-widest">Vacina</th>
+                      <th className="p-6 font-black text-xs uppercase text-slate-400 tracking-widest">Público Alvo</th>
+                      <th className="p-6 font-black text-xs uppercase text-slate-400 tracking-widest">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {appData.calendarioRO.map(c => (
+                      <tr key={c.id} className="hover:bg-slate-50/50 transition">
+                        <td className="p-6 font-bold">{c.mes}</td>
+                        <td className="p-6 font-bold">{c.vacina}</td>
+                        <td className="p-6 text-slate-500 font-medium">{c.categoria}</td>
+                        <td className="p-6">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${c.obrigatoria ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                            {c.obrigatoria ? 'Obrigatória' : 'Recomendada'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         )}
 
         {currentView === 'configuracoes' && (
-          <div className="space-y-8">
-            <h2 className="text-2xl font-bold">Configurações de Administrador</h2>
-            <div className="grid grid-cols-2 gap-8">
-              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
-                <h3 className="font-bold mb-4 flex items-center gap-2"><Users size={20}/> Gestão de Usuários</h3>
-                <div className="space-y-4">
-                  {usuarios.map(u => (
-                    <div key={u.id} className="flex justify-between items-center p-4 bg-slate-800 rounded-xl">
-                      <div><p className="font-bold">{u.nome}</p><p className="text-xs text-slate-400">{u.email} • {u.tipo}</p></div>
-                      <button className="text-slate-500 hover:text-red-500"><Trash2 size={16}/></button>
+          <div className="max-w-4xl space-y-12">
+            <section className="bg-white p-10 rounded-[40px] border border-slate-200 shadow-sm">
+              <div className="flex justify-between items-center mb-10">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Utilizadores do Sistema</h3>
+                <button onClick={() => setIsUserFormOpen(true)} className="text-green-600 font-black text-xs uppercase tracking-widest hover:underline">+ Novo</button>
+              </div>
+              <div className="space-y-4">
+                {usuarios.map(u => (
+                  <div key={u.id} className="flex justify-between items-center p-6 bg-slate-50 rounded-3xl border border-slate-100 group">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-xl">{u.nome[0]}</div>
+                      <div>
+                        <p className="font-black text-slate-900 text-lg">{u.nome}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{u.email} <span className="mx-2 text-slate-200">•</span> {u.tipo}</p>
+                      </div>
                     </div>
-                  ))}
-                  <button className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm font-bold transition">Adicionar Novo Usuário</button>
-                </div>
+                    <button className="text-slate-300 hover:text-red-500 p-3 transition-colors"><Trash2 size={20} /></button>
+                  </div>
+                ))}
               </div>
-              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
-                <h3 className="font-bold mb-4">Segurança e Sistema</h3>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-slate-800 rounded-xl"><span>Logs de Atividade</span><ChevronDown size={16}/></div>
-                  <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="w-full py-3 bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-xl text-sm font-bold transition">Resetar Banco de Dados</button>
-                </div>
-              </div>
+            </section>
+
+            <div className="bg-red-50/50 p-10 rounded-[40px] border border-red-100 flex flex-col items-center text-center space-y-6">
+               <div className="w-16 h-16 bg-red-100 rounded-3xl flex items-center justify-center text-red-600"><Settings size={32} /></div>
+               <div className="space-y-2">
+                 <h4 className="text-xl font-black text-red-900">Área de Perigo</h4>
+                 <p className="text-red-600/60 font-medium text-sm max-w-xs">A formatação apaga permanentemente todos os dados locais desta máquina.</p>
+               </div>
+               <button 
+                onClick={() => { if(confirm(\'APAGAR TUDO?\')) { localStorage.clear(); window.location.reload(); } }}
+                className="bg-red-600 text-white px-12 py-5 rounded-2xl font-black hover:bg-red-700 transition-all shadow-xl shadow-red-900/20"
+               >
+                FORMATAR BASE DE DADOS
+               </button>
             </div>
           </div>
         )}
       </main>
+
+      {/* MODAL USER */}
+      {isUserFormOpen && (
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-6 z-[100]">
+          <div className="bg-white w-full max-w-2xl rounded-[48px] p-12 shadow-2xl">
+            <div className="flex justify-between items-center mb-10">
+              <h3 className="text-3xl font-black text-slate-900 tracking-tight">Novo Utilizador</h3>
+              <button onClick={() => setIsUserFormOpen(false)} className="text-slate-300 hover:text-slate-900 transition-colors"><X size={32} /></button>
+            </div>
+            <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); setIsUserFormOpen(false); }}>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Nome Completo</label>
+                <input required className="w-full p-6 bg-slate-50 border-2 border-transparent focus:border-green-500 rounded-3xl font-black text-lg outline-none transition" />
+              </div>
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">E-mail</label>
+                  <input type="email" required className="w-full p-6 bg-slate-50 border-2 border-transparent focus:border-green-500 rounded-3xl font-black text-lg outline-none transition" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Senha</label>
+                  <input type="password" required className="w-full p-6 bg-slate-50 border-2 border-transparent focus:border-green-500 rounded-3xl font-black text-lg outline-none transition" />
+                </div>
+              </div>
+              <button className="w-full py-6 bg-green-600 text-white rounded-3xl font-black text-lg shadow-xl shadow-green-900/20 hover:bg-green-700 transition-all">Criar Acesso</button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
