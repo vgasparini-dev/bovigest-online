@@ -7,13 +7,23 @@ import {
   Edit, Baby, LayoutDashboard, Scale, Settings,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, FileText, Syringe, CalendarCheck
+  Wheat, Calculator, Users, CalendarDays, Map, KeyRound
 } from 'lucide-react';
 
 // --- BASE DE DADOS INICIAL ---
 const defaultData = {
   propriedades: [
-    { id: 1, nome: "Fazenda São João", responsavel: "Administrador", cidade: "Rondonópolis", estado: "MT", area_ha: 350, ie: "123.456.789-00" }
+    { id: 1, nome: "Fazenda São João", responsavel: "Victor Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" }
+  ],
+  usuarios: [
+    { id: 1, nome: "Administrador", email: "gestor@bovigest.com", senha: "admin", role: "Admin" },
+    { id: 2, nome: "João Peão", email: "joao@bovigest.com", senha: "123", role: "Operador" }
+  ],
+  calendarioSanitario: [
+    { id: 1, doenca: "Brucelose", mes: "1º Semestre", publico: "Fêmeas de 3 a 8 meses", obrigatorio: true },
+    { id: 2, doenca: "Raiva", mes: "Maio", publico: "Todo o rebanho", obrigatorio: true },
+    { id: 3, doenca: "Clostridioses", mes: "Novembro", publico: "Todo o rebanho (Reforço)", obrigatorio: false },
+    { id: 4, doenca: "Febre Aftosa", mes: "N/A", publico: "RO Livre sem vacinação", obrigatorio: false }
   ],
   lotes: [
     { id: 1, nome: "Matrizes A", capacidade: 50, tipo: "Pasto", obs: "Pasto Central" },
@@ -21,11 +31,11 @@ const defaultData = {
   ],
   animais: [
     { id: 1, brinco: "001", nome: "Mimosa", sexo: "F", categoria: "Vaca", tipo: "Cria", raca: "Nelore", dataNasc: "2020-03-15", peso: 420, ativo: true, lote: "Matrizes A", obs: "Matriz principal." },
-    { id: 2, brinco: "105", nome: "Soberano", sexo: "M", categoria: "Boi Gordo", tipo: "Corte", raca: "Angus", dataNasc: "2024-01-10", peso: 490, ativo: true, lote: "Confinamento 1", obs: "Fase de terminação." }
+    { id: 2, brinco: "105", nome: "Soberano", sexo: "M", categoria: "Boi Gordo", tipo: "Corte", raca: "Angus", dataNasc: "2024-01-10", peso: 490, ativo: true, lote: "Confinamento 1", obs: "Fase de terminação." },
+    { id: 3, brinco: "045", nome: "-", sexo: "M", categoria: "Bezerro", tipo: "Cria", raca: "Cruzamento", dataNasc: "2025-08-20", peso: 180, ativo: true, lote: "Matrizes A", obs: "" }
   ],
   pesagens: [
     { id: 1, brinco: "105", data: "2025-11-10", pesoAnterior: 400, pesoAtual: 450, obs: "Entrada seca" },
-    { id: 2, brinco: "105", data: "2026-02-10", pesoAnterior: 450, pesoAtual: 490, obs: "Pesagem de rotina" }
   ],
   reproducao: [
     { id: 1, brincoVaca: "001", dataInseminacao: "2025-06-10", previsaoParto: "2026-03-15", metodo: "IA", reprodutor: "Nelore PO", status: "Prenhe" },
@@ -46,9 +56,7 @@ const defaultData = {
     { id: 1, nome: "Silagem de Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
     { id: 2, nome: "Milho Grão Moído", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 },
     { id: 3, nome: "Farelo de Soja (46%)", ms: 89, elm: 2.05, elg: 1.40, pm: 320, ca: 3.5, p: 6.5, precoKg: 2.50 },
-    { id: 4, nome: "Ureia Pecuária", ms: 100, elm: 0, elg: 0, pm: 1200, ca: 0, p: 0, precoKg: 3.80 },
-    { id: 5, nome: "Núcleo Confinamento", ms: 100, elm: 0, elg: 0, pm: 0, ca: 150, p: 80, precoKg: 5.50 },
-    { id: 6, nome: "Feno de Tifton", ms: 85, elm: 1.20, elg: 0.60, pm: 40, ca: 4.0, p: 2.5, precoKg: 0.60 },
+    { id: 4, nome: "Ureia Pecuária", ms: 100, elm: 0, elg: 0, pm: 1200, ca: 0, p: 0, precoKg: 3.80 }
   ]
 };
 
@@ -69,29 +77,34 @@ const callGemini = async (prompt, systemInstruction) => {
   const apiKey = ""; 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
   const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] } };
-  for (let attempt = 0; attempt < 5; attempt++) {
-    try {
-      const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!response.ok) throw new Error(`HTTP error!`);
-      const result = await response.json();
-      return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
-    } catch (error) {
-      if (attempt === 4) return "Erro de comunicação com a IA.";
-      await new Promise(res => setTimeout(res, Math.pow(2, attempt) * 1000));
-    }
+  try {
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!response.ok) throw new Error(`HTTP error!`);
+    const result = await response.json();
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
+  } catch (error) {
+    return "Erro de comunicação com a IA. Verifique a configuração da API.";
   }
 };
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+
   const [currentView, setCurrentView] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Abas Internas
+  const [sanidadeTab, setSanidadeTab] = useState('registos'); // 'registos' | 'calendario'
+  const [activePropriedadeId, setActivePropriedadeId] = useState(1);
+
   // Modais de Estado
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [isAnimalFormOpen, setIsAnimalFormOpen] = useState(false);
   const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
+  
   const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
   const [isVaccineFormOpen, setIsVaccineFormOpen] = useState(false);
   const [isLoteFormOpen, setIsLoteFormOpen] = useState(false);
@@ -99,6 +112,13 @@ export default function App() {
   const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
   const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
   const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
+  const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
+  
+  // Utilizadores
+  const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
+  const [editingUsuario, setEditingUsuario] = useState(null);
+  
+  const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
 
   // Estados Nutrição
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
@@ -116,7 +136,7 @@ export default function App() {
 
   // --- PERSISTÊNCIA ---
   const [appData, setAppData] = useState(() => {
-    const saved = localStorage.getItem('bovigest_data_pro_v11');
+    const saved = localStorage.getItem('bovigest_data_pro_v12');
     if (saved) {
       try { 
         const parsed = JSON.parse(saved);
@@ -126,9 +146,27 @@ export default function App() {
     return defaultData;
   });
 
-  useEffect(() => { localStorage.setItem('bovigest_data_pro_v11', JSON.stringify(appData)); }, [appData]);
+  useEffect(() => { localStorage.setItem('bovigest_data_pro_v12', JSON.stringify(appData)); }, [appData]);
+
+  // --- LOGIN ---
+  const handleLogin = (e) => {
+    e.preventDefault();
+    const email = e.target.email.value;
+    const senha = e.target.senha.value;
+    const validUser = appData.usuarios.find(u => u.email === email && u.senha === senha);
+    
+    if (validUser) {
+      setCurrentUser(validUser);
+      setIsLoggedIn(true);
+      setLoginError("");
+    } else {
+      setLoginError("Email ou senha incorretos. Tente novamente.");
+    }
+  };
 
   // --- CÁLCULOS E MEMOS ---
+  const propriedadeAtiva = useMemo(() => appData.propriedades.find(p => p.id === activePropriedadeId) || appData.propriedades[0], [activePropriedadeId, appData.propriedades]);
+
   const totaisFinanceiros = useMemo(() => {
     return appData.financeiro.reduce((acc, item) => {
       if (item.status === 'pago') {
@@ -138,7 +176,27 @@ export default function App() {
       return acc;
     }, { receitas: 0, despesas: 0 });
   }, [appData.financeiro]);
+  
   const saldoAtual = totaisFinanceiros.receitas - totaisFinanceiros.despesas;
+
+  const pesoMedio = useMemo(() => {
+    if (appData.animais.length === 0) return 0;
+    return Math.round(appData.animais.reduce((acc, a) => acc + Number(a.peso), 0) / appData.animais.length);
+  }, [appData.animais]);
+
+  // Custo por Arroba Produzida (@ = 30kg peso vivo, rendimento de carcaça ~50% = 15kg carne)
+  const custoPorArroba = useMemo(() => {
+    const pesoTotal = appData.animais.reduce((acc, a) => acc + Number(a.peso), 0);
+    const totalArrobasVivas = pesoTotal / 30; 
+    if (totalArrobasVivas === 0) return 0;
+    return totaisFinanceiros.despesas / totalArrobasVivas;
+  }, [appData.animais, totaisFinanceiros.despesas]);
+
+  const distribuicaoCategorias = useMemo(() => {
+    const counts = {};
+    appData.animais.forEach(a => { counts[a.categoria] = (counts[a.categoria] || 0) + 1; });
+    return counts;
+  }, [appData.animais]);
 
   const filteredAnimais = useMemo(() => {
     return appData.animais.filter(a => 
@@ -148,11 +206,6 @@ export default function App() {
   }, [searchQuery, appData.animais]);
 
   const gadoDeCorte = useMemo(() => appData.animais.filter(a => a.tipo === 'Corte'), [appData.animais]);
-
-  const pesoMedio = useMemo(() => {
-    if (appData.animais.length === 0) return 0;
-    return Math.round(appData.animais.reduce((acc, a) => acc + Number(a.peso), 0) / appData.animais.length);
-  }, [appData.animais]);
 
   const isEmCarencia = (animalLote) => {
     const hoje = new Date();
@@ -175,7 +228,7 @@ export default function App() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `rebanho_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `rebanho_${propriedadeAtiva.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
   };
 
@@ -206,7 +259,7 @@ export default function App() {
   // --- HANDLERS IA ---
   const handleAnalyzeFarm = async () => {
     setIsAnalyzing(true);
-    const context = `Rebanho: ${appData.animais.length} cab. Peso Médio: ${pesoMedio}kg. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${appData.lotes.length}.`;
+    const context = `Rebanho: ${appData.animais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${appData.lotes.length}. Propriedade: ${propriedadeAtiva.nome} (${propriedadeAtiva.estado}).`;
     const prompt = "Faça uma análise executiva (3 parágrafos curtos) sobre a propriedade, focando-se em indicadores positivos e sugerindo uma estratégia de lucro/maneio.";
     const result = await callGemini(prompt, "És um consultor especialista em agronegócio. Usa português de Portugal. Sê analítico.\n\n" + context);
     setAiInsights(result);
@@ -220,7 +273,7 @@ export default function App() {
     setChatMessages(prev => [...prev, { role: 'user', text: userText }]);
     setChatInput("");
     setIsChatLoading(true);
-    const context = `Animais: ${appData.animais.length}. Saldo: ${saldoAtual}. Lotes: ${appData.lotes.map(l=>l.nome).join(', ')}.`;
+    const context = `Animais: ${appData.animais.length}. Custo/@: ${custoPorArroba}. Lotes: ${appData.lotes.map(l=>l.nome).join(', ')}.`;
     const historyText = chatMessages.map(m => `${m.role === 'user' ? 'Utilizador' : 'Assistente'}: ${m.text}`).join("\n");
     const result = await callGemini(`Histórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente em agropecuária. Responde em PT-PT de forma concisa.\nContexto: " + context);
     setChatMessages(prev => [...prev, { role: 'model', text: result }]);
@@ -330,6 +383,51 @@ export default function App() {
     setIsReproducaoFormOpen(false); showSaveSuccess(); 
   };
 
+  const handleAddPropriedade = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const novaProp = { id: Date.now(), nome: fd.get('nome'), responsavel: fd.get('responsavel'), cidade: fd.get('cidade'), estado: fd.get('estado'), area_ha: Number(fd.get('area_ha')), ie: fd.get('ie') };
+    setAppData(prev => ({ ...prev, propriedades: [...prev.propriedades, novaProp] }));
+    setIsPropriedadeFormOpen(false); showSaveSuccess();
+  };
+
+  const handleSaveUsuario = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const novoUsr = { 
+      id: editingUsuario ? editingUsuario.id : Date.now(), 
+      nome: fd.get('nome'), 
+      email: fd.get('email'), 
+      senha: fd.get('senha'),
+      role: fd.get('role') 
+    };
+
+    if (editingUsuario) {
+      setAppData(prev => ({ ...prev, usuarios: prev.usuarios.map(u => u.id === novoUsr.id ? novoUsr : u) }));
+    } else {
+      setAppData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
+    }
+    
+    setIsUsuarioFormOpen(false); 
+    setEditingUsuario(null);
+    showSaveSuccess();
+  };
+
+  const handleDeleteUsuario = (id) => {
+    if (confirm('Tem a certeza que deseja remover este utilizador?')) {
+      setAppData(prev => ({ ...prev, usuarios: prev.usuarios.filter(u => u.id !== id) }));
+      showSaveSuccess();
+    }
+  };
+
+  const handleAddCalendario = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const novoEvento = { id: Date.now(), doenca: fd.get('doenca'), mes: fd.get('mes'), publico: fd.get('publico'), obrigatorio: fd.get('obrigatorio') === 'true' };
+    setAppData(prev => ({ ...prev, calendarioSanitario: [...(prev.calendarioSanitario || []), novoEvento] }));
+    setIsCalendarioFormOpen(false); showSaveSuccess();
+  };
+
   const handleDeleteAnimal = (id) => { 
     if (confirm('Tem a certeza que deseja remover este animal?')) { 
       setAppData(prev => ({ ...prev, animais: prev.animais.filter(a => a.id !== id) })); 
@@ -338,6 +436,7 @@ export default function App() {
   };
 
   const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
+  const openEditUsuario = (usr) => { setEditingUsuario(usr); setIsUsuarioFormOpen(true); };
 
   // --- NAVEGAÇÃO ---
   const navItems = [
@@ -367,9 +466,18 @@ export default function App() {
         </div>
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
           <div className="bg-slate-900/90 backdrop-blur-xl py-8 px-8 shadow-2xl sm:rounded-3xl border border-slate-700/50">
-            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setIsLoggedIn(true); }}>
-              <div><input type="email" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none" defaultValue="gestor@bovigest.com" /></div>
-              <div><input type="password" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none" defaultValue="123456" /></div>
+            {loginError && (
+              <div className="mb-6 bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl text-sm font-bold text-center">
+                {loginError}
+              </div>
+            )}
+            <form className="space-y-6" onSubmit={handleLogin}>
+              <div>
+                <input type="email" name="email" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="Email (ex: gestor@bovigest.com)" defaultValue="gestor@bovigest.com" />
+              </div>
+              <div>
+                <input type="password" name="senha" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="Senha (ex: admin)" defaultValue="admin" />
+              </div>
               <button type="submit" className="w-full flex justify-center py-4 px-4 rounded-xl text-base font-bold text-white bg-green-600 hover:bg-green-500 transition-all shadow-lg">Aceder ao Painel</button>
             </form>
           </div>
@@ -385,19 +493,25 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 flex font-sans text-gray-900">
       {/* SIDEBAR */}
       <aside className="w-72 bg-slate-950 border-r border-slate-900 hidden md:flex flex-col shadow-2xl z-20">
-        <div className="h-24 flex items-center px-8 border-b border-slate-800/50">
+        <div className="h-24 flex items-center px-8 border-b border-slate-800/50 shrink-0">
           <Tractor className="text-green-500 mr-4 shrink-0" size={32} />
           <span className="text-2xl font-black tracking-tight text-white block leading-none">BoviGest</span>
         </div>
-        <div className="px-8 py-6 border-b border-slate-800/50 bg-slate-900/30">
-          <div className="flex items-center">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center text-white font-bold mr-3 shrink-0 shadow-lg">JS</div>
-            <div className="overflow-hidden">
-              <p className="font-bold text-sm text-white truncate">{appData.propriedades[0].nome}</p>
-              <p className="text-xs font-medium text-slate-400 truncate">{appData.propriedades[0].responsavel}</p>
-            </div>
-          </div>
+        
+        {/* Seletor de Propriedade */}
+        <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Propriedade Ativa</label>
+          <select 
+            value={activePropriedadeId} 
+            onChange={(e) => setActivePropriedadeId(Number(e.target.value))}
+            className="w-full bg-slate-800 text-white font-bold px-3 py-2 rounded-lg border border-slate-700 outline-none focus:ring-2 focus:ring-green-500"
+          >
+            {appData.propriedades.map(p => (
+              <option key={p.id} value={p.id}>{p.nome}</option>
+            ))}
+          </select>
         </div>
+
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -413,8 +527,8 @@ export default function App() {
           })}
         </nav>
         <div className="p-6 border-t border-slate-800/50 shrink-0">
-          <button onClick={() => setIsLoggedIn(false)} className="flex items-center justify-center w-full px-4 py-3 text-slate-400 border border-slate-700/50 hover:text-red-400 hover:bg-slate-900 rounded-xl font-bold text-sm">
-            <LogOut className="mr-2 h-4 w-4" /> Terminar Sessão
+          <button onClick={() => { setIsLoggedIn(false); setCurrentUser(null); }} className="flex items-center justify-center w-full px-4 py-3 text-slate-400 border border-slate-700/50 hover:text-red-400 hover:bg-slate-900 rounded-xl font-bold text-sm">
+            <LogOut className="mr-2 h-4 w-4" /> Terminar Sessão ({currentUser?.nome.split(' ')[0]})
           </button>
         </div>
       </aside>
@@ -455,7 +569,7 @@ export default function App() {
                       <div className="bg-red-100 p-3 rounded-xl text-red-600 mr-4"><AlertTriangle size={24} /></div>
                       <div>
                         <h4 className="text-red-900 font-extrabold text-lg">Atenção: Período de Carência</h4>
-                        <p className="text-red-700 font-medium text-sm mt-1">Existem <b>{animaisEmCarencia} animais</b> sob efeito de medicamentos/vacinas.</p>
+                        <p className="text-red-700 font-medium text-sm mt-1">Existem <b>{animaisEmCarencia} animais</b> sob efeito de medicamentos.</p>
                       </div>
                     </div>
                   )}
@@ -494,23 +608,44 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden relative">
-                <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-green-400 to-green-600"></div>
-                <div className="p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/50 gap-6">
-                  <div>
-                    <h3 className="text-2xl font-black text-gray-900 flex items-center">Relatório Inteligente <Sparkles className="ml-3 text-green-500" size={24} /></h3>
-                    <p className="text-gray-500 font-medium mt-1">A Inteligência Artificial analisa os seus dados e gera estratégias.</p>
+              {/* Novo Bloco: Distribuição do Rebanho */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                  <h3 className="text-xl font-black text-gray-900 mb-6">Distribuição por Categoria</h3>
+                  <div className="space-y-4">
+                    {Object.entries(distribuicaoCategorias).map(([cat, qtd]) => {
+                      const pct = Math.round((qtd / appData.animais.length) * 100) || 0;
+                      return (
+                        <div key={cat}>
+                          <div className="flex justify-between items-end mb-1">
+                            <span className="font-bold text-gray-700">{cat}</span>
+                            <span className="font-black text-gray-900">{pct}% ({qtd})</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-3">
+                            <div className="bg-green-500 h-full rounded-full" style={{ width: `${pct}%` }}></div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <button onClick={handleAnalyzeFarm} disabled={isAnalyzing} className="w-full sm:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-bold shadow-xl hover:bg-black transition-all flex items-center justify-center disabled:opacity-70">
-                    {isAnalyzing ? <Loader2 className="w-6 h-6 mr-3 animate-spin" /> : <Bot className="w-6 h-6 mr-3" />}
-                    {isAnalyzing ? 'A Processar...' : 'Gerar Análise IA'}
-                  </button>
                 </div>
-                {aiInsights && (
-                  <div className="p-8 bg-white border-t border-gray-100 animate-in fade-in">
-                    <div className="prose max-w-none text-gray-700 text-lg font-medium whitespace-pre-wrap leading-relaxed">{aiInsights}</div>
+
+                <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden relative flex flex-col justify-center">
+                  <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-green-400 to-green-600"></div>
+                  <div className="p-8">
+                    <h3 className="text-2xl font-black text-gray-900 flex items-center mb-2">Relatório Inteligente <Sparkles className="ml-3 text-green-500" size={24} /></h3>
+                    <p className="text-gray-500 font-medium mb-6">A Inteligência Artificial analisa os seus dados e gera estratégias para otimizar lucro e maneio.</p>
+                    <button onClick={handleAnalyzeFarm} disabled={isAnalyzing} className="w-full bg-gray-900 text-white px-8 py-4 rounded-2xl font-bold shadow-xl hover:bg-black transition-all flex items-center justify-center disabled:opacity-70">
+                      {isAnalyzing ? <Loader2 className="w-6 h-6 mr-3 animate-spin" /> : <Bot className="w-6 h-6 mr-3" />}
+                      {isAnalyzing ? 'A Processar...' : 'Gerar Análise IA Agora'}
+                    </button>
+                    {aiInsights && (
+                      <div className="mt-6 p-6 bg-green-50 border border-green-100 rounded-2xl animate-in fade-in">
+                        <div className="prose max-w-none text-green-900 text-sm font-medium whitespace-pre-wrap leading-relaxed">{aiInsights}</div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
@@ -603,6 +738,37 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- PROPRIEDADES --- */}
+          {currentView === 'propriedades' && (
+            <div className="animate-in fade-in space-y-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-black text-gray-900 flex items-center"><MapPin className="mr-3 text-blue-500" /> Gestão de Propriedades</h3>
+                <button onClick={() => setIsPropriedadeFormOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Nova Propriedade</button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {appData.propriedades.map((prop) => (
+                  <div key={prop.id} className={`bg-white p-6 rounded-3xl shadow-sm border ${activePropriedadeId === prop.id ? 'border-green-500 ring-2 ring-green-100' : 'border-gray-200'}`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <h4 className="text-2xl font-black text-gray-900">{prop.nome}</h4>
+                      {activePropriedadeId === prop.id && <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Ativa</span>}
+                    </div>
+                    <div className="space-y-2 text-sm font-medium text-gray-600">
+                      <p><strong className="text-gray-900">Responsável:</strong> {prop.responsavel}</p>
+                      <p><strong className="text-gray-900">Localização:</strong> {prop.cidade} - {prop.estado}</p>
+                      <p><strong className="text-gray-900">Área:</strong> {prop.area_ha} ha</p>
+                      <p><strong className="text-gray-900">Inscrição Est.:</strong> {prop.ie}</p>
+                    </div>
+                    <div className="mt-6 flex gap-3">
+                      <button onClick={() => setActivePropriedadeId(prop.id)} disabled={activePropriedadeId === prop.id} className={`flex-1 py-2 rounded-xl font-bold transition-all ${activePropriedadeId === prop.id ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-900 text-white hover:bg-black'}`}>
+                        {activePropriedadeId === prop.id ? 'Selecionada' : 'Tornar Ativa'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -788,31 +954,74 @@ export default function App() {
             </div>
           )}
 
-          {/* --- SANIDADE --- */}
+          {/* --- SANIDADE (COM CALENDÁRIO RO) --- */}
           {currentView === 'sanidade' && (
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><ShieldAlert className="mr-3 text-red-500" /> Sanidade e Vacinação</h3>
-                <button onClick={() => setIsVaccineFormOpen(true)} className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Tratamento</button>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 flex space-x-1">
+                  <button onClick={() => setSanidadeTab('registos')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${sanidadeTab === 'registos' ? 'bg-red-50 text-red-700' : 'text-gray-500 hover:bg-gray-50'}`}>Histórico de Lotes</button>
+                  <button onClick={() => setSanidadeTab('calendario')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${sanidadeTab === 'calendario' ? 'bg-red-50 text-red-700' : 'text-gray-500 hover:bg-gray-50'}`}>Calendário RO</button>
+                </div>
               </div>
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-red-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Data / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Lote Alvo</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Carência</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Liberação</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
-                    {appData.vacinacoes.map((vac) => (
-                      <tr key={vac.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4"><span className="block font-black text-gray-900">{vac.vacina}</span><span className="text-sm font-bold text-gray-500">{vac.dataAplicacao}</span></td>
-                        <td className="px-6 py-4 font-bold text-gray-700">{vac.lote} ({vac.qtdAnimais} cab.)</td>
-                        <td className="px-6 py-4 font-bold text-gray-700">{vac.carenciaDias} dias</td>
-                        <td className="px-6 py-4 text-right"><span className="px-3 py-1 rounded-md text-xs font-bold bg-orange-100 text-orange-800">{vac.dataLiberacao || '-'}</span></td>
-                      </tr>
-                    ))}
-                    {appData.vacinacoes.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo sanitário.</td></tr>}
-                  </tbody>
-                </table>
-              </div>
+
+              {sanidadeTab === 'registos' ? (
+                <>
+                  <div className="flex justify-end mb-4">
+                    <button onClick={() => setIsVaccineFormOpen(true)} className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Tratamento de Lote</button>
+                  </div>
+                  <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-red-50">
+                        <tr><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Data / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Lote Alvo</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Carência</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Liberação</th></tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 bg-white">
+                        {appData.vacinacoes.map((vac) => (
+                          <tr key={vac.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4"><span className="block font-black text-gray-900">{vac.vacina}</span><span className="text-sm font-bold text-gray-500">{vac.dataAplicacao}</span></td>
+                            <td className="px-6 py-4 font-bold text-gray-700">{vac.lote} ({vac.qtdAnimais} cab.)</td>
+                            <td className="px-6 py-4 font-bold text-gray-700">{vac.carenciaDias} dias</td>
+                            <td className="px-6 py-4 text-right"><span className="px-3 py-1 rounded-md text-xs font-bold bg-orange-100 text-orange-800">{vac.dataLiberacao || '-'}</span></td>
+                          </tr>
+                        ))}
+                        {appData.vacinacoes.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo sanitário.</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-2xl">
+                    <div className="flex items-center text-yellow-800">
+                      <CalendarDays className="mr-3" />
+                      <div>
+                        <h4 className="font-bold">Calendário Sanitário - Estado de Rondônia (IDARON)</h4>
+                        <p className="text-sm">Rondônia é área livre de febre aftosa sem vacinação. Consulte o calendário para outras obrigações.</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setIsCalendarioFormOpen(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-xl font-bold shadow-sm flex items-center text-sm"><Plus className="w-4 h-4 mr-1" /> Adicionar Evento</button>
+                  </div>
+                  <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Doença / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Mês(es)</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Público Alvo</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Status IDARON</th></tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 bg-white">
+                        {appData.calendarioSanitario?.map((cal) => (
+                          <tr key={cal.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 font-black text-gray-900">{cal.doenca}</td>
+                            <td className="px-6 py-4 font-bold text-gray-700">{cal.mes}</td>
+                            <td className="px-6 py-4 font-medium text-gray-600">{cal.publico}</td>
+                            <td className="px-6 py-4 text-right">
+                              {cal.obrigatorio ? <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">Obrigatório</span> : <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded text-xs">Recomendado</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -885,7 +1094,7 @@ export default function App() {
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><DollarSign className="mr-3 text-green-600" /> Gestão Financeira</h3>
                 <button onClick={() => setIsFinanceFormOpen(true)} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Lançamento</button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
                   <p className="text-sm font-bold text-gray-400 uppercase">Receitas</p>
                   <p className="text-3xl font-black text-green-600">{formatCurrency(totaisFinanceiros.receitas)}</p>
@@ -897,6 +1106,12 @@ export default function App() {
                 <div className="bg-slate-900 p-6 rounded-2xl shadow-lg border border-slate-800">
                   <p className="text-sm font-bold text-slate-400 uppercase">Saldo Líquido</p>
                   <p className={`text-3xl font-black ${saldoAtual >= 0 ? 'text-white' : 'text-red-400'}`}>{formatCurrency(saldoAtual)}</p>
+                </div>
+                {/* Novo Card: Custo por Arroba */}
+                <div className="bg-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-center">
+                  <p className="text-sm font-bold text-blue-800 uppercase flex items-center"><Activity size={16} className="mr-2" /> Custo por Arroba (@)</p>
+                  <p className="text-3xl font-black text-blue-900 mt-1">{formatCurrency(custoPorArroba)}</p>
+                  <p className="text-xs text-blue-600 mt-1">Base: 30kg peso vivo/cab</p>
                 </div>
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
@@ -919,23 +1134,55 @@ export default function App() {
             </div>
           )}
 
-          {/* --- PROPRIEDADES E CONFIGURAÇÕES --- */}
-          {['propriedades', 'configuracoes'].includes(currentView) && (
-            <div className="animate-in fade-in space-y-6 max-w-4xl mx-auto mt-10">
-              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-10 text-center">
-                <Settings size={64} className="mx-auto text-gray-300 mb-6" />
+          {/* --- CONFIGURAÇÕES E ACESSOS --- */}
+          {currentView === 'configuracoes' && (
+            <div className="animate-in fade-in space-y-6">
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 mb-8">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-2xl font-black text-gray-900 flex items-center"><Users className="mr-3 text-indigo-600" /> Acessos e Operadores</h3>
+                  <button onClick={() => { setEditingUsuario(null); setIsUsuarioFormOpen(true); }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Utilizador</button>
+                </div>
+                <div className="border border-gray-100 rounded-2xl overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Nome / Email</th>
+                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Nível de Acesso</th>
+                        <th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {appData.usuarios?.map((usr) => (
+                        <tr key={usr.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4"><span className="block font-black text-gray-900">{usr.nome}</span><span className="text-sm font-bold text-gray-500">{usr.email}</span></td>
+                          <td className="px-6 py-4">
+                            <span className={`px-3 py-1 rounded-lg text-xs font-bold ${usr.role === 'Admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'}`}>{usr.role}</span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button onClick={() => openEditUsuario(usr)} className="text-blue-600 hover:text-blue-800 p-2"><Edit size={18} /></button>
+                            <button onClick={() => handleDeleteUsuario(usr.id)} className="text-red-500 hover:text-red-700 p-2 ml-2"><Trash2 size={18} /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 text-center">
+                <Settings size={48} className="mx-auto text-gray-300 mb-4" />
                 <h3 className="text-2xl font-black text-gray-900 mb-2">Definições do Sistema</h3>
-                <p className="text-gray-500 font-medium mb-10">Faça a gestão dos seus dados e exporte relatórios para Excel.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <p className="text-gray-500 font-medium mb-8">Faça a gestão dos seus dados e exporte relatórios para Excel.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
                   <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
                     <h4 className="font-black text-gray-900 mb-1">Exportar Rebanho</h4>
-                    <p className="text-sm text-gray-500 mb-4">Gere um ficheiro CSV compatível com Excel com todos os dados dos animais.</p>
+                    <p className="text-sm text-gray-500 mb-4">Gere um ficheiro CSV da fazenda atual compatível com Excel.</p>
                     <button onClick={exportToCSV} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl flex items-center justify-center"><Download size={18} className="mr-2"/> Descarregar CSV</button>
                   </div>
                   <div className="p-6 bg-red-50 rounded-2xl border border-red-100">
                     <h4 className="font-black text-red-900 mb-1">Limpar Base de Dados</h4>
                     <p className="text-sm text-red-700 mb-4">Atenção: Esta ação apaga todos os dados armazenados localmente.</p>
-                    <button onClick={() => { if(confirm('APAGAR TUDO?')) { localStorage.removeItem('bovigest_data_pro_v11'); window.location.reload(); } }} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center"><Trash2 size={18} className="mr-2"/> Formatar Sistema</button>
+                    <button onClick={() => { if(confirm('APAGAR TUDO?')) { localStorage.removeItem('bovigest_data_pro_v12'); window.location.reload(); } }} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center"><Trash2 size={18} className="mr-2"/> Formatar Sistema</button>
                   </div>
                 </div>
               </div>
@@ -1293,6 +1540,103 @@ export default function App() {
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
               <button onClick={() => setIsInsumoFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
               <button type="submit" form="insumoForm" className="px-6 py-3 rounded-xl font-bold bg-purple-600 text-white">Adicionar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: PROPRIEDADE */}
+      {isPropriedadeFormOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-blue-50 shrink-0">
+              <h2 className="text-xl font-black text-blue-900 flex items-center"><MapPin className="mr-3 text-blue-600"/> Adicionar Propriedade</h2>
+              <button onClick={() => setIsPropriedadeFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+            </div>
+            <form id="propriedadeForm" onSubmit={handleAddPropriedade} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Nome da Fazenda *</label><input required name="nome" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Responsável *</label><input required name="responsavel" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm font-bold mb-1">Cidade</label><input required name="cidade" className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Estado (UF)</label><input required name="estado" maxLength={2} className="w-full px-4 py-3 border rounded-xl uppercase" /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-sm font-bold mb-1">Área Total (ha)</label><input required type="number" name="area_ha" className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Insc. Estadual</label><input name="ie" className="w-full px-4 py-3 border rounded-xl" /></div>
+              </div>
+            </form>
+            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
+              <button onClick={() => setIsPropriedadeFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="propriedadeForm" className="px-6 py-3 rounded-xl font-bold bg-blue-600 text-white">Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: UTILIZADOR */}
+      {isUsuarioFormOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-indigo-50 shrink-0">
+              <h2 className="text-xl font-black text-indigo-900 flex items-center"><Users className="mr-3 text-indigo-600"/> {editingUsuario ? 'Editar Operador' : 'Adicionar Operador'}</h2>
+              <button onClick={() => { setIsUsuarioFormOpen(false); setEditingUsuario(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+            </div>
+            <form id="usuarioForm" onSubmit={handleSaveUsuario} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold mb-1">Nome Completo *</label>
+                <input required name="nome" defaultValue={editingUsuario?.nome || ''} className="w-full px-4 py-3 border rounded-xl" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Email de Acesso *</label>
+                <input required type="email" name="email" defaultValue={editingUsuario?.email || ''} className="w-full px-4 py-3 border rounded-xl" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Senha de Acesso *</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input required type="text" name="senha" defaultValue={editingUsuario?.senha || ''} className="w-full pl-10 pr-4 py-3 border rounded-xl" placeholder="Digite uma senha segura..." />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Nível de Permissão</label>
+                <select name="role" defaultValue={editingUsuario?.role || 'Operador'} className="w-full px-4 py-3 border rounded-xl">
+                  <option value="Operador">Operador (Regista dados)</option>
+                  <option value="Admin">Administrador (Acesso total)</option>
+                  <option value="Leitor">Leitor (Apenas visualização)</option>
+                </select>
+              </div>
+            </form>
+            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
+              <button onClick={() => { setIsUsuarioFormOpen(false); setEditingUsuario(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="usuarioForm" className="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white">Salvar Acesso</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CALENDÁRIO SANITÁRIO */}
+      {isCalendarioFormOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-yellow-50 shrink-0">
+              <h2 className="text-xl font-black text-yellow-900 flex items-center"><CalendarDays className="mr-3 text-yellow-600"/> Adicionar ao Calendário</h2>
+              <button onClick={() => setIsCalendarioFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+            </div>
+            <form id="calendarioForm" onSubmit={handleAddCalendario} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Doença / Tratamento *</label><input required name="doenca" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Mês de Aplicação *</label><input required name="mes" placeholder="Ex: Maio e Novembro" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Público Alvo</label><input required name="publico" placeholder="Ex: Fêmeas 3 a 8 meses" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Status IDARON</label>
+                <select name="obrigatorio" className="w-full px-4 py-3 border rounded-xl">
+                  <option value="true">Obrigatório</option>
+                  <option value="false">Recomendado</option>
+                </select>
+              </div>
+            </form>
+            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
+              <button onClick={() => setIsCalendarioFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="calendarioForm" className="px-6 py-3 rounded-xl font-bold bg-yellow-600 text-white">Adicionar</button>
             </div>
           </div>
         </div>
