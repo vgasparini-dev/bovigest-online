@@ -93,13 +93,13 @@ export default function App() {
 
   if (!isLoggedIn) {
     return (
-      <div className=\"min-h-screen bg-slate-950 flex items-center justify-center p-6\">
-        <div className=\"w-full max-w-md space-y-8 bg-slate-900 p-10 rounded-3xl border border-slate-800\">
-          <div className=\"text-center\"><h1 className=\"text-4xl font-black text-green-500\">BoviGest</h1><p className=\"text-slate-400 mt-2\">Gestão Inteligente de Rebanho</p></div>
-          <form className=\"space-y-4\" onSubmit={(e) => { e.preventDefault(); setIsLoggedIn(true); }}>
-            <input type=\"email\" placeholder=\"E-mail\" className=\"w-full p-4 bg-slate-800 rounded-xl border-none text-white\" defaultValue=\"gestor@bovigest.com\" />
-            <input type=\"password\" placeholder=\"Senha\" className=\"w-full p-4 bg-slate-800 rounded-xl border-none text-white\" defaultValue=\"123456\" />
-            <button className=\"w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition\">Entrar no Painel</button>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <div className="w-full max-w-md space-y-8 bg-slate-900 p-10 rounded-3xl border border-slate-800">
+          <div className="text-center"><h1 className="text-4xl font-black text-green-500">BoviGest</h1><p className="text-slate-400 mt-2">Gestão Inteligente de Rebanho</p></div>
+          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setIsLoggedIn(true); }}>
+            <input type="email" placeholder="E-mail" className="w-full p-4 bg-slate-800 rounded-xl border-none text-white" defaultValue="gestor@bovigest.com" />
+            <input type="password" placeholder="Senha" className="w-full p-4 bg-slate-800 rounded-xl border-none text-white" defaultValue="123456" />
+            <button className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition">Entrar no Painel</button>
           </form>
         </div>
       </div>
@@ -107,24 +107,24 @@ export default function App() {
   }
 
   return (
-    <div className=\"flex h-screen bg-slate-950 text-slate-100\">
+    <div className="flex h-screen bg-slate-950 text-slate-100">
       {/* SIDEBAR */}
-      <aside className=\"w-72 bg-slate-900 border-r border-slate-800 flex flex-col p-6\">
-        <div className=\"mb-10\"><h1 className=\"text-2xl font-black text-green-500 flex items-center gap-2\"><Tractor size={28}/> BoviGest</h1></div>
+      <aside className="w-72 bg-slate-900 border-r border-slate-800 flex flex-col p-6">
+        <div className="mb-10"><h1 className="text-2xl font-black text-green-500 flex items-center gap-2"><Tractor size={28}/> BoviGest</h1></div>
         
         {/* SELEÇÃO DE PROPRIEDADE */}
-        <div className=\"mb-8 p-4 bg-slate-800/50 rounded-2xl border border-slate-700\">
-          <label className=\"text-[10px] font-bold text-slate-500 uppercase mb-2 block\">Propriedade Ativa</label>
+        <div className="mb-8 p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+          <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Propriedade Ativa</label>
           <select 
             value={selectedPropId} 
             onChange={(e) => setSelectedPropId(Number(e.target.value))}
-            className=\"w-full bg-transparent text-sm font-bold text-white outline-none cursor-pointer\"
+            className="w-full bg-transparent text-sm font-bold text-white outline-none cursor-pointer"
           >
-            {appData.propriedades.map(p => <option key={p.id} value={p.id} className=\"bg-slate-900 text-white\">{p.nome}</option>)}
+            {appData.propriedades.map(p => <option key={p.id} value={p.id} className="bg-slate-900 text-white">{p.nome}</option>)}
           </select>
         </div>
 
-        <nav className=\"flex-1 space-y-2\">
+        <nav className="flex-1 space-y-2">
           {[
             { id: 'dashboard', icon: LayoutDashboard, label: 'Painel Central' },
             { id: 'propriedades', icon: MapPin, label: 'Propriedades' },
@@ -148,52 +148,52 @@ export default function App() {
       </aside>
 
       {/* MAIN */}
-      <main className=\"flex-1 overflow-auto p-10\">
+      <main className="flex-1 overflow-auto p-10">
         {currentView === 'dashboard' && (
-          <div className=\"space-y-8\">
-            <div className=\"flex justify-between items-end\">
-              <div><h2 className=\"text-3xl font-bold\">Olá, Administrador</h2><p className=\"text-slate-400\">Fazenda Atual: {currentProp.nome}</p></div>
+          <div className="space-y-8">
+            <div className="flex justify-between items-end">
+              <div><h2 className="text-3xl font-bold">Olá, Administrador</h2><p className="text-slate-400">Fazenda Atual: {currentProp.nome}</p></div>
             </div>
-            <div className=\"grid grid-cols-4 gap-6\">
-              <div className=\"bg-slate-900 p-6 rounded-3xl border border-slate-800\">
-                <p className=\"text-slate-500 text-xs font-bold uppercase\">Gasto por @ Produzida</p>
-                <h3 className=\"text-2xl font-black mt-2 text-orange-400\">{formatCurrency(gastoPorArroba)}</h3>
+            <div className="grid grid-cols-4 gap-6">
+              <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
+                <p className="text-slate-500 text-xs font-bold uppercase">Gasto por @ Produzida</p>
+                <h3 className="text-2xl font-black mt-2 text-orange-400">{formatCurrency(gastoPorArroba)}</h3>
               </div>
-              <div className=\"bg-slate-900 p-6 rounded-3xl border border-slate-800\">
-                <p className=\"text-slate-500 text-xs font-bold uppercase\">Total Animais</p>
-                <h3 className=\"text-2xl font-black mt-2\">{animaisFiltrados.length}</h3>
+              <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
+                <p className="text-slate-500 text-xs font-bold uppercase">Total Animais</p>
+                <h3 className="text-2xl font-black mt-2">{animaisFiltrados.length}</h3>
               </div>
-              <div className=\"bg-slate-900 p-6 rounded-3xl border border-slate-800\">
-                <p className=\"text-slate-500 text-xs font-bold uppercase\">Saldo Global</p>
-                <h3 className=\"text-2xl font-black mt-2 text-green-400\">{formatCurrency(totaisFinanceiros.receitas - totaisFinanceiros.despesas)}</h3>
+              <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800">
+                <p className="text-slate-500 text-xs font-bold uppercase">Saldo Global</p>
+                <h3 className="text-2xl font-black mt-2 text-green-400">{formatCurrency(totaisFinanceiros.receitas - totaisFinanceiros.despesas)}</h3>
               </div>
             </div>
           </div>
         )}
 
         {currentView === 'sanidade' && (
-          <div className=\"space-y-6\">
-            <div className=\"flex gap-4 border-b border-slate-800 pb-2\">
+          <div className="space-y-6">
+            <div className="flex gap-4 border-b border-slate-800 pb-2">
               <button onClick={() => setSanidadeTab('historico')} className={`px-4 py-2 font-bold ${sanidadeTab === 'historico' ? 'text-green-500 border-b-2 border-green-500' : 'text-slate-500'}`}>Histórico</button>
               <button onClick={() => setSanidadeTab('calendario')} className={`px-4 py-2 font-bold ${sanidadeTab === 'calendario' ? 'text-green-500 border-b-2 border-green-500' : 'text-slate-500'}`}>Calendário RO</button>
             </div>
             
             {sanidadeTab === 'calendario' && (
-              <div className=\"bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden\">
-                <div className=\"p-6 bg-slate-800/50 border-b border-slate-800\">
-                  <h3 className=\"font-bold\">Calendário Sanitário - Estado de Rondônia</h3>
-                  <p className=\"text-xs text-slate-400\">Vacinações obrigatórias e recomendadas para a região.</p>
+              <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
+                <div className="p-6 bg-slate-800/50 border-b border-slate-800">
+                  <h3 className="font-bold">Calendário Sanitário - Estado de Rondônia</h3>
+                  <p className="text-xs text-slate-400">Vacinações obrigatórias e recomendadas para a região.</p>
                 </div>
-                <div className=\"p-6\">
-                  <table className=\"w-full text-left\">
-                    <thead><tr className=\"text-slate-500 text-xs font-bold uppercase\"><th className=\"pb-4\">Mês</th><th className=\"pb-4\">Vacina / Ação</th><th className=\"pb-4\">Público Alvo</th><th className=\"pb-4\">Status</th></tr></thead>
-                    <tbody className=\"divide-y divide-slate-800\">
+                <div className="p-6">
+                  <table className="w-full text-left">
+                    <thead><tr className="text-slate-500 text-xs font-bold uppercase"><th className="pb-4">Mês</th><th className="pb-4">Vacina / Ação</th><th className="pb-4">Público Alvo</th><th className="pb-4">Status</th></tr></thead>
+                    <tbody className="divide-y divide-slate-800">
                       {appData.calendarioRO.map(c => (
                         <tr key={c.id}>
-                          <td className=\"py-4 font-bold\">{c.mes}</td>
-                          <td className=\"py-4\">{c.vacina}</td>
-                          <td className=\"py-4 text-slate-400\">{c.categoria}</td>
-                          <td className=\"py-4\"><span className={`px-2 py-1 rounded-md text-[10px] font-black ${c.obrigatoria ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>{c.obrigatoria ? 'OBRIGATÓRIA' : 'RECOMENDADA'}</span></td>
+                          <td className="py-4 font-bold">{c.mes}</td>
+                          <td className="py-4">{c.vacina}</td>
+                          <td className="py-4 text-slate-400">{c.categoria}</td>
+                          <td className="py-4"><span className={`px-2 py-1 rounded-md text-[10px] font-black ${c.obrigatoria ? 'bg-red-500/10 text-red-500' : 'bg-blue-500/10 text-blue-500'}`}>{c.obrigatoria ? 'OBRIGATÓRIA' : 'RECOMENDADA'}</span></td>
                         </tr>
                       ))}
                     </tbody>
@@ -205,26 +205,26 @@ export default function App() {
         )}
 
         {currentView === 'configuracoes' && (
-          <div className=\"space-y-8\">
-            <h2 className=\"text-2xl font-bold\">Configurações de Administrador</h2>
-            <div className=\"grid grid-cols-2 gap-8\">
-              <div className=\"bg-slate-900 p-8 rounded-3xl border border-slate-800\">
-                <h3 className=\"font-bold mb-4 flex items-center gap-2\"><Users size={20}/> Gestão de Usuários</h3>
-                <div className=\"space-y-4\">
+          <div className="space-y-8">
+            <h2 className="text-2xl font-bold">Configurações de Administrador</h2>
+            <div className="grid grid-cols-2 gap-8">
+              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
+                <h3 className="font-bold mb-4 flex items-center gap-2"><Users size={20}/> Gestão de Usuários</h3>
+                <div className="space-y-4">
                   {usuarios.map(u => (
-                    <div key={u.id} className=\"flex justify-between items-center p-4 bg-slate-800 rounded-xl\">
-                      <div><p className=\"font-bold\">{u.nome}</p><p className=\"text-xs text-slate-400\">{u.email} • {u.tipo}</p></div>
-                      <button className=\"text-slate-500 hover:text-red-500\"><Trash2 size={16}/></button>
+                    <div key={u.id} className="flex justify-between items-center p-4 bg-slate-800 rounded-xl">
+                      <div><p className="font-bold">{u.nome}</p><p className="text-xs text-slate-400">{u.email} • {u.tipo}</p></div>
+                      <button className="text-slate-500 hover:text-red-500"><Trash2 size={16}/></button>
                     </div>
                   ))}
-                  <button className=\"w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm font-bold transition\">Adicionar Novo Usuário</button>
+                  <button className="w-full py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-sm font-bold transition">Adicionar Novo Usuário</button>
                 </div>
               </div>
-              <div className=\"bg-slate-900 p-8 rounded-3xl border border-slate-800\">
-                <h3 className=\"font-bold mb-4\">Segurança e Sistema</h3>
-                <div className=\"space-y-4\">
-                  <div className=\"flex justify-between items-center p-4 bg-slate-800 rounded-xl\"><span>Logs de Atividade</span><ChevronDown size={16}/></div>
-                  <button onClick={() => { localStorage.clear(); window.location.reload(); }} className=\"w-full py-3 bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-xl text-sm font-bold transition\">Resetar Banco de Dados</button>
+              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
+                <h3 className="font-bold mb-4">Segurança e Sistema</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-4 bg-slate-800 rounded-xl"><span>Logs de Atividade</span><ChevronDown size={16}/></div>
+                  <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="w-full py-3 bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-xl text-sm font-bold transition">Resetar Banco de Dados</button>
                 </div>
               </div>
             </div>
