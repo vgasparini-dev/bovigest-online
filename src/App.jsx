@@ -74,20 +74,29 @@ const calcularExigenciasNASEM = (peso, gpd) => {
   };
 };
 
-const callGemini = async (prompt, systemInstruction, userApiKey) => {
+const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, modelName) => {
   const apiKey = userApiKey || ""; 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+  const baseEndpoint = endpointUrl || "https://generativelanguage.googleapis.com/v1beta/models";
+  const model = modelName || "gemini-2.5-flash-preview-09-2025";
+  
+  // Limpar a barra no final do URL, se existir, para evitar dupla barra
+  const cleanEndpoint = baseEndpoint.endsWith('/') ? baseEndpoint.slice(0, -1) : baseEndpoint;
+  const url = `${cleanEndpoint}/${model}:generateContent?key=${apiKey}`;
+  
   const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] } };
+  
   try {
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!response.ok) {
-      if (response.status === 400 || response.status === 403) return "Erro de Autenticação IA: Por favor, configure a sua Chave API do Gemini na aba 'Configurações'.";
-      throw new Error(`HTTP error!`);
+      if (response.status === 400 || response.status === 403 || response.status === 401) {
+        return "Erro de Autenticação/Configuração: Verifique se a sua Chave API, Modelo e Endereço da API estão corretos na aba 'Configurações'.";
+      }
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const result = await response.json();
-    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta do modelo.";
   } catch (error) {
-    return "Erro de comunicação com a IA. Verifique a configuração da sua API Key nas Configurações.";
+    return `Erro de comunicação com a IA: ${error.message}. Verifique as suas configurações de API.`;
   }
 };
 
@@ -103,8 +112,10 @@ export default function App() {
   const [sanidadeTab, setSanidadeTab] = useState('registos');
   const [activePropriedadeId, setActivePropriedadeId] = useState(1);
 
-  // Configurações Pessoais
+  // Configurações Pessoais IA
   const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('bovigest_gemini_api_key') || '');
+  const [aiEndpoint, setAiEndpoint] = useState(() => localStorage.getItem('bovigest_ai_endpoint') || 'https://generativelanguage.googleapis.com/v1beta/models');
+  const [aiModel, setAiModel] = useState(() => localStorage.getItem('bovigest_ai_model') || 'gemini-2.5-flash-preview-09-2025');
 
   // Modais de Estado
   const [selectedAnimal, setSelectedAnimal] = useState(null);
@@ -139,15 +150,17 @@ export default function App() {
 
   // --- PERSISTÊNCIA ---
   const [appData, setAppData] = useState(() => {
-    const saved = localStorage.getItem('bovigest_data_pro_v13');
+    const saved = localStorage.getItem('bovigest_data_pro_v14');
     if (saved) {
       try { return { ...defaultData, ...JSON.parse(saved) }; } catch (e) { return defaultData; }
     }
     return defaultData;
   });
 
-  useEffect(() => { localStorage.setItem('bovigest_data_pro_v13', JSON.stringify(appData)); }, [appData]);
+  useEffect(() => { localStorage.setItem('bovigest_data_pro_v14', JSON.stringify(appData)); }, [appData]);
   useEffect(() => { localStorage.setItem('bovigest_gemini_api_key', geminiApiKey); }, [geminiApiKey]);
+  useEffect(() => { localStorage.setItem('bovigest_ai_endpoint', aiEndpoint); }, [aiEndpoint]);
+  useEffect(() => { localStorage.setItem('bovigest_ai_model', aiModel); }, [aiModel]);
 
   // --- LOGIN ---
   const handleLogin = (e) => {
@@ -296,7 +309,7 @@ export default function App() {
     setIsAnalyzing(true);
     const context = `Rebanho: ${currentAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${currentLotes.length}. Propriedade: ${propriedadeAtiva.nome} (${propriedadeAtiva.estado}).`;
     const prompt = "Faça uma análise executiva (3 parágrafos curtos) sobre a propriedade, focando-se em indicadores positivos e sugerindo uma estratégia de lucro/maneio.";
-    const result = await callGemini(prompt, "És um consultor especialista em agronegócio. Usa português de Portugal. Sê analítico.\n\n" + context, geminiApiKey);
+    const result = await callGemini(prompt, "És um consultor especialista em agronegócio. Usa português de Portugal. Sê analítico.\n\n" + context, geminiApiKey, aiEndpoint, aiModel);
     setAiInsights(result);
     setIsAnalyzing(false);
   };
@@ -310,7 +323,7 @@ export default function App() {
     setIsChatLoading(true);
     const context = `Animais: ${currentAnimais.length}. Custo/@: ${custoPorArroba}. Lotes: ${currentLotes.map(l=>l.nome).join(', ')}. Propriedade: ${propriedadeAtiva.nome}`;
     const historyText = chatMessages.map(m => `${m.role === 'user' ? 'Utilizador' : 'Assistente'}: ${m.text}`).join("\n");
-    const result = await callGemini(`Histórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente em agropecuária. Responde em PT-PT de forma concisa.\nContexto: " + context, geminiApiKey);
+    const result = await callGemini(`Histórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente em agropecuária. Responde em PT-PT de forma concisa.\nContexto: " + context, geminiApiKey, aiEndpoint, aiModel);
     setChatMessages(prev => [...prev, { role: 'model', text: result }]);
     setIsChatLoading(false);
   };
@@ -1194,21 +1207,43 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Novo Bloco: Configuração da IA */}
+              {/* Novo Bloco: Configuração da IA (Dinâmica) */}
               <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl shadow-sm border border-gray-700 p-8 mb-8 text-white relative overflow-hidden">
                 <Bot size={140} className="absolute -right-10 -bottom-10 text-white/5" />
-                <h3 className="text-2xl font-black flex items-center mb-2"><Sparkles className="mr-3 text-green-400" /> Inteligência Artificial (Google Gemini)</h3>
-                <p className="text-slate-300 font-medium mb-6 max-w-2xl">Para usar os relatórios de IA e o Assistente Virtual após publicar o site, insira a sua chave API privada e gratuita do Google Gemini abaixo.</p>
-                <div className="max-w-lg relative z-10">
-                  <label className="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">API Key do Gemini</label>
-                  <input 
-                    type="password" 
-                    value={geminiApiKey}
-                    onChange={(e) => setGeminiApiKey(e.target.value)}
-                    placeholder="Cole a sua API Key aqui..." 
-                    className="w-full px-5 py-4 bg-slate-950 border border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-white font-mono"
-                  />
-                  <p className="text-xs text-slate-500 mt-2 font-bold">Esta chave é guardada apenas no seu navegador e não é partilhada.</p>
+                <h3 className="text-2xl font-black flex items-center mb-2"><Sparkles className="mr-3 text-green-400" /> Inteligência Artificial</h3>
+                <p className="text-slate-300 font-medium mb-6 max-w-2xl">Para usar os relatórios de IA, insira a sua chave API e escolha o modelo/endereço pretendido.</p>
+                <div className="space-y-4 max-w-lg relative z-10">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">API Key (Chave de Acesso)</label>
+                    <input 
+                      type="password" 
+                      value={geminiApiKey}
+                      onChange={(e) => setGeminiApiKey(e.target.value)}
+                      placeholder="Cole a sua API Key aqui..." 
+                      className="w-full px-5 py-4 bg-slate-950 border border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Endereço da API (URL Base)</label>
+                    <input 
+                      type="text" 
+                      value={aiEndpoint}
+                      onChange={(e) => setAiEndpoint(e.target.value)}
+                      placeholder="Ex: https://generativelanguage.googleapis.com/v1beta/models" 
+                      className="w-full px-5 py-4 bg-slate-950 border border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-white font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">Modelo de IA</label>
+                    <input 
+                      type="text" 
+                      value={aiModel}
+                      onChange={(e) => setAiModel(e.target.value)}
+                      placeholder="Ex: gemini-2.5-flash-preview-09-2025" 
+                      className="w-full px-5 py-4 bg-slate-950 border border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-white font-mono"
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2 font-bold">Estes dados ficam guardados localmente no seu navegador.</p>
                 </div>
               </div>
 
@@ -1222,7 +1257,7 @@ export default function App() {
                   <button onClick={exportReproducao} className="bg-pink-50 hover:bg-pink-100 border border-pink-200 text-pink-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Reprodução</button>
                 </div>
                 <div className="mt-12 pt-8 border-t border-gray-100">
-                  <button onClick={() => { if(confirm('APAGAR TUDO?')) { localStorage.removeItem('bovigest_data_pro_v13'); window.location.reload(); } }} className="text-red-500 hover:text-red-700 font-bold flex items-center justify-center mx-auto"><Trash2 size={18} className="mr-2"/> Formatar Sistema (Apagar tudo)</button>
+                  <button onClick={() => { if(confirm('APAGAR TUDO?')) { localStorage.removeItem('bovigest_data_pro_v14'); window.location.reload(); } }} className="text-red-500 hover:text-red-700 font-bold flex items-center justify-center mx-auto"><Trash2 size={18} className="mr-2"/> Formatar Sistema (Apagar tudo)</button>
                 </div>
               </div>
             </div>
