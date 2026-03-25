@@ -7,50 +7,51 @@ import {
   Edit, Baby, LayoutDashboard, Scale, Settings,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, Users, CalendarDays, Map, KeyRound
+  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet
 } from 'lucide-react';
 
 // --- BASE DE DADOS INICIAL ---
 const defaultData = {
   propriedades: [
-    { id: 1, nome: "Fazenda São João", responsavel: "Victor Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" }
+    { id: 1, nome: "Fazenda São João", responsavel: "Victor Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" },
+    { id: 2, nome: "Sítio Esperança", responsavel: "Victor Gasparini", cidade: "Ouro Preto", estado: "RO", area_ha: 120, ie: "987.654.321-00" }
   ],
   usuarios: [
     { id: 1, nome: "Administrador", email: "gestor@bovigest.com", senha: "admin", role: "Admin" },
     { id: 2, nome: "João Peão", email: "joao@bovigest.com", senha: "123", role: "Operador" }
   ],
   calendarioSanitario: [
-    { id: 1, doenca: "Brucelose", mes: "1º Semestre", publico: "Fêmeas de 3 a 8 meses", obrigatorio: true },
-    { id: 2, doenca: "Raiva", mes: "Maio", publico: "Todo o rebanho", obrigatorio: true },
-    { id: 3, doenca: "Clostridioses", mes: "Novembro", publico: "Todo o rebanho (Reforço)", obrigatorio: false },
-    { id: 4, doenca: "Febre Aftosa", mes: "N/A", publico: "RO Livre sem vacinação", obrigatorio: false }
+    { id: 1, propriedadeId: 1, doenca: "Brucelose", mes: "1º Semestre", publico: "Fêmeas de 3 a 8 meses", obrigatorio: true },
+    { id: 2, propriedadeId: 1, doenca: "Raiva", mes: "Maio", publico: "Todo o rebanho", obrigatorio: true },
+    { id: 3, propriedadeId: 1, doenca: "Clostridioses", mes: "Novembro", publico: "Todo o rebanho (Reforço)", obrigatorio: false },
+    { id: 4, propriedadeId: 1, doenca: "Febre Aftosa", mes: "N/A", publico: "RO Livre sem vacinação", obrigatorio: false }
   ],
   lotes: [
-    { id: 1, nome: "Matrizes A", capacidade: 50, tipo: "Pasto", obs: "Pasto Central" },
-    { id: 2, nome: "Confinamento 1", capacidade: 100, tipo: "Baia", obs: "Terminação" },
+    { id: 1, propriedadeId: 1, nome: "Matrizes A", capacidade: 50, tipo: "Pasto", obs: "Pasto Central" },
+    { id: 2, propriedadeId: 1, nome: "Confinamento 1", capacidade: 100, tipo: "Baia", obs: "Terminação" },
   ],
   animais: [
-    { id: 1, brinco: "001", nome: "Mimosa", sexo: "F", categoria: "Vaca", tipo: "Cria", raca: "Nelore", dataNasc: "2020-03-15", peso: 420, ativo: true, lote: "Matrizes A", obs: "Matriz principal." },
-    { id: 2, brinco: "105", nome: "Soberano", sexo: "M", categoria: "Boi Gordo", tipo: "Corte", raca: "Angus", dataNasc: "2024-01-10", peso: 490, ativo: true, lote: "Confinamento 1", obs: "Fase de terminação." },
-    { id: 3, brinco: "045", nome: "-", sexo: "M", categoria: "Bezerro", tipo: "Cria", raca: "Cruzamento", dataNasc: "2025-08-20", peso: 180, ativo: true, lote: "Matrizes A", obs: "" }
+    { id: 1, propriedadeId: 1, brinco: "001", nome: "Mimosa", sexo: "F", categoria: "Vaca", tipo: "Cria", raca: "Nelore", dataNasc: "2020-03-15", peso: 420, ativo: true, lote: "Matrizes A", obs: "Matriz principal." },
+    { id: 2, propriedadeId: 1, brinco: "105", nome: "Soberano", sexo: "M", categoria: "Boi Gordo", tipo: "Corte", raca: "Angus", dataNasc: "2024-01-10", peso: 490, ativo: true, lote: "Confinamento 1", obs: "Fase de terminação." },
+    { id: 3, propriedadeId: 1, brinco: "045", nome: "-", sexo: "M", categoria: "Bezerro", tipo: "Cria", raca: "Cruzamento", dataNasc: "2025-08-20", peso: 180, ativo: true, lote: "Matrizes A", obs: "" }
   ],
   pesagens: [
-    { id: 1, brinco: "105", data: "2025-11-10", pesoAnterior: 400, pesoAtual: 450, obs: "Entrada seca" },
+    { id: 1, propriedadeId: 1, brinco: "105", data: "2025-11-10", pesoAnterior: 400, pesoAtual: 450, obs: "Entrada seca" },
   ],
   reproducao: [
-    { id: 1, brincoVaca: "001", dataInseminacao: "2025-06-10", previsaoParto: "2026-03-15", metodo: "IA", reprodutor: "Nelore PO", status: "Prenhe" },
+    { id: 1, propriedadeId: 1, brincoVaca: "001", dataInseminacao: "2025-06-10", previsaoParto: "2026-03-15", metodo: "IA", reprodutor: "Nelore PO", status: "Prenhe" },
   ],
   nascimentos: [],
   vacinacoes: [
-    { id: 1, vacina: "Ivermectina 1%", lote: "Confinamento 1", dataAplicacao: "2026-03-10", proximaDose: null, qtdAnimais: 80, obs: "Controlo parasitário", carenciaDias: 35, dataLiberacao: "2026-04-14", status: "concluida" },
+    { id: 1, propriedadeId: 1, vacina: "Ivermectina 1%", lote: "Confinamento 1", dataAplicacao: "2026-03-10", proximaDose: null, qtdAnimais: 80, obs: "Controlo parasitário", carenciaDias: 35, dataLiberacao: "2026-04-14", status: "concluida" },
   ],
   insumos: [
-    { id: 1, nome: "Sal Mineral 80", categoria: "Nutrição", quantidade: 50, unidade: "kg", estoqueMinimo: 100 },
-    { id: 2, nome: "Ivermectina 50ml", categoria: "Medicamentos", quantidade: 15, unidade: "frascos", estoqueMinimo: 5 }
+    { id: 1, propriedadeId: 1, nome: "Sal Mineral 80", categoria: "Nutrição", quantidade: 50, unidade: "kg", estoqueMinimo: 100 },
+    { id: 2, propriedadeId: 1, nome: "Ivermectina 50ml", categoria: "Medicamentos", quantidade: 15, unidade: "frascos", estoqueMinimo: 5 }
   ],
   financeiro: [
-    { id: 1, descricao: "Venda lote engorda", categoria: "Venda de Gado", tipo: "receita", valor: 68000, data: "2026-02-18", status: "pago" },
-    { id: 2, descricao: "Compra Ração", categoria: "Nutrição", tipo: "despesa", valor: 4500, data: "2026-02-20", status: "pago" },
+    { id: 1, propriedadeId: 1, descricao: "Venda lote engorda", categoria: "Venda de Gado", tipo: "receita", valor: 68000, data: "2026-02-18", status: "pago" },
+    { id: 2, propriedadeId: 1, descricao: "Compra Ração", categoria: "Nutrição", tipo: "despesa", valor: 4500, data: "2026-02-20", status: "pago" },
   ],
   bibliotecaAlimentos: [
     { id: 1, nome: "Silagem de Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
@@ -73,38 +74,43 @@ const calcularExigenciasNASEM = (peso, gpd) => {
   };
 };
 
-const callGemini = async (prompt, systemInstruction) => {
-  const apiKey = ""; 
+const callGemini = async (prompt, systemInstruction, userApiKey) => {
+  const apiKey = userApiKey || ""; 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
   const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] } };
   try {
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!response.ok) throw new Error(`HTTP error!`);
+    if (!response.ok) {
+      if (response.status === 400 || response.status === 403) return "Erro de Autenticação IA: Por favor, configure a sua Chave API do Gemini na aba 'Configurações'.";
+      throw new Error(`HTTP error!`);
+    }
     const result = await response.json();
     return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
   } catch (error) {
-    return "Erro de comunicação com a IA. Verifique a configuração da API.";
+    return "Erro de comunicação com a IA. Verifique a configuração da sua API Key nas Configurações.";
   }
 };
 
 export default function App() {
+  // --- AUTENTICAÇÃO E NAVEGAÇÃO ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
-
   const [currentView, setCurrentView] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Abas Internas
-  const [sanidadeTab, setSanidadeTab] = useState('registos'); // 'registos' | 'calendario'
+  // Abas Internas e Múltiplas Propriedades
+  const [sanidadeTab, setSanidadeTab] = useState('registos');
   const [activePropriedadeId, setActivePropriedadeId] = useState(1);
+
+  // Configurações Pessoais
+  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('bovigest_gemini_api_key') || '');
 
   // Modais de Estado
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [isAnimalFormOpen, setIsAnimalFormOpen] = useState(false);
   const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
-  
   const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
   const [isVaccineFormOpen, setIsVaccineFormOpen] = useState(false);
   const [isLoteFormOpen, setIsLoteFormOpen] = useState(false);
@@ -113,11 +119,8 @@ export default function App() {
   const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
   const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
   const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
-  
-  // Utilizadores
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
-  
   const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
 
   // Estados Nutrição
@@ -136,17 +139,15 @@ export default function App() {
 
   // --- PERSISTÊNCIA ---
   const [appData, setAppData] = useState(() => {
-    const saved = localStorage.getItem('bovigest_data_pro_v12');
+    const saved = localStorage.getItem('bovigest_data_pro_v13');
     if (saved) {
-      try { 
-        const parsed = JSON.parse(saved);
-        return { ...defaultData, ...parsed }; 
-      } catch (e) { return defaultData; }
+      try { return { ...defaultData, ...JSON.parse(saved) }; } catch (e) { return defaultData; }
     }
     return defaultData;
   });
 
-  useEffect(() => { localStorage.setItem('bovigest_data_pro_v12', JSON.stringify(appData)); }, [appData]);
+  useEffect(() => { localStorage.setItem('bovigest_data_pro_v13', JSON.stringify(appData)); }, [appData]);
+  useEffect(() => { localStorage.setItem('bovigest_gemini_api_key', geminiApiKey); }, [geminiApiKey]);
 
   // --- LOGIN ---
   const handleLogin = (e) => {
@@ -154,62 +155,65 @@ export default function App() {
     const email = e.target.email.value;
     const senha = e.target.senha.value;
     const validUser = appData.usuarios.find(u => u.email === email && u.senha === senha);
-    
-    if (validUser) {
-      setCurrentUser(validUser);
-      setIsLoggedIn(true);
-      setLoginError("");
-    } else {
-      setLoginError("Email ou senha incorretos. Tente novamente.");
-    }
+    if (validUser) { setCurrentUser(validUser); setIsLoggedIn(true); setLoginError(""); } 
+    else { setLoginError("Email ou senha incorretos. Tente novamente."); }
   };
 
-  // --- CÁLCULOS E MEMOS ---
+  // --- FILTROS POR PROPRIEDADE ---
   const propriedadeAtiva = useMemo(() => appData.propriedades.find(p => p.id === activePropriedadeId) || appData.propriedades[0], [activePropriedadeId, appData.propriedades]);
+  const currentAnimais = useMemo(() => appData.animais.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.animais, activePropriedadeId]);
+  const currentLotes = useMemo(() => appData.lotes.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.lotes, activePropriedadeId]);
+  const currentFinanceiro = useMemo(() => appData.financeiro.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.financeiro, activePropriedadeId]);
+  const currentPesagens = useMemo(() => appData.pesagens.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.pesagens, activePropriedadeId]);
+  const currentReproducao = useMemo(() => appData.reproducao.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.reproducao, activePropriedadeId]);
+  const currentNascimentos = useMemo(() => appData.nascimentos.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.nascimentos, activePropriedadeId]);
+  const currentVacinacoes = useMemo(() => appData.vacinacoes.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.vacinacoes, activePropriedadeId]);
+  const currentInsumos = useMemo(() => appData.insumos.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.insumos, activePropriedadeId]);
+  const currentCalendario = useMemo(() => appData.calendarioSanitario?.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.calendarioSanitario, activePropriedadeId]);
 
+  // --- CÁLCULOS E MEMOS ---
   const totaisFinanceiros = useMemo(() => {
-    return appData.financeiro.reduce((acc, item) => {
+    return currentFinanceiro.reduce((acc, item) => {
       if (item.status === 'pago') {
         if (item.tipo === 'receita') acc.receitas += Number(item.valor);
         if (item.tipo === 'despesa') acc.despesas += Number(item.valor);
       }
       return acc;
     }, { receitas: 0, despesas: 0 });
-  }, [appData.financeiro]);
+  }, [currentFinanceiro]);
   
   const saldoAtual = totaisFinanceiros.receitas - totaisFinanceiros.despesas;
 
   const pesoMedio = useMemo(() => {
-    if (appData.animais.length === 0) return 0;
-    return Math.round(appData.animais.reduce((acc, a) => acc + Number(a.peso), 0) / appData.animais.length);
-  }, [appData.animais]);
+    if (currentAnimais.length === 0) return 0;
+    return Math.round(currentAnimais.reduce((acc, a) => acc + Number(a.peso), 0) / currentAnimais.length);
+  }, [currentAnimais]);
 
-  // Custo por Arroba Produzida (@ = 30kg peso vivo, rendimento de carcaça ~50% = 15kg carne)
   const custoPorArroba = useMemo(() => {
-    const pesoTotal = appData.animais.reduce((acc, a) => acc + Number(a.peso), 0);
+    const pesoTotal = currentAnimais.reduce((acc, a) => acc + Number(a.peso), 0);
     const totalArrobasVivas = pesoTotal / 30; 
     if (totalArrobasVivas === 0) return 0;
     return totaisFinanceiros.despesas / totalArrobasVivas;
-  }, [appData.animais, totaisFinanceiros.despesas]);
+  }, [currentAnimais, totaisFinanceiros.despesas]);
 
   const distribuicaoCategorias = useMemo(() => {
     const counts = {};
-    appData.animais.forEach(a => { counts[a.categoria] = (counts[a.categoria] || 0) + 1; });
+    currentAnimais.forEach(a => { counts[a.categoria] = (counts[a.categoria] || 0) + 1; });
     return counts;
-  }, [appData.animais]);
+  }, [currentAnimais]);
 
   const filteredAnimais = useMemo(() => {
-    return appData.animais.filter(a => 
+    return currentAnimais.filter(a => 
       a.brinco.includes(searchQuery) || a.nome.toLowerCase().includes(searchQuery.toLowerCase()) || 
       a.categoria.toLowerCase().includes(searchQuery.toLowerCase()) || a.lote.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery, appData.animais]);
+  }, [searchQuery, currentAnimais]);
 
-  const gadoDeCorte = useMemo(() => appData.animais.filter(a => a.tipo === 'Corte'), [appData.animais]);
+  const gadoDeCorte = useMemo(() => currentAnimais.filter(a => a.tipo === 'Corte'), [currentAnimais]);
 
   const isEmCarencia = (animalLote) => {
     const hoje = new Date();
-    const vacinaLote = appData.vacinacoes.find(v => v.lote === animalLote || v.lote === "Todo o Rebanho");
+    const vacinaLote = currentVacinacoes.find(v => v.lote === animalLote || v.lote === "Todo o Rebanho");
     if (vacinaLote && vacinaLote.dataLiberacao) {
       const liberacao = new Date(vacinaLote.dataLiberacao);
       if (hoje < liberacao) return vacinaLote;
@@ -217,19 +221,50 @@ export default function App() {
     return false;
   };
 
+  const getGPD = (brinco) => {
+    const pesagensAnimal = currentPesagens.filter(p => p.brinco === brinco).sort((a,b) => new Date(b.data) - new Date(a.data));
+    if (pesagensAnimal.length >= 2) {
+      const diffPeso = pesagensAnimal[0].pesoAtual - pesagensAnimal[1].pesoAtual;
+      const diffDias = (new Date(pesagensAnimal[0].data) - new Date(pesagensAnimal[1].data)) / (1000 * 60 * 60 * 24);
+      if (diffDias > 0) return (diffPeso / diffDias).toFixed(2);
+    }
+    return null;
+  };
+
   const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   const showSaveSuccess = () => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); };
 
-  // --- EXPORTAÇÃO CSV ---
-  const exportToCSV = () => {
-    const headers = ['ID', 'Brinco', 'Nome', 'Sexo', 'Categoria', 'Raça', 'Peso (kg)', 'Data Nasc', 'Lote', 'Status'];
-    const rows = appData.animais.map(a => [a.id, a.brinco, a.nome, a.sexo, a.categoria, a.raca, a.peso, a.dataNasc, a.lote, a.ativo ? 'Ativo' : 'Inativo']);
+  // --- EXPORTAÇÃO CSV PADRONIZADA ---
+  const downloadCSV = (filename, headers, rows) => {
     const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `rebanho_${propriedadeAtiva.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = filename; link.click();
+  };
+
+  const exportRebanho = () => {
+    const headers = ['Nº Brinco', 'Nome/Apelido', 'Espécie/Raça', 'Data Nasc.', 'Idade (meses)', 'Categoria', 'Sexo', 'Pelagem/Cor', 'Peso Atual (kg)', 'Peso Anterior (kg)', 'GMD (kg/dia)', 'Status', 'Origem', 'Pasto/Lote', 'Pai (Touro)', 'Mãe (Matriz)', 'Observações'];
+    const rows = currentAnimais.map(a => {
+      const ageMonths = Math.floor((new Date() - new Date(a.dataNasc)) / (1000 * 60 * 60 * 24 * 30));
+      const pAnimal = currentPesagens.filter(p => p.brinco === a.brinco).sort((x, y) => new Date(y.data) - new Date(x.data));
+      const pesoAnt = pAnimal.length > 0 ? pAnimal[0].pesoAnterior : '';
+      return [a.brinco, a.nome, a.raca, a.dataNasc, ageMonths, a.categoria, a.sexo, '-', a.peso, pesoAnt, getGPD(a.brinco) || '', a.ativo ? 'Ativo' : 'Inativo', '-', a.lote, '-', '-', a.obs];
+    });
+    downloadCSV(`Rebanho_${propriedadeAtiva.nome}.csv`, headers, rows);
+  };
+
+  const exportFinanceiro = () => {
+    const headers = ['Data', 'Descrição', 'Tipo', 'Categoria', 'Subcategoria', 'Valor (R$)', 'Forma de Pagamento', 'Fornecedor/Cliente', 'Nº NF/Recibo', 'Centro de Custo', 'Comprovante', 'Observações', 'Mês', 'Ano'];
+    const rows = currentFinanceiro.map(f => {
+      const d = new Date(f.data);
+      return [f.data, f.descricao, f.tipo, f.categoria, '-', f.valor, '-', '-', '-', '-', '-', f.obs || '', d.getMonth()+1, d.getFullYear()];
+    });
+    downloadCSV(`Financeiro_${propriedadeAtiva.nome}.csv`, headers, rows);
+  };
+
+  const exportReproducao = () => {
+    const headers = ['Nº Brinco', 'Nome Matriz', 'Data IA/Monta', 'Tipo (IA/Monta Natural)', 'Tourou/Sêmen', 'Raça Touro', 'Resultado DG', 'Data DG', 'Data Prev. Parto', 'Nº IA na Vaca', 'Técnico Responsável', 'Protocolo Hormonal', 'Custo IA (R$)', 'Observações', 'Status Final'];
+    const rows = currentReproducao.map(r => [r.brincoVaca, '-', r.dataInseminacao, r.metodo, r.reprodutor, '-', '-', '-', r.previsaoParto, '-', '-', '-', '-', '-', r.status]);
+    downloadCSV(`Reproducao_${propriedadeAtiva.nome}.csv`, headers, rows);
   };
 
   // --- NUTRIÇÃO ---
@@ -259,9 +294,9 @@ export default function App() {
   // --- HANDLERS IA ---
   const handleAnalyzeFarm = async () => {
     setIsAnalyzing(true);
-    const context = `Rebanho: ${appData.animais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${appData.lotes.length}. Propriedade: ${propriedadeAtiva.nome} (${propriedadeAtiva.estado}).`;
+    const context = `Rebanho: ${currentAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${currentLotes.length}. Propriedade: ${propriedadeAtiva.nome} (${propriedadeAtiva.estado}).`;
     const prompt = "Faça uma análise executiva (3 parágrafos curtos) sobre a propriedade, focando-se em indicadores positivos e sugerindo uma estratégia de lucro/maneio.";
-    const result = await callGemini(prompt, "És um consultor especialista em agronegócio. Usa português de Portugal. Sê analítico.\n\n" + context);
+    const result = await callGemini(prompt, "És um consultor especialista em agronegócio. Usa português de Portugal. Sê analítico.\n\n" + context, geminiApiKey);
     setAiInsights(result);
     setIsAnalyzing(false);
   };
@@ -273,19 +308,20 @@ export default function App() {
     setChatMessages(prev => [...prev, { role: 'user', text: userText }]);
     setChatInput("");
     setIsChatLoading(true);
-    const context = `Animais: ${appData.animais.length}. Custo/@: ${custoPorArroba}. Lotes: ${appData.lotes.map(l=>l.nome).join(', ')}.`;
+    const context = `Animais: ${currentAnimais.length}. Custo/@: ${custoPorArroba}. Lotes: ${currentLotes.map(l=>l.nome).join(', ')}. Propriedade: ${propriedadeAtiva.nome}`;
     const historyText = chatMessages.map(m => `${m.role === 'user' ? 'Utilizador' : 'Assistente'}: ${m.text}`).join("\n");
-    const result = await callGemini(`Histórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente em agropecuária. Responde em PT-PT de forma concisa.\nContexto: " + context);
+    const result = await callGemini(`Histórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente em agropecuária. Responde em PT-PT de forma concisa.\nContexto: " + context, geminiApiKey);
     setChatMessages(prev => [...prev, { role: 'model', text: result }]);
     setIsChatLoading(false);
   };
 
-  // --- HANDLERS FORMS ---
+  // --- HANDLERS FORMS (COM ISOLAMENTO DE PROPRIEDADE) ---
   const handleSaveAnimal = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const animalData = {
       id: editingAnimal ? editingAnimal.id : Date.now(),
+      propriedadeId: activePropriedadeId,
       brinco: fd.get('brinco'), nome: fd.get('nome') || "-", sexo: fd.get('sexo'),
       categoria: fd.get('categoria'), tipo: fd.get('tipo'), raca: fd.get('raca'),
       dataNasc: fd.get('dataNasc'), peso: Number(fd.get('peso')), lote: fd.get('lote') || "Sem Lote",
@@ -306,7 +342,7 @@ export default function App() {
     const novosAnimais = [];
     for (let i = 0; i < quantidade; i++) {
       novosAnimais.push({
-        id: Date.now() + i, brinco: `${prefixo}${(inicio + i).toString().padStart(3, '0')}`, nome: "-",
+        id: Date.now() + i, propriedadeId: activePropriedadeId, brinco: `${prefixo}${(inicio + i).toString().padStart(3, '0')}`, nome: "-",
         sexo: fd.get('sexo'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), raca: fd.get('raca'),
         dataNasc: fd.get('dataNasc'), peso: Number(fd.get('peso')), lote, obs: "Cadastrado em lote.", ativo: true
       });
@@ -320,10 +356,10 @@ export default function App() {
     const fd = new FormData(e.target);
     const brinco = fd.get('brinco');
     const pesoAtual = Number(fd.get('pesoAtual'));
-    const animal = appData.animais.find(a => a.brinco === brinco);
-    if (!animal) return alert("Animal não encontrado!");
-    const novaPesagem = { id: Date.now(), brinco, data: fd.get('data'), pesoAnterior: animal.peso, pesoAtual, obs: fd.get('obs') || "" };
-    setAppData(prev => ({ ...prev, pesagens: [novaPesagem, ...prev.pesagens], animais: prev.animais.map(a => a.brinco === brinco ? { ...a, peso: pesoAtual } : a) }));
+    const animal = currentAnimais.find(a => a.brinco === brinco);
+    if (!animal) return alert("Animal não encontrado na propriedade atual!");
+    const novaPesagem = { id: Date.now(), propriedadeId: activePropriedadeId, brinco, data: fd.get('data'), pesoAnterior: animal.peso, pesoAtual, obs: fd.get('obs') || "" };
+    setAppData(prev => ({ ...prev, pesagens: [novaPesagem, ...prev.pesagens], animais: prev.animais.map(a => a.brinco === brinco && a.propriedadeId === activePropriedadeId ? { ...a, peso: pesoAtual } : a) }));
     setIsPesagemFormOpen(false); showSaveSuccess();
   };
 
@@ -333,9 +369,9 @@ export default function App() {
     const brincoMatriz = fd.get('brincoMatriz');
     const brincoBezerro = fd.get('brincoBezerro');
     const pesoNascer = Number(fd.get('pesoNascimento'));
-    const novoNasc = { id: Date.now(), data: fd.get('data'), brincoMatriz, brincoBezerro, sexo: fd.get('sexo'), pesoNascimento: pesoNascer, obs: fd.get('obs') || "" };
-    const novoAnimal = { id: Date.now() + 1, brinco: brincoBezerro, nome: "-", sexo: fd.get('sexo'), categoria: "Bezerro(a)", tipo: "Cria", raca: fd.get('raca'), dataNasc: fd.get('data'), peso: pesoNascer, lote: "Maternidade", obs: `Cria da matriz ${brincoMatriz}`, ativo: true };
-    setAppData(prev => ({ ...prev, nascimentos: [novoNasc, ...prev.nascimentos], animais: [novoAnimal, ...prev.animais], reproducao: prev.reproducao.map(r => r.brincoVaca === brincoMatriz && r.status === 'Prenhe' ? { ...r, status: 'Parida' } : r) }));
+    const novoNasc = { id: Date.now(), propriedadeId: activePropriedadeId, data: fd.get('data'), brincoMatriz, brincoBezerro, sexo: fd.get('sexo'), pesoNascimento: pesoNascer, obs: fd.get('obs') || "" };
+    const novoAnimal = { id: Date.now() + 1, propriedadeId: activePropriedadeId, brinco: brincoBezerro, nome: "-", sexo: fd.get('sexo'), categoria: "Bezerro(a)", tipo: "Cria", raca: fd.get('raca'), dataNasc: fd.get('data'), peso: pesoNascer, lote: "Maternidade", obs: `Cria da matriz ${brincoMatriz}`, ativo: true };
+    setAppData(prev => ({ ...prev, nascimentos: [novoNasc, ...prev.nascimentos], animais: [novoAnimal, ...prev.animais], reproducao: prev.reproducao.map(r => r.brincoVaca === brincoMatriz && r.status === 'Prenhe' && r.propriedadeId === activePropriedadeId ? { ...r, status: 'Parida' } : r) }));
     setIsNascimentoFormOpen(false); showSaveSuccess();
   };
 
@@ -349,7 +385,7 @@ export default function App() {
       libDate.setDate(libDate.getDate() + carenciaDias);
       dataLiberacao = libDate.toISOString().split('T')[0];
     }
-    const novaVacina = { id: Date.now(), vacina: fd.get('vacina'), lote: fd.get('lote'), dataAplicacao: fd.get('dataAplicacao'), proximaDose: fd.get('proximaDose') || null, qtdAnimais: Number(fd.get('qtdAnimais')), obs: fd.get('obs') || "", carenciaDias, dataLiberacao, status: "concluida" };
+    const novaVacina = { id: Date.now(), propriedadeId: activePropriedadeId, vacina: fd.get('vacina'), lote: fd.get('lote'), dataAplicacao: fd.get('dataAplicacao'), proximaDose: fd.get('proximaDose') || null, qtdAnimais: Number(fd.get('qtdAnimais')), obs: fd.get('obs') || "", carenciaDias, dataLiberacao, status: "concluida" };
     setAppData(prev => ({ ...prev, vacinacoes: [novaVacina, ...prev.vacinacoes] }));
     setIsVaccineFormOpen(false); showSaveSuccess();
   };
@@ -357,21 +393,21 @@ export default function App() {
   const handleAddFinance = (e) => { 
     e.preventDefault(); 
     const fd = new FormData(e.target); 
-    setAppData(prev => ({ ...prev, financeiro: [{ id: Date.now(), descricao: fd.get('descricao'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), valor: Number(fd.get('valor')), data: fd.get('data'), status: fd.get('status') }, ...prev.financeiro] })); 
+    setAppData(prev => ({ ...prev, financeiro: [{ id: Date.now(), propriedadeId: activePropriedadeId, descricao: fd.get('descricao'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), valor: Number(fd.get('valor')), data: fd.get('data'), status: fd.get('status') }, ...prev.financeiro] })); 
     setIsFinanceFormOpen(false); showSaveSuccess(); 
   };
   
   const handleAddLote = (e) => { 
     e.preventDefault(); 
     const fd = new FormData(e.target); 
-    setAppData(prev => ({ ...prev, lotes: [{ id: Date.now(), nome: fd.get('nome'), capacidade: Number(fd.get('capacidade')), tipo: fd.get('tipo'), obs: fd.get('obs') || "" }, ...prev.lotes] })); 
+    setAppData(prev => ({ ...prev, lotes: [{ id: Date.now(), propriedadeId: activePropriedadeId, nome: fd.get('nome'), capacidade: Number(fd.get('capacidade')), tipo: fd.get('tipo'), obs: fd.get('obs') || "" }, ...prev.lotes] })); 
     setIsLoteFormOpen(false); showSaveSuccess(); 
   };
   
   const handleAddInsumo = (e) => { 
     e.preventDefault(); 
     const fd = new FormData(e.target); 
-    setAppData(prev => ({ ...prev, insumos: [{ id: Date.now(), nome: fd.get('nome'), categoria: fd.get('categoria'), quantidade: Number(fd.get('quantidade')), unidade: fd.get('unidade'), estoqueMinimo: Number(fd.get('estoqueMinimo')) }, ...prev.insumos] })); 
+    setAppData(prev => ({ ...prev, insumos: [{ id: Date.now(), propriedadeId: activePropriedadeId, nome: fd.get('nome'), categoria: fd.get('categoria'), quantidade: Number(fd.get('quantidade')), unidade: fd.get('unidade'), estoqueMinimo: Number(fd.get('estoqueMinimo')) }, ...prev.insumos] })); 
     setIsInsumoFormOpen(false); showSaveSuccess(); 
   };
   
@@ -379,7 +415,7 @@ export default function App() {
     e.preventDefault(); 
     const fd = new FormData(e.target); 
     const prevDate = new Date(new Date(fd.get('dataInseminacao')).setDate(new Date(fd.get('dataInseminacao')).getDate() + 290)).toISOString().split('T')[0]; 
-    setAppData(prevData => ({ ...prevData, reproducao: [{ id: Date.now(), brincoVaca: fd.get('brincoVaca'), dataInseminacao: fd.get('dataInseminacao'), previsaoParto: prevDate, metodo: fd.get('metodo'), reprodutor: fd.get('reprodutor'), status: fd.get('status') }, ...prevData.reproducao] })); 
+    setAppData(prevData => ({ ...prevData, reproducao: [{ id: Date.now(), propriedadeId: activePropriedadeId, brincoVaca: fd.get('brincoVaca'), dataInseminacao: fd.get('dataInseminacao'), previsaoParto: prevDate, metodo: fd.get('metodo'), reprodutor: fd.get('reprodutor'), status: fd.get('status') }, ...prevData.reproducao] })); 
     setIsReproducaoFormOpen(false); showSaveSuccess(); 
   };
 
@@ -396,42 +432,30 @@ export default function App() {
     const fd = new FormData(e.target);
     const novoUsr = { 
       id: editingUsuario ? editingUsuario.id : Date.now(), 
-      nome: fd.get('nome'), 
-      email: fd.get('email'), 
-      senha: fd.get('senha'),
-      role: fd.get('role') 
+      nome: fd.get('nome'), email: fd.get('email'), senha: fd.get('senha'), role: fd.get('role') 
     };
-
-    if (editingUsuario) {
-      setAppData(prev => ({ ...prev, usuarios: prev.usuarios.map(u => u.id === novoUsr.id ? novoUsr : u) }));
-    } else {
-      setAppData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
-    }
-    
-    setIsUsuarioFormOpen(false); 
-    setEditingUsuario(null);
-    showSaveSuccess();
+    if (editingUsuario) setAppData(prev => ({ ...prev, usuarios: prev.usuarios.map(u => u.id === novoUsr.id ? novoUsr : u) }));
+    else setAppData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
+    setIsUsuarioFormOpen(false); setEditingUsuario(null); showSaveSuccess();
   };
 
   const handleDeleteUsuario = (id) => {
     if (confirm('Tem a certeza que deseja remover este utilizador?')) {
-      setAppData(prev => ({ ...prev, usuarios: prev.usuarios.filter(u => u.id !== id) }));
-      showSaveSuccess();
+      setAppData(prev => ({ ...prev, usuarios: prev.usuarios.filter(u => u.id !== id) })); showSaveSuccess();
     }
   };
 
   const handleAddCalendario = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const novoEvento = { id: Date.now(), doenca: fd.get('doenca'), mes: fd.get('mes'), publico: fd.get('publico'), obrigatorio: fd.get('obrigatorio') === 'true' };
+    const novoEvento = { id: Date.now(), propriedadeId: activePropriedadeId, doenca: fd.get('doenca'), mes: fd.get('mes'), publico: fd.get('publico'), obrigatorio: fd.get('obrigatorio') === 'true' };
     setAppData(prev => ({ ...prev, calendarioSanitario: [...(prev.calendarioSanitario || []), novoEvento] }));
     setIsCalendarioFormOpen(false); showSaveSuccess();
   };
 
   const handleDeleteAnimal = (id) => { 
     if (confirm('Tem a certeza que deseja remover este animal?')) { 
-      setAppData(prev => ({ ...prev, animais: prev.animais.filter(a => a.id !== id) })); 
-      setSelectedAnimal(null); showSaveSuccess(); 
+      setAppData(prev => ({ ...prev, animais: prev.animais.filter(a => a.id !== id) })); setSelectedAnimal(null); showSaveSuccess(); 
     } 
   };
 
@@ -444,11 +468,11 @@ export default function App() {
     { id: 'ai-assistant', icon: Sparkles, label: 'Consultor IA' },
     { id: 'nutricao', icon: Wheat, label: 'Nutrição & Dietas' },
     { id: 'propriedades', icon: MapPin, label: 'Propriedades' },
-    { id: 'animais', icon: Beef, label: 'Rebanho Geral', badge: appData.animais.length },
+    { id: 'animais', icon: Beef, label: 'Rebanho Geral', badge: currentAnimais.length },
     { id: 'gado_corte', icon: Target, label: 'Gado de Corte', badge: gadoDeCorte.length },
-    { id: 'pastagens', icon: LayoutGrid, label: 'Pastagens / Lotes', badge: appData.lotes.length },
+    { id: 'pastagens', icon: LayoutGrid, label: 'Pastagens / Lotes', badge: currentLotes.length },
     { id: 'reproducao', icon: HeartPulse, label: 'Inseminações' },
-    { id: 'nascimentos', icon: Baby, label: 'Nascimentos', badge: appData.nascimentos.length },
+    { id: 'nascimentos', icon: Baby, label: 'Nascimentos', badge: currentNascimentos.length },
     { id: 'sanidade', icon: ShieldAlert, label: 'Sanidade Clínica' },
     { id: 'pesagens', icon: Scale, label: 'Pesagens' },
     { id: 'insumos', icon: Archive, label: 'Estoque Insumos' },
@@ -486,8 +510,8 @@ export default function App() {
     );
   }
 
-  const animaisEmCarencia = appData.animais.filter(a => isEmCarencia(a.lote)).length;
-  const insumosCriticos = appData.insumos.filter(i => i.quantidade <= i.estoqueMinimo).length;
+  const animaisEmCarencia = currentAnimais.filter(a => isEmCarencia(a.lote)).length;
+  const insumosCriticos = currentInsumos.filter(i => i.quantidade <= i.estoqueMinimo).length;
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans text-gray-900">
@@ -588,7 +612,7 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col">
                   <div className="flex justify-between items-start mb-6"><div className="bg-blue-50 p-4 rounded-2xl text-blue-600"><Beef size={28} /></div></div>
-                  <h3 className="text-5xl font-black text-gray-900 tracking-tight">{appData.animais.length}</h3>
+                  <h3 className="text-5xl font-black text-gray-900 tracking-tight">{currentAnimais.length}</h3>
                   <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Total Cabeças</p>
                 </div>
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col">
@@ -603,7 +627,7 @@ export default function App() {
                 </div>
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col">
                   <div className="flex justify-between items-start mb-6"><div className="bg-pink-50 p-4 rounded-2xl text-pink-600"><HeartPulse size={28} /></div></div>
-                  <h3 className="text-5xl font-black text-gray-900 tracking-tight">{appData.reproducao.filter(r=>r.status === 'Prenhe').length}</h3>
+                  <h3 className="text-5xl font-black text-gray-900 tracking-tight">{currentReproducao.filter(r=>r.status === 'Prenhe').length}</h3>
                   <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Matrizes Prenhes</p>
                 </div>
               </div>
@@ -614,7 +638,7 @@ export default function App() {
                   <h3 className="text-xl font-black text-gray-900 mb-6">Distribuição por Categoria</h3>
                   <div className="space-y-4">
                     {Object.entries(distribuicaoCategorias).map(([cat, qtd]) => {
-                      const pct = Math.round((qtd / appData.animais.length) * 100) || 0;
+                      const pct = Math.round((qtd / currentAnimais.length) * 100) || 0;
                       return (
                         <div key={cat}>
                           <div className="flex justify-between items-end mb-1">
@@ -874,8 +898,8 @@ export default function App() {
                 <button onClick={() => setIsLoteFormOpen(true)} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Lote</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {appData.lotes.map(lote => {
-                  const animaisNoLote = appData.animais.filter(a => a.lote === lote.nome).length;
+                {currentLotes.map(lote => {
+                  const animaisNoLote = currentAnimais.filter(a => a.lote === lote.nome).length;
                   const ocupacao = Math.round((animaisNoLote / lote.capacidade) * 100) || 0;
                   return (
                     <div key={lote.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
@@ -911,7 +935,7 @@ export default function App() {
                     <tr><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Matriz</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Data / Método</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Prev. Parto</th><th className="px-6 py-4 text-right text-xs font-black text-pink-800 uppercase">Status</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
-                    {appData.reproducao.map((rep) => (
+                    {currentReproducao.map((rep) => (
                       <tr key={rep.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 font-black text-gray-900">{rep.brincoVaca}</td>
                         <td className="px-6 py-4"><span className="block font-bold text-gray-700">{rep.dataInseminacao}</span><span className="text-xs text-gray-500">{rep.metodo} - {rep.reprodutor}</span></td>
@@ -919,7 +943,7 @@ export default function App() {
                         <td className="px-6 py-4 text-right"><span className={`px-3 py-1 rounded-full text-xs font-bold ${rep.status === 'Prenhe' ? 'bg-green-100 text-green-700' : rep.status === 'Parida' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{rep.status}</span></td>
                       </tr>
                     ))}
-                    {appData.reproducao.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo reprodutivo.</td></tr>}
+                    {currentReproducao.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo reprodutivo.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -939,7 +963,7 @@ export default function App() {
                     <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
-                    {appData.nascimentos.map((nasc) => (
+                    {currentNascimentos.map((nasc) => (
                       <tr key={nasc.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 font-bold text-gray-700">{nasc.data}</td>
                         <td className="px-6 py-4"><span className="block font-black text-gray-900">M: {nasc.brincoMatriz}</span><span className="text-sm font-bold text-blue-600">B: {nasc.brincoBezerro}</span></td>
@@ -947,7 +971,7 @@ export default function App() {
                         <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td>
                       </tr>
                     ))}
-                    {appData.nascimentos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum nascimento registado.</td></tr>}
+                    {currentNascimentos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum nascimento registado.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -976,7 +1000,7 @@ export default function App() {
                         <tr><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Data / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Lote Alvo</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Carência</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Liberação</th></tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
-                        {appData.vacinacoes.map((vac) => (
+                        {currentVacinacoes.map((vac) => (
                           <tr key={vac.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4"><span className="block font-black text-gray-900">{vac.vacina}</span><span className="text-sm font-bold text-gray-500">{vac.dataAplicacao}</span></td>
                             <td className="px-6 py-4 font-bold text-gray-700">{vac.lote} ({vac.qtdAnimais} cab.)</td>
@@ -984,7 +1008,7 @@ export default function App() {
                             <td className="px-6 py-4 text-right"><span className="px-3 py-1 rounded-md text-xs font-bold bg-orange-100 text-orange-800">{vac.dataLiberacao || '-'}</span></td>
                           </tr>
                         ))}
-                        {appData.vacinacoes.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo sanitário.</td></tr>}
+                        {currentVacinacoes.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo sanitário.</td></tr>}
                       </tbody>
                     </table>
                   </div>
@@ -1007,7 +1031,7 @@ export default function App() {
                         <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Doença / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Mês(es)</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Público Alvo</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Status IDARON</th></tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
-                        {appData.calendarioSanitario?.map((cal) => (
+                        {currentCalendario?.map((cal) => (
                           <tr key={cal.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 font-black text-gray-900">{cal.doenca}</td>
                             <td className="px-6 py-4 font-bold text-gray-700">{cal.mes}</td>
@@ -1038,7 +1062,7 @@ export default function App() {
                     <tr><th className="px-6 py-4 text-left text-xs font-black text-orange-800 uppercase">Data / Brinco</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Ant.</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Atual</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Evolução</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
-                    {appData.pesagens.map((pes) => {
+                    {currentPesagens.map((pes) => {
                       const diff = pes.pesoAtual - pes.pesoAnterior;
                       return (
                         <tr key={pes.id} className="hover:bg-gray-50">
@@ -1049,7 +1073,7 @@ export default function App() {
                         </tr>
                       );
                     })}
-                    {appData.pesagens.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhuma pesagem registada.</td></tr>}
+                    {currentPesagens.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhuma pesagem registada.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1069,7 +1093,7 @@ export default function App() {
                     <tr><th className="px-6 py-4 text-left text-xs font-black text-purple-800 uppercase">Produto / Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Qtd Atual</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Estoque Min.</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Status</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
-                    {appData.insumos.map((ins) => {
+                    {currentInsumos.map((ins) => {
                       const isCritico = ins.quantidade <= ins.estoqueMinimo;
                       return (
                         <tr key={ins.id} className="hover:bg-gray-50">
@@ -1080,7 +1104,7 @@ export default function App() {
                         </tr>
                       );
                     })}
-                    {appData.insumos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum insumo registado.</td></tr>}
+                    {currentInsumos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum insumo registado.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1120,14 +1144,14 @@ export default function App() {
                     <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Data / Descrição</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Valor</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
-                    {appData.financeiro.map((fin) => (
+                    {currentFinanceiro.map((fin) => (
                       <tr key={fin.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4"><span className="block font-bold text-gray-500 text-sm">{fin.data}</span><span className="font-black text-gray-900">{fin.descricao}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{fin.categoria}</td>
                         <td className={`px-6 py-4 text-right font-black ${fin.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}>{fin.tipo === 'receita' ? '+' : '-'}{formatCurrency(fin.valor)}</td>
                       </tr>
                     ))}
-                    {appData.financeiro.length === 0 && <tr><td colSpan={3} className="text-center py-8 font-bold text-gray-400">Nenhuma transação.</td></tr>}
+                    {currentFinanceiro.length === 0 && <tr><td colSpan={3} className="text-center py-8 font-bold text-gray-400">Nenhuma transação.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1137,6 +1161,7 @@ export default function App() {
           {/* --- CONFIGURAÇÕES E ACESSOS --- */}
           {currentView === 'configuracoes' && (
             <div className="animate-in fade-in space-y-6">
+              
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 mb-8">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-2xl font-black text-gray-900 flex items-center"><Users className="mr-3 text-indigo-600" /> Acessos e Operadores</h3>
@@ -1169,21 +1194,35 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Novo Bloco: Configuração da IA */}
+              <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl shadow-sm border border-gray-700 p-8 mb-8 text-white relative overflow-hidden">
+                <Bot size={140} className="absolute -right-10 -bottom-10 text-white/5" />
+                <h3 className="text-2xl font-black flex items-center mb-2"><Sparkles className="mr-3 text-green-400" /> Inteligência Artificial (Google Gemini)</h3>
+                <p className="text-slate-300 font-medium mb-6 max-w-2xl">Para usar os relatórios de IA e o Assistente Virtual após publicar o site, insira a sua chave API privada e gratuita do Google Gemini abaixo.</p>
+                <div className="max-w-lg relative z-10">
+                  <label className="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">API Key do Gemini</label>
+                  <input 
+                    type="password" 
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    placeholder="Cole a sua API Key aqui..." 
+                    className="w-full px-5 py-4 bg-slate-950 border border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-white font-mono"
+                  />
+                  <p className="text-xs text-slate-500 mt-2 font-bold">Esta chave é guardada apenas no seu navegador e não é partilhada.</p>
+                </div>
+              </div>
+
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 text-center">
-                <Settings size={48} className="mx-auto text-gray-300 mb-4" />
-                <h3 className="text-2xl font-black text-gray-900 mb-2">Definições do Sistema</h3>
-                <p className="text-gray-500 font-medium mb-8">Faça a gestão dos seus dados e exporte relatórios para Excel.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                  <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                    <h4 className="font-black text-gray-900 mb-1">Exportar Rebanho</h4>
-                    <p className="text-sm text-gray-500 mb-4">Gere um ficheiro CSV da fazenda atual compatível com Excel.</p>
-                    <button onClick={exportToCSV} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl flex items-center justify-center"><Download size={18} className="mr-2"/> Descarregar CSV</button>
-                  </div>
-                  <div className="p-6 bg-red-50 rounded-2xl border border-red-100">
-                    <h4 className="font-black text-red-900 mb-1">Limpar Base de Dados</h4>
-                    <p className="text-sm text-red-700 mb-4">Atenção: Esta ação apaga todos os dados armazenados localmente.</p>
-                    <button onClick={() => { if(confirm('APAGAR TUDO?')) { localStorage.removeItem('bovigest_data_pro_v12'); window.location.reload(); } }} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl flex items-center justify-center"><Trash2 size={18} className="mr-2"/> Formatar Sistema</button>
-                  </div>
+                <FileSpreadsheet size={48} className="mx-auto text-green-600 mb-4" />
+                <h3 className="text-2xl font-black text-gray-900 mb-2">Exportação de Planilhas</h3>
+                <p className="text-gray-500 font-medium mb-8">Descarregue os dados da propriedade ativa em formato CSV (compatível com Excel).</p>
+                <div className="flex flex-wrap justify-center gap-4">
+                  <button onClick={exportRebanho} className="bg-green-50 hover:bg-green-100 border border-green-200 text-green-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Rebanho</button>
+                  <button onClick={exportFinanceiro} className="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Financeiro</button>
+                  <button onClick={exportReproducao} className="bg-pink-50 hover:bg-pink-100 border border-pink-200 text-pink-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Reprodução</button>
+                </div>
+                <div className="mt-12 pt-8 border-t border-gray-100">
+                  <button onClick={() => { if(confirm('APAGAR TUDO?')) { localStorage.removeItem('bovigest_data_pro_v13'); window.location.reload(); } }} className="text-red-500 hover:text-red-700 font-bold flex items-center justify-center mx-auto"><Trash2 size={18} className="mr-2"/> Formatar Sistema (Apagar tudo)</button>
                 </div>
               </div>
             </div>
@@ -1287,7 +1326,7 @@ export default function App() {
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Lote</label>
                     <select name="lote" defaultValue={editingAnimal?.lote || ''} className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white outline-none">
-                      <option value="">Sem Lote</option>{appData.lotes.map(l => <option key={l.id} value={l.nome}>{l.nome}</option>)}
+                      <option value="">Sem Lote</option>{currentLotes.map(l => <option key={l.id} value={l.nome}>{l.nome}</option>)}
                     </select>
                   </div>
                   <div>
@@ -1332,7 +1371,7 @@ export default function App() {
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Lote Destino</label>
                     <select name="lote" className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white outline-none">
-                      <option value="">Sem Lote</option>{appData.lotes.map(l => <option key={l.id} value={l.nome}>{l.nome}</option>)}
+                      <option value="">Sem Lote</option>{currentLotes.map(l => <option key={l.id} value={l.nome}>{l.nome}</option>)}
                     </select>
                   </div>
                   <div>
@@ -1415,7 +1454,7 @@ export default function App() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold mb-1">Lote Alvo</label>
-                  <select name="lote" className="w-full px-4 py-3 border rounded-xl"><option value="Todo o Rebanho">Todo o Rebanho</option>{appData.lotes.map(l=><option key={l.id} value={l.nome}>{l.nome}</option>)}</select>
+                  <select name="lote" className="w-full px-4 py-3 border rounded-xl"><option value="Todo o Rebanho">Todo o Rebanho</option>{currentLotes.map(l=><option key={l.id} value={l.nome}>{l.nome}</option>)}</select>
                 </div>
                 <div><label className="block text-sm font-bold mb-1">Qtd. Animais</label><input required type="number" name="qtdAnimais" defaultValue="1" className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
