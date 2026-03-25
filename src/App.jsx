@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* ts-nocheck eslint-disable */
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Tractor, Beef, Activity, LogOut, Bell, Search, Plus, MapPin, 
@@ -6,641 +6,336 @@ import {
   LayoutDashboard, Scale, Settings, Sparkles, Bot, Send, 
   Loader2, CheckCircle2, Download, Archive, Target, PackagePlus, 
   AlertTriangle, ListPlus, ShieldAlert, Wheat, Calculator, 
-  FileText, Syringe, CalendarCheck, Users, ChevronRight, ArrowRightLeft,
-  MoveHorizontal
+  FileText, Syringe, CalendarCheck, Users 
 } from 'lucide-react';
 
 // --- BASE DE DADOS INICIAL ---
 const defaultData = {
   propriedades: [
-    { id: 1, nome: 'Fazenda São João', responsavel: 'Administrador', cidade: 'Jaru', estado: 'RO', area_ha: 350, ie: '123.456.789' },
-    { id: 2, nome: 'Estância Vitória', responsavel: 'Vinícius', cidade: 'Ariquemes', estado: 'RO', area_ha: 120, ie: '987.654.321' }
+    { id: 1, nome: "Fazenda São João", responsavel: "Administrador", cidade: "Rondonópolis", estado: "MT", area_ha: 350, ie: "123.456.789-00" }
+  ],
+  lotes: [
+    { id: 1, nome: "Matrizes A", capacidade: 50, tipo: "Pasto", obs: "Pasto Central" },
+    { id: 2, nome: "Confinamento 1", capacidade: 100, tipo: "Baia", obs: "Terminação" }
   ],
   animais: [
-    { id: 1, propId: 1, brinco: 'NEL-001', raca: 'Nelore', peso_entrada: 200, peso: 450, lote: 'Engorda A', categoria: 'Boi Gordo', status: 'Saudável' },
-    { id: 2, propId: 1, brinco: 'NEL-002', raca: 'Nelore', peso_entrada: 180, peso: 420, lote: 'Engorda A', categoria: 'Boi Gordo', status: 'Saudável' },
-    { id: 3, propId: 2, brinco: 'ANG-050', raca: 'Angus', peso_entrada: 150, peso: 380, lote: 'Pasto Central', categoria: 'Vaca', status: 'Saudável' }
+    { id: 1, brinco: "001", nome: "Mimosa", sexo: "F", categoria: "Vaca", tipo: "Cria", raca: "Nelore", dataNasc: "2020-03-15", peso: 420, ativo: true, lote: "Matrizes A", obs: "Matriz principal." },
+    { id: 2, brinco: "105", nome: "Soberano", sexo: "M", categoria: "Boi Gordo", tipo: "Corte", raca: "Angus", dataNasc: "2024-01-10", peso: 490, ativo: true, lote: "Confinamento 1", obs: "Fase de terminação." }
+  ],
+  pesagens: [
+    { id: 1, brinco: "105", data: "2025-11-10", pesoAnterior: 400, pesoAtual: 450, obs: "Entrada seca" },
+    { id: 2, brinco: "105", data: "2026-02-10", pesoAnterior: 450, pesoAtual: 490, obs: "Pesagem de rotina" }
+  ],
+  reproducao: [
+    { id: 1, brincoVaca: "001", dataInseminacao: "2025-06-10", previsaoParto: "2026-03-15", metodo: "IA", reprodutor: "Nelore PO", status: "Prenhe" }
+  ],
+  nascimentos: [],
+  vacinacoes: [
+    { id: 1, vacina: "Ivermectina 1%", lote: "Confinamento 1", dataAplicacao: "2026-03-10", proximaDose: null, qtdAnimais: 80, obs: "Controlo parasitário", carenciaDias: 35, dataLiberacao: "2026-04-14", status: "concluida" }
+  ],
+  insumos: [
+    { id: 1, nome: "Sal Mineral 80", categoria: "Nutrição", quantidade: 50, unidade: "kg", estoqueMinimo: 100 },
+    { id: 2, nome: "Ivermectina 50ml", categoria: "Medicamentos", quantidade: 15, unidade: "frascos", estoqueMinimo: 5 }
   ],
   financeiro: [
-    { id: 1, propId: 1, tipo: 'Despesa', descricao: 'Ração Proteinada', valor: 2500, data: '2024-05-10' },
-    { id: 2, propId: 1, tipo: 'Receita', descricao: 'Venda de Bezerros', valor: 8000, data: '2024-05-12' },
-    { id: 3, propId: 2, tipo: 'Despesa', descricao: 'Vacinas', valor: 800, data: '2024-05-15' }
+    { id: 1, descricao: "Venda lote engorda", categoria: "Venda de Gado", tipo: "receita", valor: 68000, data: "2026-02-18", status: "pago" },
+    { id: 2, descricao: "Compra Ração", categoria: "Nutrição", tipo: "despesa", valor: 4500, data: "2026-02-20", status: "pago" }
+  ],
+  bibliotecaAlimentos: [
+    { id: 1, nome: "Silagem de Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
+    { id: 2, nome: "Milho Grão Moído", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 },
+    { id: 3, nome: "Farelo de Soja (46%)", ms: 89, elm: 2.05, elg: 1.40, pm: 320, ca: 3.5, p: 6.5, precoKg: 2.50 },
+    { id: 4, nome: "Ureia Pecuária", ms: 100, elm: 0, elg: 0, pm: 1200, ca: 0, p: 0, precoKg: 3.80 },
+    { id: 5, nome: "Núcleo Confinamento", ms: 100, elm: 0, elg: 0, pm: 0, ca: 150, p: 80, precoKg: 5.50 },
+    { id: 6, nome: "Feno de Tifton", ms: 85, elm: 1.20, elg: 0.60, pm: 40, ca: 4.0, p: 2.5, precoKg: 0.60 }
   ]
 };
 
-// --- COMPONENTES UI ---
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-3xl p-6 shadow-sm border border-slate-100 ${className}`}>
-    {children}
-  </div>
-);
-
-const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
-  <Card className="hover:shadow-md transition-shadow">
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="text-slate-500 font-medium text-sm mb-1">{title}</p>
-        <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
-        {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
-      </div>
-      <div className={`p-3 rounded-2xl ${color}`}>
-        <Icon size={24} />
-      </div>
-    </div>
-  </Card>
-);
+// --- FUNÇÕES UTILITÁRIAS IA ---
+const calcularExigenciasNASEM = (peso, gpd) => {
+  const pesoMetabolico = Math.pow(peso, 0.75);
+  return {
+    cms: peso * 0.022,
+    elm: 0.077 * pesoMetabolico,
+    elg: 0.063 * pesoMetabolico * Math.pow(gpd, 1.097),
+    pm: 3.8 * pesoMetabolico + gpd * 250,
+    ca: 15 + gpd * 10,
+    p: 10 + gpd * 8
+  };
+};
 
 export default function App() {
-  // Estados Principais
-  const [data, setData] = useState(() => {
-    const saved = localStorage.getItem('bovigest_data');
-    return saved ? JSON.parse(saved) : defaultData;
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [searchQuery, setSearchQuery] = useState('');
   
-  const [activeView, setActiveView] = useState('dashboard');
-  const [selectedPropId, setSelectedPropId] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  // Estados para Modais/Formulários
+  // Estados de Modais
+  const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [isAnimalFormOpen, setIsAnimalFormOpen] = useState(false);
-  const [isBatchFormOpen, setIsBatchFormOpen] = useState(false);
-  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
-  const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
+  const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
-  const [movingAnimal, setMovingAnimal] = useState(null);
+  const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
+  const [isVaccineFormOpen, setIsVaccineFormOpen] = useState(false);
+  const [isLoteFormOpen, setIsLoteFormOpen] = useState(false);
+  const [isReproducaoFormOpen, setIsReproducaoFormOpen] = useState(false);
+  const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
+  const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
+  const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
+  const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
+  const [editingPropriedade, setEditingPropriedade] = useState(null);
 
-  // Persistência
+  const [propriedadeAtiva, setPropriedadeAtiva] = useState(1);
+  const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
+  const [nutriAlvoGPD, setNutriAlvoGPD] = useState(1.2);
+  const [dietaAtual, setDietaAtual] = useState([]);
+  const [insumoSelecionado, setInsumoSelecionado] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // --- PERSISTÊNCIA ---
+  const [appData, setAppData] = useState(() => {
+    const saved = localStorage.getItem('bovigest_data_pro_v1.1');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return { ...defaultData, ...parsed };
+      } catch (e) {
+        return defaultData;
+      }
+    }
+    return defaultData;
+  });
+
   useEffect(() => {
-    localStorage.setItem('bovigest_data', JSON.stringify(data));
-  }, [data]);
+    localStorage.setItem('bovigest_data_pro_v1.1', JSON.stringify(appData));
+  }, [appData]);
 
-  // Filtros e Cálculos
-  const currentProp = useMemo(() => 
-    data.propriedades.find(p => p.id === selectedPropId) || data.propriedades[0], 
-    [data.propriedades, selectedPropId]
-  );
+  // --- CÁLCULOS E MEMOS ---
+  const totaisFinanceiros = useMemo(() => {
+    return appData.financeiro.reduce((acc, item) => {
+      if (item.status === 'pago') {
+        if (item.tipo === 'receita') acc.receitas += Number(item.valor);
+        if (item.tipo === 'despesa') acc.despesas += Number(item.valor);
+      }
+      return acc;
+    }, { receitas: 0, despesas: 0 });
+  }, [appData.financeiro]);
 
-  const filteredAnimais = useMemo(() => 
-    data.animais.filter(a => a.propId === selectedPropId && 
-      (a.brinco.toLowerCase().includes(searchTerm.toLowerCase()) || 
-       a.lote.toLowerCase().includes(searchTerm.toLowerCase()))
-    ), 
-    [data.animais, selectedPropId, searchTerm]
-  );
+  const saldoAtual = totaisFinanceiros.receitas - totaisFinanceiros.despesas;
 
-  const stats = useMemo(() => {
-    const animaisProp = data.animais.filter(a => a.propId === selectedPropId);
-    const financeiroProp = data.financeiro.filter(f => f.propId === selectedPropId);
-    
-    const pesoTotal = animaisProp.reduce((acc, curr) => acc + curr.peso, 0);
-    const pesoEntradaTotal = animaisProp.reduce((acc, curr) => acc + (curr.peso_entrada || 0), 0);
-    const ganhoPesoKg = pesoTotal - pesoEntradaTotal;
-    const arrobasProduzidas = ganhoPesoKg / 15;
-    
-    const totalDespesas = financeiroProp
-      .filter(f => f.tipo === 'Despesa')
-      .reduce((acc, curr) => acc + curr.valor, 0);
-    
-    const custoArroba = arrobasProduzidas > 0 
-      ? (totalDespesas / arrobasProduzidas).toFixed(2) 
-      : "0,00";
-
-    const saldo = financeiroProp.reduce((acc, curr) => 
-      acc + (curr.tipo === 'Receita' ? curr.valor : -curr.valor), 0
+  const filteredAnimais = useMemo(() => {
+    return appData.animais.filter(a => 
+      a.brinco.includes(searchQuery) || 
+      a.nome.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      a.categoria.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      a.lote.toLowerCase().includes(searchQuery.toLowerCase())
     );
+  }, [searchQuery, appData.animais]);
 
-    return {
-      totalAnimais: animaisProp.length,
-      pesoMedio: animaisProp.length > 0 ? (pesoTotal / animaisProp.length).toFixed(1) : 0,
-      custoArroba,
-      saldo: saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-      totalDespesas: totalDespesas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-      ganhoArrobas: arrobasProduzidas.toFixed(1)
-    };
-  }, [data, selectedPropId]);
+  const pesoMedio = useMemo(() => {
+    if (appData.animais.length === 0) return 0;
+    return Math.round(appData.animais.reduce((acc, a) => acc + Number(a.peso), 0) / appData.animais.length);
+  }, [appData.animais]);
 
-  // Funções de Gerenciamento
+  const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
   const handleSaveAnimal = (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const animal = {
+    const fd = new FormData(e.target);
+    const animalData = {
       id: editingAnimal ? editingAnimal.id : Date.now(),
-      propId: selectedPropId,
-      brinco: formData.get('brinco'),
-      raca: formData.get('raca'),
-      peso_entrada: Number(formData.get('peso_entrada')),
-      peso: Number(formData.get('peso')),
-      lote: formData.get('lote'),
-      categoria: formData.get('categoria'),
-      status: 'Saudável'
+      brinco: fd.get('brinco'),
+      nome: fd.get('nome') || "-",
+      sexo: fd.get('sexo'),
+      categoria: fd.get('categoria'),
+      tipo: fd.get('tipo'),
+      raca: fd.get('raca'),
+      dataNasc: fd.get('dataNasc'),
+      peso: Number(fd.get('peso')),
+      lote: fd.get('lote') || "Sem Lote",
+      obs: fd.get('obs'),
+      ativo: true
     };
 
-    setData(prev => ({
-      ...prev,
-      animais: editingAnimal 
-        ? prev.animais.map(a => a.id === animal.id ? animal : a)
-        : [...prev.animais, animal]
-    }));
-    
+    if (editingAnimal) {
+      setAppData(prev => ({ ...prev, animais: prev.animais.map(a => a.id === animalData.id ? animalData : a) }));
+    } else {
+      setAppData(prev => ({ ...prev, animais: [animalData, ...prev.animais] }));
+    }
     setIsAnimalFormOpen(false);
     setEditingAnimal(null);
   };
 
-  const handleBatchRegister = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const prefixo = formData.get('prefixo') || '';
-    const inicio = Number(formData.get('inicio'));
-    const quantidade = Number(formData.get('quantidade'));
-    const pesoEntrada = Number(formData.get('peso_entrada'));
-    const pesoAtual = Number(formData.get('peso'));
-    
-    const novosAnimais = [];
-    for (let i = 0; i < quantidade; i++) {
-      novosAnimais.push({
-        id: Date.now() + i,
-        propId: selectedPropId,
-        brinco: `${prefixo}${inicio + i}`,
-        raca: formData.get('raca'),
-        peso_entrada: pesoEntrada,
-        peso: pesoAtual,
-        lote: formData.get('lote'),
-        categoria: formData.get('categoria'),
-        status: 'Saudável'
-      });
-    }
-
-    setData(prev => ({
-      ...prev,
-      animais: [...prev.animais, ...novosAnimais]
-    }));
-    setIsBatchFormOpen(false);
-  };
-
-  const deleteAnimal = (id) => {
-    if (confirm('Tem certeza que deseja excluir este animal?')) {
-      setData(prev => ({
-        ...prev,
-        animais: prev.animais.filter(a => a.id !== id)
-      }));
-    }
-  };
-
-  const handleMoveAnimal = (e) => {
-    e.preventDefault();
-    const destPropId = Number(new FormData(e.target).get('destPropId'));
-    setData(prev => ({
-      ...prev,
-      animais: prev.animais.map(a => 
-        a.id === movingAnimal.id ? { ...a, propId: destPropId } : a
-      )
-    }));
-    setIsMoveModalOpen(false);
-    setMovingAnimal(null);
-  };
-
-  const handleAddExpense = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const nova = {
-      id: Date.now(),
-      propId: selectedPropId,
-      tipo: formData.get('tipo'),
-      descricao: formData.get('descricao'),
-      valor: Number(formData.get('valor')),
-      data: new Date().toISOString().split('T')[0]
-    };
-    setData(prev => ({
-      ...prev,
-      financeiro: [...prev.financeiro, nova]
-    }));
-    setIsFinanceFormOpen(false);
-  };
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-cover bg-center" style={{backgroundImage: 'url("https://images.unsplash.com/photo-1544866582-90e808381861?q=80&w=2074&auto=format&fit=crop")'}}>
+        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+        <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+          <div className="flex justify-center text-green-500 mb-4">
+            <Tractor size={64} className="drop-shadow-lg" />
+          </div>
+          <h2 className="mt-2 text-center text-5xl font-extrabold text-white tracking-tight drop-shadow-md">
+            BoviGest <span className="text-green-500">PRO</span>
+          </h2>
+        </div>
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+          <div className="bg-slate-900/90 backdrop-blur-xl py-8 px-8 shadow-2xl sm:rounded-3xl border border-slate-700/50">
+            <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); setIsLoggedIn(true); }}>
+              <div>
+                <input type="email" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none" defaultValue="gestor@bovigest.com" />
+              </div>
+              <div>
+                <input type="password" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none" defaultValue="123456" />
+              </div>
+              <button type="submit" className="w-full flex justify-center py-4 px-4 rounded-xl text-base font-bold text-white bg-green-600 hover:bg-green-500 transition-all shadow-lg">
+                Aceder ao Painel
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC]">
-      {/* Sidebar Lateral */}
-      <aside className="w-72 bg-slate-900 text-white p-6 flex flex-col fixed h-full z-20">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="bg-indigo-600 p-2 rounded-xl">
-            <Beef size={24} />
-          </div>
-          <h1 className="text-xl font-black tracking-tight">BoviGest PRO</h1>
+    <div className="min-h-screen bg-slate-50 flex font-sans text-gray-900">
+      {/* SIDEBAR */}
+      <aside className="w-72 bg-slate-950 border-r border-slate-900 hidden md:flex flex-col shadow-2xl z-20">
+        <div className="h-24 flex items-center px-8 border-b border-slate-800/50">
+          <Tractor className="text-green-500 mr-4 shrink-0" size={32} />
+          <span className="text-2xl font-black tracking-tight text-white block leading-none">BoviGest</span>
         </div>
-
-        <nav className="flex-1 space-y-2">
+        
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
           {[
-            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-            { id: 'rebanho', label: 'Rebanho Geral', icon: Beef },
-            { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
-            { id: 'sanidade', label: 'Sanidade', icon: Syringe },
-            { id: 'propriedades', label: 'Minhas Fazendas', icon: MapPin },
-            { id: 'configuracoes', label: 'Configurações', icon: Settings },
+            { id: 'dashboard', icon: LayoutDashboard, label: 'Painel Central' },
+            { id: 'animais', icon: Beef, label: 'Rebanho Geral' },
+            { id: 'propriedades', icon: MapPin, label: 'Propriedades' },
+            { id: 'financeiro', icon: DollarSign, label: 'Financeiro' },
+            { id: 'configuracoes', icon: Settings, label: 'Configurações' },
           ].map(item => (
             <button
               key={item.id}
-              onClick={() => setActiveView(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl font-bold transition-all duration-200 ${
-                activeView === item.id 
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-              }`}
+              onClick={() => setCurrentView(item.id)}
+              className={`w-full flex items-center px-4 py-3 rounded-xl group transition-all ${currentView === item.id ? 'bg-green-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}
             >
-              <item.icon size={20} />
-              {item.label}
+              <item.icon className={`mr-3 h-5 w-5 shrink-0 ${currentView === item.id ? 'text-white' : 'text-slate-500 group-hover:text-white'}`} />
+              <span className="font-bold text-sm truncate">{item.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="pt-6 border-t border-slate-800 mt-auto">
-          <button className="flex items-center gap-3 text-slate-400 hover:text-white px-4 py-2 font-medium w-full">
-            <LogOut size={20} />
-            Sair
+        <div className="p-6 border-t border-slate-800/50 shrink-0">
+          <button onClick={() => setIsLoggedIn(false)} className="flex items-center justify-center w-full px-4 py-3 text-slate-400 border border-slate-700/50 hover:text-red-400 hover:bg-slate-900 rounded-xl font-bold text-sm">
+            <LogOut className="mr-2 h-4 w-4" /> Terminar Sessão
           </button>
         </div>
       </aside>
 
-      {/* Conteúdo Principal */}
-      <main className="flex-1 ml-72 p-8 pb-24">
-        {/* Header Superior */}
-        <header className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900">Olá, {currentProp?.responsavel}</h2>
-            <p className="text-slate-500 font-medium">Você está gerenciando: <span className="text-indigo-600">{currentProp?.nome}</span></p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <select 
-              value={selectedPropId}
-              onChange={(e) => setSelectedPropId(Number(e.target.value))}
-              className="bg-white border-2 border-slate-100 rounded-2xl px-6 py-3 font-bold text-slate-700 focus:ring-4 focus:ring-indigo-100 outline-none transition-all cursor-pointer"
-            >
-              {data.propriedades.map(p => (
-                <option key={p.id} value={p.id}>{p.nome}</option>
-              ))}
-            </select>
-            
-            <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 font-bold border-2 border-indigo-200">
-              VG
-            </div>
+      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50/50 relative">
+        <header className="h-24 bg-white border-b border-gray-200 flex items-center justify-between px-10 z-10 shadow-sm shrink-0">
+          <h2 className="text-3xl font-extrabold text-gray-900 capitalize flex items-center tracking-tight">
+            {currentView}
+          </h2>
+          <div className="flex items-center space-x-4">
+            <button className="text-gray-400 hover:text-gray-800 relative p-3 bg-white border border-gray-200 hover:bg-gray-50 rounded-full transition-colors shadow-sm">
+              <Bell className="h-5 w-5" />
+            </button>
           </div>
         </header>
 
-        {/* --- VIEW: DASHBOARD --- */}
-        {activeView === 'dashboard' && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard 
-                title="Total de Animais" 
-                value={stats.totalAnimais} 
-                icon={Beef} 
-                color="bg-blue-100 text-blue-600"
-                subtitle="Cabeças no pátio"
-              />
-              <StatCard 
-                title="Peso Médio" 
-                value={`${stats.pesoMedio} kg`} 
-                icon={Scale} 
-                color="bg-orange-100 text-orange-600"
-                subtitle="Média por animal"
-              />
-              <StatCard 
-                title="Custo / Arroba" 
-                value={`R$ ${stats.custoArroba}`} 
-                icon={Calculator} 
-                color="bg-emerald-100 text-emerald-600"
-                subtitle={`Baseado em ${stats.ganhoArrobas} @ prod.`}
-              />
-              <StatCard 
-                title="Despesa Total" 
-                value={stats.totalDespesas} 
-                icon={DollarSign} 
-                color="bg-rose-100 text-rose-600"
-                subtitle="Mês atual"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <Card className="lg:col-span-2">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-slate-900">Atividades Recentes</h3>
-                  <button className="text-indigo-600 font-bold text-sm">Ver tudo</button>
+        <div className="flex-1 overflow-y-auto p-6 md:p-10">
+          {currentView === 'dashboard' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+                  <div className="bg-blue-50 p-4 rounded-2xl text-blue-600 w-fit mb-4"><Beef size={28} /></div>
+                  <h3 className="text-5xl font-black text-gray-900 tracking-tight">{appData.animais.length}</h3>
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Total Cabeças</p>
                 </div>
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                          <Activity size={18} className="text-indigo-600" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-800 text-sm">Pesagem realizada</p>
-                          <p className="text-xs text-slate-400">Há 2 horas • Lote {i}</p>
-                        </div>
-                      </div>
-                      <ChevronRight size={18} className="text-slate-300" />
-                    </div>
-                  ))}
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+                  <div className="bg-green-50 p-4 rounded-2xl text-green-600 w-fit mb-4"><DollarSign size={28} /></div>
+                  <h3 className="text-3xl font-black text-gray-900 mt-2">{formatCurrency(saldoAtual)}</h3>
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Saldo Global</p>
                 </div>
-              </Card>
-
-              <Card>
-                <h3 className="text-lg font-bold text-slate-900 mb-6">Ações Rápidas</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  <button 
-                    onClick={() => {setEditingAnimal(null); setIsAnimalFormOpen(true);}}
-                    className="flex items-center gap-3 p-4 bg-indigo-50 text-indigo-700 rounded-2xl font-bold hover:bg-indigo-100 transition-colors"
-                  >
-                    <Plus size={20} /> Cadastrar Animal
-                  </button>
-                  <button 
-                    onClick={() => setIsBatchFormOpen(true)}
-                    className="flex items-center gap-3 p-4 bg-slate-50 text-slate-700 rounded-2xl font-bold hover:bg-slate-100 transition-colors"
-                  >
-                    <ListPlus size={20} /> Entrada em Lote
-                  </button>
-                  <button 
-                    onClick={() => setIsFinanceFormOpen(true)}
-                    className="flex items-center gap-3 p-4 bg-rose-50 text-rose-700 rounded-2xl font-bold hover:bg-rose-100 transition-colors"
-                  >
-                    <DollarSign size={20} /> Lançar Despesa
-                  </button>
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col">
+                  <div className="bg-orange-50 p-4 rounded-2xl text-orange-600 w-fit mb-4"><Scale size={28} /></div>
+                  <h3 className="text-5xl font-black text-gray-900 tracking-tight">{pesoMedio} <span className="text-xl text-gray-300 font-bold">kg</span></h3>
+                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mt-2">Média de Peso</p>
                 </div>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {/* --- VIEW: REBANHO GERAL --- */}
-        {activeView === 'rebanho' && (
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="relative flex-1 min-w-[300px]">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar por brinco ou lote..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-white border-2 border-slate-100 rounded-2xl pl-12 pr-4 py-3.5 outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-medium"
-                />
-              </div>
-              
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setIsBatchFormOpen(true)}
-                  className="bg-slate-800 text-white px-6 py-3.5 rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-700 transition-all shadow-lg shadow-slate-200"
-                >
-                  <ListPlus size={20} /> Cadastro em Lote
-                </button>
-                <button 
-                  onClick={() => {setEditingAnimal(null); setIsAnimalFormOpen(true);}}
-                  className="bg-indigo-600 text-white px-6 py-3.5 rounded-2xl font-bold flex items-center gap-2 hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-200"
-                >
-                  <Plus size={20} /> Novo Animal
-                </button>
               </div>
             </div>
+          )}
 
-            <Card className="overflow-hidden !p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100">
-                      <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Animal</th>
-                      <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Lote / Categoria</th>
-                      <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider">Peso (Atual)</th>
-                      <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-wider text-right">Ações</th>
+          {currentView === 'animais' && (
+            <div className="animate-in fade-in space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="relative w-full sm:w-[400px]">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-13 pr-5 py-4 border border-gray-200 rounded-2xl bg-white outline-none focus:ring-2 focus:ring-green-500" placeholder="Procurar brinco, lote..." />
+                </div>
+                <button onClick={() => { setEditingAnimal(null); setIsAnimalFormOpen(true); }} className="bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-2xl font-bold flex items-center shadow-md">
+                  <Plus className="mr-2" /> Novo Animal
+                </button>
+              </div>
+
+              <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-8 py-5 text-left text-xs font-black text-gray-400 uppercase tracking-widest">Identificação</th>
+                      <th className="px-8 py-5 text-left text-xs font-black text-gray-400 uppercase tracking-widest">Lote</th>
+                      <th className="px-8 py-5 text-right text-xs font-black text-gray-400 uppercase tracking-widest">Peso</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-50">
+                  <tbody className="divide-y divide-gray-100 bg-white">
                     {filteredAnimais.map(animal => (
-                      <tr key={animal.id} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black text-xs">
-                              ID
-                            </div>
+                      <tr key={animal.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-8 py-5">
+                          <div className="flex items-center">
+                            <div className={`h-12 w-12 shrink-0 rounded-2xl flex items-center justify-center font-black text-sm mr-5 ${animal.sexo === 'M' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{animal.brinco}</div>
                             <div>
-                              <p className="font-bold text-slate-900">#{animal.brinco}</p>
-                              <p className="text-xs text-slate-400 font-medium">{animal.raca}</p>
+                              <div className="text-base font-black text-gray-900">{animal.nome}</div>
+                              <div className="text-sm font-semibold text-gray-500">{animal.raca} • {animal.categoria}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <p className="font-bold text-slate-700">{animal.lote}</p>
-                          <p className="text-xs text-slate-400">{animal.categoria}</p>
+                        <td className="px-8 py-5">
+                          <span className="text-sm font-bold text-gray-900 bg-gray-100 px-3 py-1 rounded-lg">{animal.lote}</span>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="inline-flex items-center gap-2 px-3 py-1 bg-orange-50 text-orange-600 rounded-lg font-bold text-sm">
-                            <Scale size={14} />
-                            {animal.weight || animal.peso} kg
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => {setMovingAnimal(animal); setIsMoveModalOpen(true);}}
-                              title="Mover de Fazenda"
-                              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                            >
-                              <MoveHorizontal size={18} />
-                            </button>
-                            <button 
-                              onClick={() => {setEditingAnimal(animal); setIsAnimalFormOpen(true);}}
-                              title="Editar"
-                              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                            >
-                              <Edit size={18} />
-                            </button>
-                            <button 
-                              onClick={() => deleteAnimal(animal.id)}
-                              title="Excluir"
-                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
+                        <td className="px-8 py-5 text-right font-black text-gray-900">{animal.peso} kg</td>
                       </tr>
                     ))}
-                    {filteredAnimais.length === 0 && (
-                      <tr>
-                        <td colSpan="4" className="px-6 py-12 text-center text-slate-400 font-medium">
-                          Nenhum animal encontrado para esta fazenda.
-                        </td>
-                      </tr>
-                    )}
                   </tbody>
                 </table>
               </div>
-            </Card>
-          </div>
-        )}
-
-        {/* --- OUTRAS VIEWS (PLACEHOLDERS) --- */}
-        {['sanidade', 'financeiro', 'propriedades', 'configuracoes'].includes(activeView) && (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6 text-slate-400">
-              <Bot size={40} />
             </div>
-            <h3 className="text-xl font-bold text-slate-900">Módulo em Desenvolvimento</h3>
-            <p className="text-slate-500 max-w-sm mt-2">Estamos trabalhando para trazer as melhores ferramentas de gestão para você.</p>
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
-      {/* --- MODAL: FORMULÁRIO DE ANIMAL --- */}
+      {/* MODAL ANIMAL */}
       {isAnimalFormOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-xl shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h3 className="text-xl font-black text-slate-900">
-                  {editingAnimal ? 'Editar Animal' : 'Novo Registro'}
-                </h3>
-                <p className="text-slate-400 text-sm font-medium">Preencha as informações do animal</p>
-              </div>
-              <button 
-                onClick={() => {setIsAnimalFormOpen(false); setEditingAnimal(null);}}
-                className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors"
-              >
-                <X size={24} />
-              </button>
+          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl p-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-black">{editingAnimal ? 'Editar' : 'Novo'} Animal</h2>
+              <button onClick={() => setIsAnimalFormOpen(false)}><X /></button>
             </div>
-
-            <form onSubmit={handleSaveAnimal} className="space-y-6">
+            <form onSubmit={handleSaveAnimal} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase px-1">Brinco / ID</label>
-                  <input name="brinco" defaultValue={editingAnimal?.brinco} placeholder="Ex: NEL-102" required 
-                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase px-1">Raça</label>
-                  <input name="raca" defaultValue={editingAnimal?.raca} placeholder="Ex: Nelore" required 
-                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase px-1">Peso Entrada (kg)</label>
-                  <input name="peso_entrada" type="number" defaultValue={editingAnimal?.peso_entrada} placeholder="0" required 
-                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase px-1">Peso Atual (kg)</label>
-                  <input name="peso" type="number" defaultValue={editingAnimal?.peso} placeholder="0" required 
-                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase px-1">Lote</label>
-                  <input name="lote" defaultValue={editingAnimal?.lote} placeholder="Ex: Piquete 01" required 
-                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase px-1">Categoria</label>
-                  <select name="categoria" defaultValue={editingAnimal?.categoria || 'Garrote'} 
-                    className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold">
-                    <option>Boi Gordo</option>
-                    <option>Vaca</option>
-                    <option>Bezerro</option>
-                    <option>Garrote</option>
-                    <option>Novilha</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => {setIsAnimalFormOpen(false); setEditingAnimal(null);}}
-                  className="flex-1 px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all">
-                  Cancelar
-                </button>
-                <button type="submit"
-                  className="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-200">
-                  Salvar Registro
-                </button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
-
-      {/* --- MODAL: CADASTRO EM LOTE --- */}
-      {isBatchFormOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-xl shadow-2xl">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-slate-900">Entrada de Lote Seqüencial</h3>
-              <button onClick={() => setIsBatchFormOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={24}/></button>
-            </div>
-            <form onSubmit={handleBatchRegister} className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase px-1">Prefixo</label>
-                  <input name="prefixo" placeholder="Ex: NEL-" className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 font-bold outline-none focus:border-indigo-600" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase px-1">Nº Inicial</label>
-                  <input name="inicio" type="number" placeholder="100" required className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 font-bold outline-none focus:border-indigo-600" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-black text-slate-400 uppercase px-1">Quantidade</label>
-                  <input name="quantidade" type="number" placeholder="10" required className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 font-bold outline-none focus:border-indigo-600" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <input name="raca" placeholder="Raça" required className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 font-bold outline-none focus:border-indigo-600" />
-                <input name="lote" placeholder="Lote de Destino" required className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 font-bold outline-none focus:border-indigo-600" />
-                <input name="peso_entrada" type="number" placeholder="Peso Entrada (kg)" required className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 font-bold outline-none focus:border-indigo-600" />
-                <input name="peso" type="number" placeholder="Peso Atual (kg)" required className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-3.5 font-bold outline-none focus:border-indigo-600" />
-              </div>
-              <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-200 transition-all">
-                Gerar Animais Automaticamente
-              </button>
-            </form>
-          </Card>
-        </div>
-      )}
-
-      {/* --- MODAL: MOVER ANIMAL --- */}
-      {isMoveModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-black text-slate-900 mb-6">Mover Animal: #{movingAnimal?.brinco}</h3>
-            <form onSubmit={handleMoveAnimal} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-500">Selecione a Fazenda de Destino</label>
-                <select name="destPropId" className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-4 font-bold outline-none focus:border-indigo-600 transition-all">
-                  {data.propriedades.filter(p => p.id !== selectedPropId).map(p => (
-                    <option key={p.id} value={p.id}>{p.nome}</option>
-                  ))}
+                <input required name="brinco" placeholder="Brinco" className="px-4 py-3 border rounded-xl w-full" defaultValue={editingAnimal?.brinco} />
+                <input name="nome" placeholder="Nome" className="px-4 py-3 border rounded-xl w-full" defaultValue={editingAnimal?.nome} />
+                <select name="sexo" className="px-4 py-3 border rounded-xl w-full" defaultValue={editingAnimal?.sexo}>
+                  <option value="M">Macho</option>
+                  <option value="F">Fêmea</option>
                 </select>
+                <input required name="raca" placeholder="Raça" className="px-4 py-3 border rounded-xl w-full" defaultValue={editingAnimal?.raca} />
+                <input required type="number" name="peso" placeholder="Peso (kg)" className="px-4 py-3 border rounded-xl w-full" defaultValue={editingAnimal?.peso} />
+                <input name="lote" placeholder="Lote" className="px-4 py-3 border rounded-xl w-full" defaultValue={editingAnimal?.lote} />
               </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={() => setIsMoveModalOpen(false)} className="flex-1 p-4 bg-slate-100 rounded-2xl font-bold">Cancelar</button>
-                <button type="submit" className="flex-1 p-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-200">Confirmar Mudança</button>
-              </div>
+              <button type="submit" className="w-full bg-green-600 text-white py-4 rounded-xl font-bold">Salvar</button>
             </form>
-          </Card>
-        </div>
-      )}
-
-      {/* --- MODAL: LANÇAR DESPESA --- */}
-      {isFinanceFormOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md shadow-2xl">
-            <h3 className="text-xl font-black text-slate-900 mb-6">Lançar Novo Custo</h3>
-            <form onSubmit={handleAddExpense} className="space-y-6">
-              <input name="descricao" placeholder="Descrição (Ex: Ração, Vacina...)" required className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-4 font-bold outline-none focus:border-indigo-600" />
-              <input name="valor" type="number" placeholder="Valor (R$)" required className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-4 font-bold outline-none focus:border-indigo-600" />
-              <select name="tipo" className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl px-4 py-4 font-bold outline-none focus:border-indigo-600">
-                <option value="Despesa">Despesa (Custo)</option>
-                <option value="Receita">Receita (Venda)</option>
-              </select>
-              <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-200 transition-all">
-                Salvar Lançamento
-              </button>
-            </form>
-          </Card>
+          </div>
         </div>
       )}
     </div>
