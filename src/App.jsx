@@ -1445,7 +1445,7 @@ export default function App() {
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Categoria</label>
-                    <select name="categoria" className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white outline-none"><option value="Bezerro">Bezerro(a)</option><option value="Novilha">Novilha</option><option value="Garrote">Garrote</option></select>
+                    <select name="categoria" className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white outline-none"><option value="Bezerro">Bezerro(a)</option><option value="Novilha">Novilha</option><option value="Garrote">Garrote</option><option value="Vaca">Vaca</option><option value="Novilho">Novilho</option><option value="Boi Gordo">Boi Gordo</option><option value="Touro">Touro</option></select>
                   </div>
                 </div>
               </form>
