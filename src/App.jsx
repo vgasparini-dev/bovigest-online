@@ -328,8 +328,32 @@ export default function App() {
   // --- HANDLERS IA ---
   const handleAnalyzeFarm = async () => {
     setIsAnalyzing(true);
-    const context = `Rebanho: ${currentAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${currentLotes.length}. Propriedade: ${propriedadeAtiva?.nome}.`;
-    const prompt = "Faça uma análise executiva e aponte os indicadores positivos e uma estratégia de lucro.";
+        const context = `
+PROPRIEDADE: ${propriedadeAtiva?.nome}
+LOCALIZAÇÃO: ${propriedadeAtiva?.cidade} - ${propriedadeAtiva?.estado}
+ÁREA: ${propriedadeAtiva?.area_ha} hectares
+
+REBANHO:
+- Total: ${currentAnimais.length} cabeças
+- Peso Médio: ${pesoMedio}kg
+- Distribuição: ${Object.entries(distribuicaoCategorias).map(([cat, qtd]) => `${cat}: ${qtd}`).join(', ')}
+- Gado de Corte: ${gadoDeCorte.length} animais
+
+FINANCEIRO:
+- Receitas: ${formatCurrency(totaisFinanceiros.receitas)}
+- Despesas: ${formatCurrency(totaisFinanceiros.despesas)}
+- Saldo: ${formatCurrency(saldoAtual)}
+- Custo/@: ${formatCurrency(custoPorArroba)}
+
+INFRAESTRUTURA:
+- Lotes/Pastagens: ${currentLotes.length}
+- Capacidade Total: ${currentLotes.reduce((acc, l) => acc + l.capacidade, 0)} cabeças
+
+REPRODUÇÃO:
+- Matrizes Prenhes: ${currentReproducao.filter(r => r.status === 'Prenhe').length}
+- Nascimentos Registados: ${currentNascimentos.length}
+`;
+        const prompt = "Faça uma análise técnica completa da fazenda, incluindo: 1) Indicadores de performance, 2) Pontos de atenção, 3) Oportunidades de melhoria, 4) Estratégias de rentabilidade.";
     const result = await callGemini(prompt, "És um consultor especialista em agronegócio.", geminiApiKey, aiEndpoint, aiModel);
     setAiInsights(result);
     setIsAnalyzing(false);
