@@ -38,7 +38,7 @@ export default async function handler(req, res) {
       if (user) return res.status(200).json({ success: true, user });
       return res.status(401).json({ success: false, error: 'Credenciais invalidas' });
     }
-    return res.status(200).json(usuarios.map(u => ({ ...u, senha: undefined })));
+    return res.status(200).json(usuarios);
   }
 
   if (req.method === 'POST') {
