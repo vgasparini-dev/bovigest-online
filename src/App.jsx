@@ -148,7 +148,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('bovigest_ai_model', aiModel); }, [aiModel]);
 
   // --- LOGIN COM VALIDAÇÃO DE CONVITE ---
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     const email = e.target.email.value;
     const senha = e.target.senha.value;
@@ -167,7 +167,7 @@ export default function App() {
       setLoginError(""); 
     } 
     else { 
-      setLoginError("Credenciais inválidas. Verifique o email e senha inseridos."); 
+      // Tentar login via API centralizada (usuários de outros dispositivos)       try {         const resp = await fetch(`/api/usuarios?action=login&email=${encodeURIComponent(email)}&senha=${encodeURIComponent(senha)}`);         if (resp.ok) {           const apiResult = await resp.json();           if (apiResult.success && apiResult.user) {             setCurrentUser(apiResult.user);             setIsLoggedIn(true);             setLoginError("");             return;           }         }       } catch (_) {}       setLoginError("Credenciais inválidas. Verifique o email e senha inseridos."); 
     }
   };
 
