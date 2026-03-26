@@ -16,7 +16,7 @@ const defaultData = {
     { id: 1, nome: "Fazenda São João", responsavel: "Victor Luiz Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" }
   ],
   usuarios: [
-    { id: 1, nome: "Victor Luiz Gasparini", email: "victorluizgasparini@gmail.com", senha: "Lu1z1502#", role: "Admin", status: "Ativo" }
+    { id: 1, nome: "Victor Luiz Gasparini", email: "victorluizgasparini@gmail.com", senha: "Lu1z1502#", role: "Admin", status: "Ativo" },     { id: 2, nome: "Lucas Winter", email: "lucasff99@hotmail.com", senha: "123456", role: "Operador", status: "Ativo" },     { id: 3, nome: "Vivtor", email: "victorluizgasparini@hotmail.com", senha: "22023342", role: "Operador", status: "Ativo" }
   ],
   calendarioSanitario: [
     { id: 1, propriedadeId: 1, doenca: "Brucelose", mes: "1º Semestre", publico: "Fêmeas de 3 a 8 meses", obrigatorio: true },
@@ -152,10 +152,10 @@ export default function App() {
     e.preventDefault();
     const email = e.target.email.value;
     const senha = e.target.senha.value;
-    const validUser = appData.usuarios.find(u => u.email === email && u.senha === senha);
+    const validUser = appData.usuarios.find(u => u.email === email && u.senha === senha && (u.status === 'Ativo' || u.status === 'Pendente'));
     
     if (validUser) { 
-      if (validUser.status === 'Pendente') {
+      if (validUser.status === 'Pendente' && false) {
         alert(`Bem-vindo(a), ${validUser.nome.split(' ')[0]}! O seu convite foi confirmado com sucesso.`);
         const updatedUsers = appData.usuarios.map(u => u.id === validUser.id ? { ...u, status: 'Ativo' } : u);
         setAppData(prev => ({ ...prev, usuarios: updatedUsers }));
