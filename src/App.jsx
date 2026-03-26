@@ -155,7 +155,7 @@ export default function App() {
     const validUser = appData.usuarios.find(u => u.email === email && u.senha === senha && (u.status === 'Ativo' || u.status === 'Pendente'));
     
     if (validUser) { 
-      if (validUser.status === 'Pendente' && false) {
+      if (validUser.status === 'Pendente') {
         alert(`Bem-vindo(a), ${validUser.nome.split(' ')[0]}! O seu convite foi confirmado com sucesso.`);
         const updatedUsers = appData.usuarios.map(u => u.id === validUser.id ? { ...u, status: 'Ativo' } : u);
         setAppData(prev => ({ ...prev, usuarios: updatedUsers }));
@@ -779,7 +779,7 @@ Equipa BoviGest`);
                     <h3 className="text-2xl font-black text-gray-900 flex items-center mb-2">Relatório Inteligente <Sparkles className="ml-3 text-green-500" size={24} /></h3>
                     <p className="text-gray-500 font-medium mb-6">A Inteligência Artificial analisa os seus dados e gera estratégias para otimizar lucro e maneio.</p>
                     
-                    {!geminiApiKey ? (
+                    {(false) ? (
                       <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-200 text-sm font-bold flex items-start">
                         <AlertTriangle className="w-5 h-5 mr-2 shrink-0 mt-0.5" />
                         <p>Para ativar os Relatórios, insira a sua API Key do Gemini na aba <b>Configurações</b>.</p>
@@ -810,7 +810,7 @@ Equipa BoviGest`);
         <Sparkles className="w-7 h-7 mr-3 text-purple-600" />
         Análise Inteligente da Propriedade
       </h3>
-      {!geminiApiKey ? (
+      {(false) ? (
         <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-xl">
           ⚠️ Configure sua API Key do Google Gemini em <strong>Configurações</strong> para ativar a IA.
         </div>
@@ -851,7 +851,7 @@ Equipa BoviGest`);
         )}
       </div>
       <form onSubmit={handleSendMessage} className="p-4 bg-white border-t-2 border-gray-200 flex gap-3">
-        <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Digite sua pergunta sobre a gestão da fazenda..." className="flex-1 px-5 py-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500" disabled={isChatLoading || !geminiApiKey} />
+        <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Digite sua pergunta sobre a gestão da fazenda..." className="flex-1 px-5 py-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500" disabled={isChatLoading} />
         <button type="submit" disabled={isChatLoading || !chatInput.trim() || !geminiApiKey} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-md flex items-center transition-all disabled:opacity-40">
           <Send className="w-5 h-5" />
         </button>
