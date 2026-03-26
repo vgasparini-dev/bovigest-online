@@ -13,8 +13,7 @@ import {
 // --- BASE DE DADOS INICIAL ---
 const defaultData = {
   propriedades: [
-    { id: 1, nome: "Fazenda São João", responsavel: "Victor Luiz Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" },
-    { id: 2, nome: "Sítio Esperança", responsavel: "Victor Luiz Gasparini", cidade: "Ouro Preto", estado: "RO", area_ha: 120, ie: "987.654.321-00" }
+    { id: 1, nome: "Fazenda São João", responsavel: "Victor Luiz Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" }
   ],
   usuarios: [
     { id: 1, nome: "Victor Luiz Gasparini", email: "victorluizgasparini@gmail.com", senha: "Lu1z1502#", role: "Admin", status: "Ativo" }
@@ -70,7 +69,7 @@ const calcularExigenciasNASEM = (peso, gpd) => {
 
 const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, modelName) => {
   if (!userApiKey) {
-    return "⚠️ Atenção Administrador: Para que eu possa analisar os dados e conversar consigo, é necessário configurar a sua Chave API (API Key) do Google Gemini na aba 'Configurações'. Sem ela, o módulo de IA permanece inativo por razões de segurança do servidor.";
+    return "⚠️ Atenção: A sua Chave API (API Key) do Google Gemini não está configurada. Por favor, aceda à aba 'Configurações' e insira a sua chave para ativar o módulo de Inteligência Artificial e a geração de relatórios.";
   }
 
   const apiKey = userApiKey.trim(); 
@@ -86,12 +85,12 @@ const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, mo
   try {
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!response.ok) {
-      return `❌ Erro de Ligação IA (Status ${response.status}). Verifique se a sua Chave API está correta e se o modelo "${model}" está disponível para a sua conta.`;
+      return `❌ Erro de Ligação IA (Status ${response.status}). Verifique se a sua Chave API está correta e se o modelo "${model}" está disponível.`;
     }
     const result = await response.json();
     return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta do modelo.";
   } catch (error) {
-    return `❌ Erro de Comunicação: Falha ao ligar ao servidor da Google. Verifique a sua ligação de rede ou as configurações de API.`;
+    return `❌ Erro de Comunicação: Falha ao ligar ao servidor da Google. Verifique a sua internet ou configurações da API.`;
   }
 };
 
@@ -166,7 +165,7 @@ export default function App() {
     
     if (validUser) { 
       if (validUser.status === 'Pendente') {
-        alert(`Bem-vindo, ${validUser.nome.split(' ')[0]}! O seu convite foi confirmado com sucesso.`);
+        alert(`Bem-vindo(a), ${validUser.nome.split(' ')[0]}! O seu convite foi confirmado com sucesso.`);
         const updatedUsers = appData.usuarios.map(u => u.id === validUser.id ? { ...u, status: 'Ativo' } : u);
         setAppData(prev => ({ ...prev, usuarios: updatedUsers }));
         setCurrentUser({ ...validUser, status: 'Ativo' });
@@ -259,7 +258,7 @@ export default function App() {
 
   // --- EXPORTAÇÃO CSV PADRONIZADA DOS EXCEIS ---
   const downloadCSV = (filename, headers, rows) => {
-    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const csvContent = [headers.join(','), ...rows.map(e => e.map(item => `"${item}"`).join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = filename; link.click();
   };
@@ -329,9 +328,9 @@ export default function App() {
   // --- HANDLERS IA ---
   const handleAnalyzeFarm = async () => {
     setIsAnalyzing(true);
-    const context = `Rebanho: ${currentAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${currentLotes.length}. Propriedade: ${propriedadeAtiva.nome} (${propriedadeAtiva.estado}).`;
-    const prompt = "Faça uma análise executiva (3 parágrafos curtos) sobre a propriedade, focando-se em indicadores positivos e sugerindo uma estratégia de lucro/maneio.";
-    const result = await callGemini(prompt, "És um consultor especialista em agronegócio. Usa português de Portugal. Sê analítico.\n\n" + context, geminiApiKey, aiEndpoint, aiModel);
+    const context = `Rebanho: ${currentAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${currentLotes.length}. Propriedade: ${propriedadeAtiva?.nome}.`;
+    const prompt = "Faça uma análise executiva e aponte os indicadores positivos e uma estratégia de lucro.";
+    const result = await callGemini(prompt, "És um consultor especialista em agronegócio.", geminiApiKey, aiEndpoint, aiModel);
     setAiInsights(result);
     setIsAnalyzing(false);
   };
@@ -343,9 +342,9 @@ export default function App() {
     setChatMessages(prev => [...prev, { role: 'user', text: userText }]);
     setChatInput("");
     setIsChatLoading(true);
-    const context = `Animais: ${currentAnimais.length}. Custo/@: ${custoPorArroba}. Lotes: ${currentLotes.map(l=>l.nome).join(', ')}. Propriedade: ${propriedadeAtiva.nome}`;
+    const context = `Animais: ${currentAnimais.length}. Custo/@: ${custoPorArroba}. Lotes: ${currentLotes.map(l=>l.nome).join(', ')}. Propriedade: ${propriedadeAtiva?.nome}`;
     const historyText = chatMessages.map(m => `${m.role === 'user' ? 'Utilizador' : 'Assistente'}: ${m.text}`).join("\n");
-    const result = await callGemini(`Histórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente em agropecuária. Responde em PT-PT de forma concisa.\nContexto: " + context, geminiApiKey, aiEndpoint, aiModel);
+    const result = await callGemini(`Histórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente agropecuário.", geminiApiKey, aiEndpoint, aiModel);
     setChatMessages(prev => [...prev, { role: 'model', text: result }]);
     setIsChatLoading(false);
   };
@@ -459,7 +458,35 @@ export default function App() {
     const fd = new FormData(e.target);
     const novaProp = { id: Date.now(), nome: fd.get('nome'), responsavel: fd.get('responsavel'), cidade: fd.get('cidade'), estado: fd.get('estado'), area_ha: Number(fd.get('area_ha')), ie: fd.get('ie') };
     setAppData(prev => ({ ...prev, propriedades: [...prev.propriedades, novaProp] }));
+    setActivePropriedadeId(novaProp.id);
     setIsPropriedadeFormOpen(false); showSaveSuccess();
+  };
+
+  const handleDeletePropriedade = (id) => {
+    if (appData.propriedades.length === 1) {
+      alert("Não é possível excluir a única propriedade do sistema.");
+      return;
+    }
+    if (confirm('🚨 ATENÇÃO: Deseja apagar esta propriedade e TODOS os animais, lotes, finanças e registos associados a ela? Esta ação é irreversível!')) {
+      setAppData(prev => ({
+        ...prev,
+        propriedades: prev.propriedades.filter(p => p.id !== id),
+        lotes: prev.lotes.filter(x => x.propriedadeId !== id),
+        animais: prev.animais.filter(x => x.propriedadeId !== id),
+        pesagens: prev.pesagens.filter(x => x.propriedadeId !== id),
+        reproducao: prev.reproducao.filter(x => x.propriedadeId !== id),
+        nascimentos: prev.nascimentos.filter(x => x.propriedadeId !== id),
+        vacinacoes: prev.vacinacoes.filter(x => x.propriedadeId !== id),
+        insumos: prev.insumos.filter(x => x.propriedadeId !== id),
+        financeiro: prev.financeiro.filter(x => x.propriedadeId !== id),
+        calendarioSanitario: prev.calendarioSanitario.filter(x => x.propriedadeId !== id),
+      }));
+      if (activePropriedadeId === id) {
+        const nextProp = appData.propriedades.find(p => p.id !== id);
+        if (nextProp) setActivePropriedadeId(nextProp.id);
+      }
+      showSaveSuccess();
+    }
   };
 
   const handleSaveUsuario = (e) => {
@@ -478,7 +505,11 @@ export default function App() {
       setAppData(prev => ({ ...prev, usuarios: prev.usuarios.map(u => u.id === novoUsr.id ? novoUsr : u) }));
     } else {
       setAppData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
-      alert(`Notificação Simulada do Sistema:\n\nUm email de convite foi enviado para "${novoUsr.email}". O operador terá de inserir as credenciais no portal para confirmar a aceitação.`);
+      
+      // Abre o email cliente do Admin para enviar os dados
+      const subject = encodeURIComponent("Convite de Acesso - BoviGest PRO");
+      const body = encodeURIComponent(`Olá ${novoUsr.nome},\n\nFoi convidado a aceder ao sistema BoviGest PRO.\n\nO seu email de acesso: ${novoUsr.email}\nA sua senha provisória: ${novoUsr.senha}\n\nAceda à plataforma e faça login para confirmar o seu registo.\n\nAtenciosamente,\nAdministração`);
+      window.location.href = `mailto:${novoUsr.email}?subject=${subject}&body=${body}`;
     }
     setIsUsuarioFormOpen(false); setEditingUsuario(null); showSaveSuccess();
   };
@@ -541,10 +572,10 @@ export default function App() {
             )}
             <form className="space-y-6" onSubmit={handleLogin}>
               <div>
-                <input type="email" name="email" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder-slate-500" placeholder="Insira o seu email de acesso..." />
+                <input type="email" name="email" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder-slate-500" placeholder="Email de Acesso" />
               </div>
               <div>
-                <input type="password" name="senha" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder-slate-500" placeholder="Insira a sua senha de segurança..." />
+                <input type="password" name="senha" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder-slate-500" placeholder="Senha" />
               </div>
               <button type="submit" className="w-full flex justify-center py-4 px-4 rounded-xl text-base font-bold text-white bg-green-600 hover:bg-green-500 transition-all shadow-lg">Aceder ao Portal Seguro</button>
             </form>
@@ -568,11 +599,11 @@ export default function App() {
         
         {/* Seletor de Propriedade Isolada */}
         <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Propriedade Isolada</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Propriedade Ativa</label>
           <select 
             value={activePropriedadeId} 
             onChange={(e) => setActivePropriedadeId(Number(e.target.value))}
-            className="w-full bg-slate-800 text-white font-bold px-3 py-2 rounded-lg border border-slate-700 outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full bg-slate-800 text-white font-bold px-3 py-2 rounded-lg border border-slate-700 outline-none focus:ring-2 focus:ring-green-500 truncate"
           >
             {appData.propriedades.map(p => (
               <option key={p.id} value={p.id}>{p.nome}</option>
@@ -703,10 +734,19 @@ export default function App() {
                   <div className="p-8">
                     <h3 className="text-2xl font-black text-gray-900 flex items-center mb-2">Relatório Inteligente <Sparkles className="ml-3 text-green-500" size={24} /></h3>
                     <p className="text-gray-500 font-medium mb-6">A Inteligência Artificial analisa os seus dados e gera estratégias para otimizar lucro e maneio.</p>
-                    <button onClick={handleAnalyzeFarm} disabled={isAnalyzing} className="w-full bg-gray-900 text-white px-8 py-4 rounded-2xl font-bold shadow-xl hover:bg-black transition-all flex items-center justify-center disabled:opacity-70">
-                      {isAnalyzing ? <Loader2 className="w-6 h-6 mr-3 animate-spin" /> : <Bot className="w-6 h-6 mr-3" />}
-                      {isAnalyzing ? 'A Processar Análise...' : 'Gerar Análise IA Agora'}
-                    </button>
+                    
+                    {!geminiApiKey ? (
+                      <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-200 text-sm font-bold flex items-start">
+                        <AlertTriangle className="w-5 h-5 mr-2 shrink-0 mt-0.5" />
+                        <p>Para ativar os Relatórios, insira a sua API Key do Gemini na aba <b>Configurações</b>.</p>
+                      </div>
+                    ) : (
+                      <button onClick={handleAnalyzeFarm} disabled={isAnalyzing} className="w-full bg-gray-900 text-white px-8 py-4 rounded-2xl font-bold shadow-xl hover:bg-black transition-all flex items-center justify-center disabled:opacity-70">
+                        {isAnalyzing ? <Loader2 className="w-6 h-6 mr-3 animate-spin" /> : <Bot className="w-6 h-6 mr-3" />}
+                        {isAnalyzing ? 'A Processar Análise...' : 'Gerar Análise IA Agora'}
+                      </button>
+                    )}
+                    
                     {aiInsights && (
                       <div className="mt-6 p-6 bg-green-50 border border-green-100 rounded-2xl animate-in fade-in">
                         <div className="prose max-w-none text-green-900 text-sm font-medium whitespace-pre-wrap leading-relaxed">{aiInsights}</div>
@@ -822,7 +862,10 @@ export default function App() {
                   <div key={prop.id} className={`bg-white p-6 rounded-3xl shadow-sm border ${activePropriedadeId === prop.id ? 'border-green-500 ring-2 ring-green-100' : 'border-gray-200'}`}>
                     <div className="flex justify-between items-start mb-4">
                       <h4 className="text-2xl font-black text-gray-900">{prop.nome}</h4>
-                      {activePropriedadeId === prop.id && <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Ativa</span>}
+                      <div className="flex items-center space-x-2">
+                        {activePropriedadeId === prop.id && <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Ativa</span>}
+                        <button onClick={() => handleDeletePropriedade(prop.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={18}/></button>
+                      </div>
                     </div>
                     <div className="space-y-2 text-sm font-medium text-gray-600">
                       <p><strong className="text-gray-900">Responsável:</strong> {prop.responsavel}</p>
@@ -1175,6 +1218,7 @@ export default function App() {
                   <p className="text-sm font-bold text-slate-400 uppercase">Saldo Líquido</p>
                   <p className={`text-3xl font-black ${saldoAtual >= 0 ? 'text-white' : 'text-red-400'}`}>{formatCurrency(saldoAtual)}</p>
                 </div>
+                {/* Card: Custo por Arroba */}
                 <div className="bg-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-center">
                   <p className="text-sm font-bold text-blue-800 uppercase flex items-center"><Activity size={16} className="mr-2" /> Custo por Arroba (@)</p>
                   <p className="text-3xl font-black text-blue-900 mt-1">{formatCurrency(custoPorArroba)}</p>
@@ -1289,52 +1333,9 @@ export default function App() {
                   <button onClick={exportParicao} className="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Parição</button>
                   <button onClick={exportSaude} className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Saúde</button>
                 </div>
-                <div className="mt-12 pt-8 border-t border-gray-100">
-                  <button onClick={() => { if(confirm('ATENÇÃO: Isto apagará TODO o sistema BoviGest PRO no seu navegador. Deseja continuar?')) { localStorage.removeItem('bovigest_data_pro_master'); window.location.reload(); } }} className="text-red-500 hover:text-red-700 font-bold flex items-center justify-center mx-auto"><Trash2 size={18} className="mr-2"/> Formatar Sistema (Apagar tudo)</button>
-                </div>
               </div>
             </div>
           )}
-
-          {/* VISUALIZAÇÃO: AI ASSISTANT */}
-          {currentView === 'ai-assistant' && (
-            <div className="animate-in fade-in flex flex-col h-[calc(100vh-140px)] min-h-[500px] bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between shrink-0">
-                <div className="flex items-center">
-                  <div className="bg-green-500 p-2.5 rounded-xl mr-4 shadow-sm hidden sm:block"><Bot size={28} className="text-white" /></div>
-                  <div>
-                    <h2 className="text-xl font-extrabold flex items-center">Consultor Agro IA <Sparkles size={18} className="ml-2 text-green-300" /></h2>
-                    <p className="text-slate-300 text-sm font-medium mt-0.5">Dúvidas sobre maneio, finanças e dados do seu rebanho.</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-50">
-                {chatMessages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-4 ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none shadow-md' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'}`}>
-                      <p className="whitespace-pre-wrap font-medium leading-relaxed">{msg.text}</p>
-                    </div>
-                  </div>
-                ))}
-                {isChatLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm flex items-center space-x-2">
-                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="p-4 bg-white border-t border-gray-200 shrink-0">
-                <form onSubmit={handleSendMessage} className="relative flex items-center">
-                  <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Pergunte-me o que quiser..." className="w-full pl-6 pr-16 py-4 border border-gray-300 rounded-full bg-gray-50 focus:bg-white focus:ring-2 focus:ring-green-500 outline-none transition-all shadow-inner font-medium" disabled={isChatLoading} />
-                  <button type="submit" disabled={!chatInput.trim() || isChatLoading} className="absolute right-2 p-3 bg-green-600 text-white rounded-full hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"><Send size={20} /></button>
-                </form>
-              </div>
-            </div>
-          )}
-
         </div>
       </main>
 
@@ -1698,10 +1699,10 @@ export default function App() {
                 <input required type="email" name="email" defaultValue={editingUsuario?.email || ''} className="w-full px-4 py-3 border rounded-xl" />
               </div>
               <div>
-                <label className="block text-sm font-bold mb-1">Senha Provisória *</label>
+                <label className="block text-sm font-bold mb-1">Senha de Acesso *</label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input required type="text" name="senha" defaultValue={editingUsuario?.senha || ''} className="w-full pl-10 pr-4 py-3 border rounded-xl" placeholder="Senha que o operador usará..." />
+                  <input required type="text" name="senha" defaultValue={editingUsuario?.senha || ''} className="w-full pl-10 pr-4 py-3 border rounded-xl" placeholder="Defina a senha..." />
                 </div>
               </div>
               <div>
@@ -1715,7 +1716,7 @@ export default function App() {
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
               <button onClick={() => { setIsUsuarioFormOpen(false); setEditingUsuario(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
-              <button type="submit" form="usuarioForm" className="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white">Enviar Convite</button>
+              <button type="submit" form="usuarioForm" className="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white">{editingUsuario ? 'Guardar' : 'Criar e Enviar'}</button>
             </div>
           </div>
         </div>
