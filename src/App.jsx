@@ -140,6 +140,7 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([{ role: 'model', text: 'Olá! Sou o seu Consultor Agro IA. Como posso ajudar com a gestão da sua fazenda hoje?' }]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
+    const [emailModalData, setEmailModalData] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // --- PERSISTÊNCIA ---
@@ -530,12 +531,41 @@ REPRODUÇÃO:
     } else {
       setAppData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
       
-      // Abre o email cliente do Admin para enviar os dados
-      const subject = encodeURIComponent("Convite de Acesso - BoviGest PRO");
-      const body = encodeURIComponent(`Olá ${novoUsr.nome},\n\nFoi convidado a aceder ao sistema BoviGest PRO.\n\nO seu email de acesso: ${novoUsr.email}\nA sua senha provisória: ${novoUsr.senha}\n\nAceda à plataforma e faça login para confirmar o seu registo.\n\nAtenciosamente,\nAdministração`);
-      window.location.href = `mailto:${novoUsr.email}?subject=${subject}&body=${body}`;
-    }
+    // Em vez de abrir mailto diretamente, mostrar modal
+    setEmailModalData({
+      nome: novoUsr.nome,
+      email: novoUsr.email,
+      senha: novoUsr.senha,
+      role: novoUsr.role
+    });    }
     setIsUsuarioFormOpen(false); setEditingUsuario(null); showSaveSuccess();
+  };
+
+    // Função para enviar email
+  const handleSendEmail = () => {
+    const subject = encodeURIComponent("Convite de Acesso - BoviGest PRO");
+    const body = encodeURIComponent(`Olá ${emailModalData.nome},
+
+Foi convidado(a) a aceder ao sistema BoviGest PRO.
+
+🔑 DADOS DE ACESSO:
+Email: ${emailModalData.email}
+Senha Provisória: ${emailModalData.senha}
+Nível de Acesso: ${emailModalData.role}
+
+🌐 ACEDER AO SISTEMA:
+https://bovigest-online.vercel.app/
+
+⚠️ IMPORTANTE:
+- Recomendamos alterar a senha no primeiro acesso
+- Mantenha suas credenciais em local seguro
+- Em caso de dúvidas, contacte o administrador
+
+Atenciosamente,
+Equipa BoviGest`);
+    
+    window.location.href = `mailto:${emailModalData.email}?subject=${subject}&body=${body}`;
+    setEmailModalData(null);
   };
 
   const handleDeleteUsuario = (id) => {
@@ -1775,4 +1805,41 @@ REPRODUÇÃO:
       )}
     </div>
   );
+
+      {/* MODAL: EMAIL NOVO USUÁRIO */}
+    {emailModalData && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <Mail className="mr-3 text-indigo-600" /> Credenciais do Novo Usuário
+          </h2>
+          
+          <div className="bg-indigo-50 p-4 rounded-xl mb-6 space-y-2">
+            <p><strong>Nome:</strong> {emailModalData.nome}</p>
+            <p><strong>Email:</strong> {emailModalData.email}</p>
+            <p><strong>Senha:</strong> <code className="bg-white px-2 py-1 rounded">{emailModalData.senha}</code></p>
+            <p><strong>Permissão:</strong> {emailModalData.role}</p>
+          </div>
+          
+          <p className="text-sm text-gray-600 mb-6">
+            Copie estas credenciais antes de enviar o email. Clique abaixo para abrir seu cliente de email com uma mensagem pré-formatada.
+          </p>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={() => setEmailModalData(null)}
+              className="flex-1 px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              Fechar
+            </button>
+            <button
+              onClick={handleSendEmail}
+              className="flex-1 px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center"
+            >
+              <Mail className="mr-2" size={20} /> Enviar Email
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 }
