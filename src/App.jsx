@@ -1158,7 +1158,7 @@ Equipa BoviGest`);
                         <td className="px-6 py-4 font-bold text-gray-700">{nasc.data}</td>
                         <td className="px-6 py-4"><span className="block font-black text-gray-900">M: {nasc.brincoMatriz}</span><span className="text-sm font-bold text-blue-600">B: {nasc.brincoBezerro}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{nasc.sexo}</td>
-                        <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td>
+                        <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
                       </tr>
                     ))}
                     {currentNascimentos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum nascimento registado.</td></tr>}
