@@ -74,29 +74,21 @@ const calcularExigenciasNASEM = (peso, gpd) => {
   };
 };
 
-const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, modelName) => {
-  const apiKey = userApiKey || ""; 
-  const baseEndpoint = endpointUrl || "https://generativelanguage.googleapis.com/v1beta/models";
-  const model = modelName || "gemini-2.5-flash-preview-09-2025";
-  
-  // Limpar a barra no final do URL, se existir, para evitar dupla barra
-  const cleanEndpoint = baseEndpoint.endsWith('/') ? baseEndpoint.slice(0, -1) : baseEndpoint;
-  const url = `${cleanEndpoint}/${model}:generateContent?key=${apiKey}`;
-  
-  const payload = { contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: systemInstruction }] } };
-  
+const callGemini = async (prompt, systemInstruction) => {
   try {
-    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, systemInstruction }),
+    });
     if (!response.ok) {
-      if (response.status === 400 || response.status === 403 || response.status === 401) {
-        return "Erro de Autenticação/Configuração: Verifique se a sua Chave API, Modelo e Endereço da API estão corretos na aba 'Configurações'.";
-      }
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      const err = await response.json();
+      return `Erro do servidor: ${err.error || response.status}`;
     }
-    const result = await response.json();
-    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta do modelo.";
+    const data = await response.json();
+    return data.text || 'Sem resposta do modelo.';
   } catch (error) {
-    return `Erro de comunicação com a IA: ${error.message}. Verifique as suas configurações de API.`;
+    return `Erro de comunicacao com a IA: ${error.message}.`;
   }
 };
 
