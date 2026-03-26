@@ -82,7 +82,7 @@ const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, mo
   } catch (error) {
     return `❌ Erro de Comunicação: ${error.message}`;
   }
-};};
+};
 
 export default function App() {
   // --- AUTENTICAÇÃO E NAVEGAÇÃO ---
