@@ -68,31 +68,21 @@ const calcularExigenciasNASEM = (peso, gpd) => {
 };
 
 const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, modelName) => {
-  if (!userApiKey) {
-    return "⚠️ Atenção: A sua Chave API (API Key) do Google Gemini não está configurada. Por favor, aceda à aba 'Configurações' e insira a sua chave para ativar o módulo de Inteligência Artificial e a geração de relatórios.";
-  }
-
-  const apiKey = userApiKey.trim(); 
-  const baseEndpoint = endpointUrl || "https://generativelanguage.googleapis.com/v1beta/models";
-  const model = modelName || "gemini-2.5-flash-preview-09-2025";
-  const cleanEndpoint = baseEndpoint.endsWith('/') ? baseEndpoint.slice(0, -1) : baseEndpoint;
-  const url = `${cleanEndpoint}/${model}:generateContent?key=${apiKey}`;
-  
-  const payload = {
-    contents: [{ parts: [{ text: systemInstruction + "\n\nConsulta do Utilizador: " + prompt }] }]
-  };
-  
   try {
-    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, systemInstruction }),
+    });
     if (!response.ok) {
-      return `❌ Erro de Ligação IA (Status ${response.status}). Verifique se a sua Chave API está correta e se o modelo "${model}" está disponível.`;
+      return `❌ Erro de Ligação IA (Status ${response.status}). Verifique se a sua Chave API está correta e se o modelo "llama-3.3-70b-versatile" está disponível.`;
     }
     const result = await response.json();
-    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta do modelo.";
+    return result.text || 'Sem resposta do modelo.';
   } catch (error) {
-    return `❌ Erro de Comunicação: Falha ao ligar ao servidor da Google. Verifique a sua internet ou configurações da API.`;
+    return `❌ Erro de Comunicação: ${error.message}`;
   }
-};
+};};
 
 export default function App() {
   // --- AUTENTICAÇÃO E NAVEGAÇÃO ---
