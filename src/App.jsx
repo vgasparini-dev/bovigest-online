@@ -7,18 +7,17 @@ import {
   Edit, Baby, LayoutDashboard, Scale, Settings,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet
+  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail
 } from 'lucide-react';
 
 // --- BASE DE DADOS INICIAL ---
 const defaultData = {
   propriedades: [
-    { id: 1, nome: "Fazenda São João", responsavel: "Victor Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" },
-    { id: 2, nome: "Sítio Esperança", responsavel: "Victor Gasparini", cidade: "Ouro Preto", estado: "RO", area_ha: 120, ie: "987.654.321-00" }
+    { id: 1, nome: "Fazenda São João", responsavel: "Victor Luiz Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" },
+    { id: 2, nome: "Sítio Esperança", responsavel: "Victor Luiz Gasparini", cidade: "Ouro Preto", estado: "RO", area_ha: 120, ie: "987.654.321-00" }
   ],
   usuarios: [
-    { id: 1, nome: "Administrador", email: "gestor@bovigest.com", senha: "admin", role: "Admin" },
-    { id: 2, nome: "João Peão", email: "joao@bovigest.com", senha: "123", role: "Operador" }
+    { id: 1, nome: "Victor Luiz Gasparini", email: "victorluizgasparini@gmail.com", senha: "Lu1z1502#", role: "Admin", status: "Ativo" }
   ],
   calendarioSanitario: [
     { id: 1, propriedadeId: 1, doenca: "Brucelose", mes: "1º Semestre", publico: "Fêmeas de 3 a 8 meses", obrigatorio: true },
@@ -33,7 +32,6 @@ const defaultData = {
   animais: [
     { id: 1, propriedadeId: 1, brinco: "001", nome: "Mimosa", sexo: "F", categoria: "Vaca", tipo: "Cria", raca: "Nelore", dataNasc: "2020-03-15", peso: 420, ativo: true, lote: "Matrizes A", obs: "Matriz principal." },
     { id: 2, propriedadeId: 1, brinco: "105", nome: "Soberano", sexo: "M", categoria: "Boi Gordo", tipo: "Corte", raca: "Angus", dataNasc: "2024-01-10", peso: 490, ativo: true, lote: "Confinamento 1", obs: "Fase de terminação." },
-    { id: 3, propriedadeId: 1, brinco: "045", nome: "-", sexo: "M", categoria: "Bezerro", tipo: "Cria", raca: "Cruzamento", dataNasc: "2025-08-20", peso: 180, ativo: true, lote: "Matrizes A", obs: "" }
   ],
   pesagens: [
     { id: 1, propriedadeId: 1, brinco: "105", data: "2025-11-10", pesoAnterior: 400, pesoAtual: 450, obs: "Entrada seca" },
@@ -47,17 +45,13 @@ const defaultData = {
   ],
   insumos: [
     { id: 1, propriedadeId: 1, nome: "Sal Mineral 80", categoria: "Nutrição", quantidade: 50, unidade: "kg", estoqueMinimo: 100 },
-    { id: 2, propriedadeId: 1, nome: "Ivermectina 50ml", categoria: "Medicamentos", quantidade: 15, unidade: "frascos", estoqueMinimo: 5 }
   ],
   financeiro: [
     { id: 1, propriedadeId: 1, descricao: "Venda lote engorda", categoria: "Venda de Gado", tipo: "receita", valor: 68000, data: "2026-02-18", status: "pago" },
-    { id: 2, propriedadeId: 1, descricao: "Compra Ração", categoria: "Nutrição", tipo: "despesa", valor: 4500, data: "2026-02-20", status: "pago" },
   ],
   bibliotecaAlimentos: [
     { id: 1, nome: "Silagem de Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
     { id: 2, nome: "Milho Grão Moído", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 },
-    { id: 3, nome: "Farelo de Soja (46%)", ms: 89, elm: 2.05, elg: 1.40, pm: 320, ca: 3.5, p: 6.5, precoKg: 2.50 },
-    { id: 4, nome: "Ureia Pecuária", ms: 100, elm: 0, elg: 0, pm: 1200, ca: 0, p: 0, precoKg: 3.80 }
   ]
 };
 
@@ -74,21 +68,30 @@ const calcularExigenciasNASEM = (peso, gpd) => {
   };
 };
 
-const callGemini = async (prompt, systemInstruction) => {
+const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, modelName) => {
+  if (!userApiKey) {
+    return "⚠️ Atenção Administrador: Para que eu possa analisar os dados e conversar consigo, é necessário configurar a sua Chave API (API Key) do Google Gemini na aba 'Configurações'. Sem ela, o módulo de IA permanece inativo por razões de segurança do servidor.";
+  }
+
+  const apiKey = userApiKey.trim(); 
+  const baseEndpoint = endpointUrl || "https://generativelanguage.googleapis.com/v1beta/models";
+  const model = modelName || "gemini-2.5-flash-preview-09-2025";
+  const cleanEndpoint = baseEndpoint.endsWith('/') ? baseEndpoint.slice(0, -1) : baseEndpoint;
+  const url = `${cleanEndpoint}/${model}:generateContent?key=${apiKey}`;
+  
+  const payload = {
+    contents: [{ parts: [{ text: systemInstruction + "\n\nConsulta do Utilizador: " + prompt }] }]
+  };
+  
   try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, systemInstruction }),
-    });
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!response.ok) {
-      const err = await response.json();
-      return `Erro do servidor: ${err.error || response.status}`;
+      return `❌ Erro de Ligação IA (Status ${response.status}). Verifique se a sua Chave API está correta e se o modelo "${model}" está disponível para a sua conta.`;
     }
-    const data = await response.json();
-    return data.text || 'Sem resposta do modelo.';
+    const result = await response.json();
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta do modelo.";
   } catch (error) {
-    return `Erro de comunicacao com a IA: ${error.message}.`;
+    return `❌ Erro de Comunicação: Falha ao ligar ao servidor da Google. Verifique a sua ligação de rede ou as configurações de API.`;
   }
 };
 
@@ -142,41 +145,56 @@ export default function App() {
 
   // --- PERSISTÊNCIA ---
   const [appData, setAppData] = useState(() => {
-    const saved = localStorage.getItem('bovigest_data_pro_v14');
+    const saved = localStorage.getItem('bovigest_data_pro_master');
     if (saved) {
       try { return { ...defaultData, ...JSON.parse(saved) }; } catch (e) { return defaultData; }
     }
     return defaultData;
   });
 
-  useEffect(() => { localStorage.setItem('bovigest_data_pro_v14', JSON.stringify(appData)); }, [appData]);
+  useEffect(() => { localStorage.setItem('bovigest_data_pro_master', JSON.stringify(appData)); }, [appData]);
   useEffect(() => { localStorage.setItem('bovigest_gemini_api_key', geminiApiKey); }, [geminiApiKey]);
   useEffect(() => { localStorage.setItem('bovigest_ai_endpoint', aiEndpoint); }, [aiEndpoint]);
   useEffect(() => { localStorage.setItem('bovigest_ai_model', aiModel); }, [aiModel]);
 
-  // --- LOGIN ---
+  // --- LOGIN COM VALIDAÇÃO DE CONVITE ---
   const handleLogin = (e) => {
     e.preventDefault();
     const email = e.target.email.value;
     const senha = e.target.senha.value;
     const validUser = appData.usuarios.find(u => u.email === email && u.senha === senha);
-    if (validUser) { setCurrentUser(validUser); setIsLoggedIn(true); setLoginError(""); } 
-    else { setLoginError("Email ou senha incorretos. Tente novamente."); }
+    
+    if (validUser) { 
+      if (validUser.status === 'Pendente') {
+        alert(`Bem-vindo, ${validUser.nome.split(' ')[0]}! O seu convite foi confirmado com sucesso.`);
+        const updatedUsers = appData.usuarios.map(u => u.id === validUser.id ? { ...u, status: 'Ativo' } : u);
+        setAppData(prev => ({ ...prev, usuarios: updatedUsers }));
+        setCurrentUser({ ...validUser, status: 'Ativo' });
+      } else {
+        setCurrentUser(validUser);
+      }
+      setIsLoggedIn(true); 
+      setLoginError(""); 
+    } 
+    else { 
+      setLoginError("Credenciais inválidas. Verifique o email e senha inseridos."); 
+    }
   };
 
-  // --- FILTROS POR PROPRIEDADE ---
+  // --- FILTROS RÍGIDOS POR PROPRIEDADE (Isolamento de Dados) ---
   const propriedadeAtiva = useMemo(() => appData.propriedades.find(p => p.id === activePropriedadeId) || appData.propriedades[0], [activePropriedadeId, appData.propriedades]);
-  const currentAnimais = useMemo(() => appData.animais.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.animais, activePropriedadeId]);
-  const currentLotes = useMemo(() => appData.lotes.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.lotes, activePropriedadeId]);
-  const currentFinanceiro = useMemo(() => appData.financeiro.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.financeiro, activePropriedadeId]);
-  const currentPesagens = useMemo(() => appData.pesagens.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.pesagens, activePropriedadeId]);
-  const currentReproducao = useMemo(() => appData.reproducao.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.reproducao, activePropriedadeId]);
-  const currentNascimentos = useMemo(() => appData.nascimentos.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.nascimentos, activePropriedadeId]);
-  const currentVacinacoes = useMemo(() => appData.vacinacoes.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.vacinacoes, activePropriedadeId]);
-  const currentInsumos = useMemo(() => appData.insumos.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.insumos, activePropriedadeId]);
-  const currentCalendario = useMemo(() => appData.calendarioSanitario?.filter(a => a.propriedadeId === activePropriedadeId || !a.propriedadeId), [appData.calendarioSanitario, activePropriedadeId]);
+  
+  const currentAnimais = useMemo(() => appData.animais.filter(a => a.propriedadeId === activePropriedadeId), [appData.animais, activePropriedadeId]);
+  const currentLotes = useMemo(() => appData.lotes.filter(a => a.propriedadeId === activePropriedadeId), [appData.lotes, activePropriedadeId]);
+  const currentFinanceiro = useMemo(() => appData.financeiro.filter(a => a.propriedadeId === activePropriedadeId), [appData.financeiro, activePropriedadeId]);
+  const currentPesagens = useMemo(() => appData.pesagens.filter(a => a.propriedadeId === activePropriedadeId), [appData.pesagens, activePropriedadeId]);
+  const currentReproducao = useMemo(() => appData.reproducao.filter(a => a.propriedadeId === activePropriedadeId), [appData.reproducao, activePropriedadeId]);
+  const currentNascimentos = useMemo(() => appData.nascimentos.filter(a => a.propriedadeId === activePropriedadeId), [appData.nascimentos, activePropriedadeId]);
+  const currentVacinacoes = useMemo(() => appData.vacinacoes.filter(a => a.propriedadeId === activePropriedadeId), [appData.vacinacoes, activePropriedadeId]);
+  const currentInsumos = useMemo(() => appData.insumos.filter(a => a.propriedadeId === activePropriedadeId), [appData.insumos, activePropriedadeId]);
+  const currentCalendario = useMemo(() => appData.calendarioSanitario?.filter(a => a.propriedadeId === activePropriedadeId), [appData.calendarioSanitario, activePropriedadeId]);
 
-  // --- CÁLCULOS E MEMOS ---
+  // --- CÁLCULOS GERAIS ---
   const totaisFinanceiros = useMemo(() => {
     return currentFinanceiro.reduce((acc, item) => {
       if (item.status === 'pago') {
@@ -239,7 +257,7 @@ export default function App() {
   const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   const showSaveSuccess = () => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); };
 
-  // --- EXPORTAÇÃO CSV PADRONIZADA ---
+  // --- EXPORTAÇÃO CSV PADRONIZADA DOS EXCEIS ---
   const downloadCSV = (filename, headers, rows) => {
     const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -252,9 +270,9 @@ export default function App() {
       const ageMonths = Math.floor((new Date() - new Date(a.dataNasc)) / (1000 * 60 * 60 * 24 * 30));
       const pAnimal = currentPesagens.filter(p => p.brinco === a.brinco).sort((x, y) => new Date(y.data) - new Date(x.data));
       const pesoAnt = pAnimal.length > 0 ? pAnimal[0].pesoAnterior : '';
-      return [a.brinco, a.nome, a.raca, a.dataNasc, ageMonths, a.categoria, a.sexo, '-', a.peso, pesoAnt, getGPD(a.brinco) || '', a.ativo ? 'Ativo' : 'Inativo', '-', a.lote, '-', '-', a.obs];
+      return [a.brinco, a.nome, a.raca, a.dataNasc, ageMonths, a.categoria, a.sexo, '-', a.peso, pesoAnt, getGPD(a.brinco) || '', a.ativo ? 'Ativo' : 'Inativo', '-', a.lote, '-', '-', a.obs || ''];
     });
-    downloadCSV(`Rebanho_${propriedadeAtiva.nome}.csv`, headers, rows);
+    downloadCSV(`Rebanho_${propriedadeAtiva.nome.replace(/\s+/g, '_')}.csv`, headers, rows);
   };
 
   const exportFinanceiro = () => {
@@ -263,13 +281,25 @@ export default function App() {
       const d = new Date(f.data);
       return [f.data, f.descricao, f.tipo, f.categoria, '-', f.valor, '-', '-', '-', '-', '-', f.obs || '', d.getMonth()+1, d.getFullYear()];
     });
-    downloadCSV(`Financeiro_${propriedadeAtiva.nome}.csv`, headers, rows);
+    downloadCSV(`Financeiro_${propriedadeAtiva.nome.replace(/\s+/g, '_')}.csv`, headers, rows);
   };
 
   const exportReproducao = () => {
     const headers = ['Nº Brinco', 'Nome Matriz', 'Data IA/Monta', 'Tipo (IA/Monta Natural)', 'Tourou/Sêmen', 'Raça Touro', 'Resultado DG', 'Data DG', 'Data Prev. Parto', 'Nº IA na Vaca', 'Técnico Responsável', 'Protocolo Hormonal', 'Custo IA (R$)', 'Observações', 'Status Final'];
     const rows = currentReproducao.map(r => [r.brincoVaca, '-', r.dataInseminacao, r.metodo, r.reprodutor, '-', '-', '-', r.previsaoParto, '-', '-', '-', '-', '-', r.status]);
-    downloadCSV(`Reproducao_${propriedadeAtiva.nome}.csv`, headers, rows);
+    downloadCSV(`Reproducao_${propriedadeAtiva.nome.replace(/\s+/g, '_')}.csv`, headers, rows);
+  };
+
+  const exportParicao = () => {
+    const headers = ['Nº Brinco Mãe', 'Nome da Mãe', 'Data do Parto', 'Hora do Parto', 'Tipo de Parto', 'Nº Brinco Cria', 'Sexo Cria', 'Raça Cria', 'Peso Nasc. (kg)', 'Condição ao Nascer', 'Nº Prenhez (Ordem)', 'Pai (Touro/Sêmen)', 'Assistência Veterinária', 'Intercorrências', 'Destino da Cria', 'Status Mãe Pós-Parto', 'Observações'];
+    const rows = currentNascimentos.map(n => [n.brincoMatriz, '-', n.data, '-', 'Normal', n.brincoBezerro, n.sexo, '-', n.pesoNascimento, 'Vigoroso', '-', '-', '-', '-', '-', '-', n.obs || '']);
+    downloadCSV(`Paricao_${propriedadeAtiva.nome.replace(/\s+/g, '_')}.csv`, headers, rows);
+  };
+
+  const exportSaude = () => {
+    const headers = ['Nº Brinco', 'Nome Animal', 'Data Atendimento', 'Tipo de Evento', 'Doença/Condição', 'Medicamento/Vacina', 'Dose (ml/g)', 'Via de Adm.', 'Período Carência (dias)', 'Data Fim Carência', 'Veterinário Resp.', 'Custo (R$)', 'Nº Lote Vacina', 'Próx. Dose/Retorno', 'Resultado/Evolução', 'Observações'];
+    const rows = currentVacinacoes.map(v => [`LOTE: ${v.lote}`, 'Vários', v.dataAplicacao, 'Vacinação/Tratamento', '-', v.vacina, '-', '-', v.carenciaDias, v.dataLiberacao || '-', '-', '-', '-', v.proximaDose || '-', v.status, v.obs || '']);
+    downloadCSV(`Saude_Animal_${propriedadeAtiva.nome.replace(/\s+/g, '_')}.csv`, headers, rows);
   };
 
   // --- NUTRIÇÃO ---
@@ -320,7 +350,7 @@ export default function App() {
     setIsChatLoading(false);
   };
 
-  // --- HANDLERS FORMS (COM ISOLAMENTO DE PROPRIEDADE) ---
+  // --- HANDLERS FORMS (ISOLAMENTO POR PROPRIEDADE ATIVA) ---
   const handleSaveAnimal = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -437,10 +467,19 @@ export default function App() {
     const fd = new FormData(e.target);
     const novoUsr = { 
       id: editingUsuario ? editingUsuario.id : Date.now(), 
-      nome: fd.get('nome'), email: fd.get('email'), senha: fd.get('senha'), role: fd.get('role') 
+      nome: fd.get('nome'), 
+      email: fd.get('email'), 
+      senha: fd.get('senha'), 
+      role: fd.get('role'),
+      status: editingUsuario ? editingUsuario.status : 'Pendente'
     };
-    if (editingUsuario) setAppData(prev => ({ ...prev, usuarios: prev.usuarios.map(u => u.id === novoUsr.id ? novoUsr : u) }));
-    else setAppData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
+    
+    if (editingUsuario) {
+      setAppData(prev => ({ ...prev, usuarios: prev.usuarios.map(u => u.id === novoUsr.id ? novoUsr : u) }));
+    } else {
+      setAppData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
+      alert(`Notificação Simulada do Sistema:\n\nUm email de convite foi enviado para "${novoUsr.email}". O operador terá de inserir as credenciais no portal para confirmar a aceitação.`);
+    }
     setIsUsuarioFormOpen(false); setEditingUsuario(null); showSaveSuccess();
   };
 
@@ -502,12 +541,12 @@ export default function App() {
             )}
             <form className="space-y-6" onSubmit={handleLogin}>
               <div>
-                <input type="email" name="email" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="Email (ex: gestor@bovigest.com)" defaultValue="gestor@bovigest.com" />
+                <input type="email" name="email" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder-slate-500" placeholder="Insira o seu email de acesso..." />
               </div>
               <div>
-                <input type="password" name="senha" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="Senha (ex: admin)" defaultValue="admin" />
+                <input type="password" name="senha" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder-slate-500" placeholder="Insira a sua senha de segurança..." />
               </div>
-              <button type="submit" className="w-full flex justify-center py-4 px-4 rounded-xl text-base font-bold text-white bg-green-600 hover:bg-green-500 transition-all shadow-lg">Aceder ao Painel</button>
+              <button type="submit" className="w-full flex justify-center py-4 px-4 rounded-xl text-base font-bold text-white bg-green-600 hover:bg-green-500 transition-all shadow-lg">Aceder ao Portal Seguro</button>
             </form>
           </div>
         </div>
@@ -527,9 +566,9 @@ export default function App() {
           <span className="text-2xl font-black tracking-tight text-white block leading-none">BoviGest</span>
         </div>
         
-        {/* Seletor de Propriedade */}
+        {/* Seletor de Propriedade Isolada */}
         <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Propriedade Ativa</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Propriedade Isolada</label>
           <select 
             value={activePropriedadeId} 
             onChange={(e) => setActivePropriedadeId(Number(e.target.value))}
@@ -557,7 +596,7 @@ export default function App() {
         </nav>
         <div className="p-6 border-t border-slate-800/50 shrink-0">
           <button onClick={() => { setIsLoggedIn(false); setCurrentUser(null); }} className="flex items-center justify-center w-full px-4 py-3 text-slate-400 border border-slate-700/50 hover:text-red-400 hover:bg-slate-900 rounded-xl font-bold text-sm">
-            <LogOut className="mr-2 h-4 w-4" /> Terminar Sessão ({currentUser?.nome.split(' ')[0]})
+            <LogOut className="mr-2 h-4 w-4" /> Sair ({currentUser?.nome.split(' ')[0]})
           </button>
         </div>
       </aside>
@@ -637,7 +676,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Novo Bloco: Distribuição do Rebanho */}
+              {/* Bloco: Distribuição do Rebanho */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
                   <h3 className="text-xl font-black text-gray-900 mb-6">Distribuição por Categoria</h3>
@@ -666,7 +705,7 @@ export default function App() {
                     <p className="text-gray-500 font-medium mb-6">A Inteligência Artificial analisa os seus dados e gera estratégias para otimizar lucro e maneio.</p>
                     <button onClick={handleAnalyzeFarm} disabled={isAnalyzing} className="w-full bg-gray-900 text-white px-8 py-4 rounded-2xl font-bold shadow-xl hover:bg-black transition-all flex items-center justify-center disabled:opacity-70">
                       {isAnalyzing ? <Loader2 className="w-6 h-6 mr-3 animate-spin" /> : <Bot className="w-6 h-6 mr-3" />}
-                      {isAnalyzing ? 'A Processar...' : 'Gerar Análise IA Agora'}
+                      {isAnalyzing ? 'A Processar Análise...' : 'Gerar Análise IA Agora'}
                     </button>
                     {aiInsights && (
                       <div className="mt-6 p-6 bg-green-50 border border-green-100 rounded-2xl animate-in fade-in">
@@ -858,7 +897,7 @@ export default function App() {
                           </tr>
                         );
                       })}
-                      {filteredAnimais.length === 0 && <tr><td colSpan={4} className="text-center py-12 text-gray-400 font-bold text-lg">Nenhum animal listado.</td></tr>}
+                      {filteredAnimais.length === 0 && <tr><td colSpan={4} className="text-center py-12 text-gray-400 font-bold text-lg">Nenhum animal listado na propriedade atual.</td></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -1136,7 +1175,6 @@ export default function App() {
                   <p className="text-sm font-bold text-slate-400 uppercase">Saldo Líquido</p>
                   <p className={`text-3xl font-black ${saldoAtual >= 0 ? 'text-white' : 'text-red-400'}`}>{formatCurrency(saldoAtual)}</p>
                 </div>
-                {/* Novo Card: Custo por Arroba */}
                 <div className="bg-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-center">
                   <p className="text-sm font-bold text-blue-800 uppercase flex items-center"><Activity size={16} className="mr-2" /> Custo por Arroba (@)</p>
                   <p className="text-3xl font-black text-blue-900 mt-1">{formatCurrency(custoPorArroba)}</p>
@@ -1156,7 +1194,7 @@ export default function App() {
                         <td className={`px-6 py-4 text-right font-black ${fin.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}>{fin.tipo === 'receita' ? '+' : '-'}{formatCurrency(fin.valor)}</td>
                       </tr>
                     ))}
-                    {currentFinanceiro.length === 0 && <tr><td colSpan={3} className="text-center py-8 font-bold text-gray-400">Nenhuma transação.</td></tr>}
+                    {currentFinanceiro.length === 0 && <tr><td colSpan={3} className="text-center py-8 font-bold text-gray-400">Nenhuma transação na propriedade atual.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1177,7 +1215,7 @@ export default function App() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Nome / Email</th>
-                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Nível de Acesso</th>
+                        <th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Status / Permissão</th>
                         <th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Ações</th>
                       </tr>
                     </thead>
@@ -1186,7 +1224,8 @@ export default function App() {
                         <tr key={usr.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4"><span className="block font-black text-gray-900">{usr.nome}</span><span className="text-sm font-bold text-gray-500">{usr.email}</span></td>
                           <td className="px-6 py-4">
-                            <span className={`px-3 py-1 rounded-lg text-xs font-bold ${usr.role === 'Admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'}`}>{usr.role}</span>
+                            <span className={`px-3 py-1 rounded-lg text-xs font-bold mr-2 ${usr.role === 'Admin' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'}`}>{usr.role}</span>
+                            <span className={`px-3 py-1 rounded-lg text-xs font-bold ${usr.status === 'Pendente' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>{usr.status}</span>
                           </td>
                           <td className="px-6 py-4 text-right">
                             <button onClick={() => openEditUsuario(usr)} className="text-blue-600 hover:text-blue-800 p-2"><Edit size={18} /></button>
@@ -1199,11 +1238,11 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Novo Bloco: Configuração da IA (Dinâmica) */}
+              {/* Bloco: Configuração da IA (Dinâmica) */}
               <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl shadow-sm border border-gray-700 p-8 mb-8 text-white relative overflow-hidden">
                 <Bot size={140} className="absolute -right-10 -bottom-10 text-white/5" />
                 <h3 className="text-2xl font-black flex items-center mb-2"><Sparkles className="mr-3 text-green-400" /> Inteligência Artificial</h3>
-                <p className="text-slate-300 font-medium mb-6 max-w-2xl">Para usar os relatórios de IA, insira a sua chave API e escolha o modelo/endereço pretendido.</p>
+                <p className="text-slate-300 font-medium mb-6 max-w-2xl">Para usar os relatórios de IA e o Assistente, insira a sua chave API do Google AI Studio e escolha o modelo.</p>
                 <div className="space-y-4 max-w-lg relative z-10">
                   <div>
                     <label className="block text-sm font-bold text-slate-400 mb-2 uppercase tracking-widest">API Key (Chave de Acesso)</label>
@@ -1242,14 +1281,16 @@ export default function App() {
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 text-center">
                 <FileSpreadsheet size={48} className="mx-auto text-green-600 mb-4" />
                 <h3 className="text-2xl font-black text-gray-900 mb-2">Exportação de Planilhas</h3>
-                <p className="text-gray-500 font-medium mb-8">Descarregue os dados da propriedade ativa em formato CSV (compatível com Excel).</p>
+                <p className="text-gray-500 font-medium mb-8">Descarregue os dados da propriedade <b className="text-gray-900">{propriedadeAtiva.nome}</b> em formato CSV idêntico às suas tabelas base.</p>
                 <div className="flex flex-wrap justify-center gap-4">
                   <button onClick={exportRebanho} className="bg-green-50 hover:bg-green-100 border border-green-200 text-green-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Rebanho</button>
                   <button onClick={exportFinanceiro} className="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Financeiro</button>
                   <button onClick={exportReproducao} className="bg-pink-50 hover:bg-pink-100 border border-pink-200 text-pink-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Reprodução</button>
+                  <button onClick={exportParicao} className="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Parição</button>
+                  <button onClick={exportSaude} className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 font-bold px-6 py-3 rounded-xl flex items-center shadow-sm"><Download size={18} className="mr-2"/> Exportar Saúde</button>
                 </div>
                 <div className="mt-12 pt-8 border-t border-gray-100">
-                  <button onClick={() => { if(confirm('APAGAR TUDO?')) { localStorage.removeItem('bovigest_data_pro_v14'); window.location.reload(); } }} className="text-red-500 hover:text-red-700 font-bold flex items-center justify-center mx-auto"><Trash2 size={18} className="mr-2"/> Formatar Sistema (Apagar tudo)</button>
+                  <button onClick={() => { if(confirm('ATENÇÃO: Isto apagará TODO o sistema BoviGest PRO no seu navegador. Deseja continuar?')) { localStorage.removeItem('bovigest_data_pro_master'); window.location.reload(); } }} className="text-red-500 hover:text-red-700 font-bold flex items-center justify-center mx-auto"><Trash2 size={18} className="mr-2"/> Formatar Sistema (Apagar tudo)</button>
                 </div>
               </div>
             </div>
@@ -1644,7 +1685,7 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-indigo-50 shrink-0">
-              <h2 className="text-xl font-black text-indigo-900 flex items-center"><Users className="mr-3 text-indigo-600"/> {editingUsuario ? 'Editar Operador' : 'Adicionar Operador'}</h2>
+              <h2 className="text-xl font-black text-indigo-900 flex items-center"><Users className="mr-3 text-indigo-600"/> {editingUsuario ? 'Editar Operador' : 'Convite de Acesso'}</h2>
               <button onClick={() => { setIsUsuarioFormOpen(false); setEditingUsuario(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
             <form id="usuarioForm" onSubmit={handleSaveUsuario} className="p-6 space-y-4">
@@ -1657,10 +1698,10 @@ export default function App() {
                 <input required type="email" name="email" defaultValue={editingUsuario?.email || ''} className="w-full px-4 py-3 border rounded-xl" />
               </div>
               <div>
-                <label className="block text-sm font-bold mb-1">Senha de Acesso *</label>
+                <label className="block text-sm font-bold mb-1">Senha Provisória *</label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input required type="text" name="senha" defaultValue={editingUsuario?.senha || ''} className="w-full pl-10 pr-4 py-3 border rounded-xl" placeholder="Digite uma senha segura..." />
+                  <input required type="text" name="senha" defaultValue={editingUsuario?.senha || ''} className="w-full pl-10 pr-4 py-3 border rounded-xl" placeholder="Senha que o operador usará..." />
                 </div>
               </div>
               <div>
@@ -1674,7 +1715,7 @@ export default function App() {
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
               <button onClick={() => { setIsUsuarioFormOpen(false); setEditingUsuario(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
-              <button type="submit" form="usuarioForm" className="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white">Salvar Acesso</button>
+              <button type="submit" form="usuarioForm" className="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white">Enviar Convite</button>
             </div>
           </div>
         </div>
