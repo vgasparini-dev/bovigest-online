@@ -812,6 +812,65 @@ Equipa BoviGest`);
             </div>
           )}
 
+                    {/* --- CONSULTOR IA --- */}
+{currentView === 'ai-assistant' && (
+  <div className="max-w-5xl mx-auto space-y-6">
+    <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-2xl p-6 shadow-lg">
+      <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+        <Sparkles className="w-7 h-7 mr-3 text-purple-600" />
+        Análise Inteligente da Propriedade
+      </h3>
+      {!geminiApiKey ? (
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-xl">
+          ⚠️ Configure sua API Key do Google Gemini em <strong>Configurações</strong> para ativar a IA.
+        </div>
+      ) : (
+        <button onClick={handleAnalyzeFarm} disabled={isAnalyzing} className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-bold shadow-lg flex items-center transition-all disabled:opacity-50">
+          {isAnalyzing ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Bot className="w-5 h-5 mr-2" />}
+          {isAnalyzing ? 'Analisando Dados...' : 'Gerar Análise Completa'}
+        </button>
+      )}
+      {aiInsights && (
+        <div className="mt-6 bg-white border border-gray-200 rounded-xl p-6 whitespace-pre-wrap text-gray-800 shadow-sm">
+          {aiInsights}
+        </div>
+      )}
+    </div>
+    <div className="bg-white border-2 border-gray-200 rounded-2xl shadow-xl overflow-hidden">
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+        <h3 className="text-xl font-bold text-white flex items-center">
+          <Bot className="w-6 h-6 mr-2" />
+          Assistente Virtual BoviGest
+        </h3>
+      </div>
+      <div className="h-96 overflow-y-auto p-6 space-y-4 bg-gray-50">
+        {chatMessages.map((msg, idx) => (
+          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-lg px-5 py-3 rounded-2xl shadow-md ${msg.role === 'user' ? 'bg-green-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        {isChatLoading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-200 px-5 py-3 rounded-2xl flex items-center">
+              <Loader2 className="w-5 h-5 animate-spin text-gray-600" />
+              <span className="ml-2 text-gray-600">Pensando...</span>
+            </div>
+          </div>
+        )}
+      </div>
+      <form onSubmit={handleSendMessage} className="p-4 bg-white border-t-2 border-gray-200 flex gap-3">
+        <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Digite sua pergunta sobre a gestão da fazenda..." className="flex-1 px-5 py-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500" disabled={isChatLoading || !geminiApiKey} />
+        <button type="submit" disabled={isChatLoading || !chatInput.trim() || !geminiApiKey} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-md flex items-center transition-all disabled:opacity-40">
+          <Send className="w-5 h-5" />
+        </button>
+      </form>
+    </div>
+  </div>
+)}
+
+
           {/* --- NUTRIÇÃO (NASEM) --- */}
           {currentView === 'nutricao' && (
             <div className="animate-in fade-in space-y-6">
