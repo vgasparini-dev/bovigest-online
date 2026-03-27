@@ -1138,7 +1138,7 @@ Equipa BoviGest`);
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {currentLotes.map(lote => {
                   const animaisNoLote = currentAnimais.filter(a => a.lote === lote.nome).length;
-return((
+return(
                     <div key={lote.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                       <div className="flex justify-between items-start mb-4">
                         <h4 className="text-lg font-black text-gray-900">{lote.nome}</h4>
