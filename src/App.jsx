@@ -1197,7 +1197,7 @@ return (
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-blue-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</t<th className="px-6 py-4 text-left">Observações</th><th className="px-6 py-4 text-right">Ações</th>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</th><th className="px-6 py-4 text-left">Observações</th><th className="px-6 py-4 text-right">Ações</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentNascimentos.map((nasc) => (
