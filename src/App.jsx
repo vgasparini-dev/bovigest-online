@@ -1400,8 +1400,8 @@ currentReproducao.map
                       <tr key={fin.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4"><span className="block font-bold text-gray-500 text-sm">{fin.data}</span><span className="font-black text-gray-900">{fin.descricao}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{fin.categoria}</td>
-                        <td className={`px-6 py-4 text-right font-black ${fin.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}>{fin.tipo === 'receita' ? '+' : '-'}{<td className="px-8 py-5"><button onClick={() => handleDeleteFinanceiro(fin.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
-                                        <td className="px-6 py-4 text-right"><button onClick={() => handleDeleteFinanceiro(fin.id)} className="text-red-500 hover:text-red-700 p-2"><Trash2 size={18} /></button></td>
+                                          <td className="px-6 py-4 text-right font-black text-gray-900">{fin.tipo === 'receita' ? '+' : '-'}{formatCurrency(fin.valor)}</td>
+                                                                                  <td className="px-6 py-4 text-right"><button onClick={() => handleDeleteFinanceiro(fin.id)} className="text-red-500 hover:text-red-700"><Trash2 size={18} /></button></td>
 </tr>
                     ))}
                     {currentFinanceiro.length === 0 && <tr><td colSpan={3} className="text-center py-8 font-bold text-gray-400">Nenhuma transação na propriedade atual.</td></tr>}
