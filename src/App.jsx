@@ -1197,7 +1197,7 @@ return (
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-blue-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</th></tr><th className="px-6 py-4 text-right">Ações</th>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</t<th className="px-6 py-4 text-left">Observações className="px-6 py-4 text-right">Ações</th>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentNascimentos.map((nasc) => (
@@ -1221,7 +1221,7 @@ return (
           )}
 
           {/* --- SANIDADE (COM CALENDÁRIO RO) --- */}
-          {currentView === 'sanidade' && (
+          {currentView === 'sanidade' ^\S+&& \(
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><ShieldAlert className="mr-3 text-red-500" /> Sanidade e Vacinação</h3>
