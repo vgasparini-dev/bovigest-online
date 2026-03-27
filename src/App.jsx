@@ -1190,7 +1190,6 @@ Equipa BoviGest`);
           {currentView === 'nascimentos' && (
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-black text-gray-900 flex items-center"><Baby className="mr-3 text-blue-500" /> Nascimentos</h3>
                 <button onClick={() => setIsNascimentoFormOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Nascimento</button>
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
