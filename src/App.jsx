@@ -1221,7 +1221,7 @@ return (
           )}
 
           {/* --- SANIDADE (COM CALENDÁRIO RO) --- */}
-          {currentView === 'sanidade'</K>&& \(
+          {currentView === 'sanidade' && (
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><ShieldAlert className="mr-3 text-red-500" /> Sanidade e Vacinação</h3>
