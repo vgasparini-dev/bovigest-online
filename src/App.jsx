@@ -1160,7 +1160,7 @@ return (
           )}
 
           {/* --- REPRODUÇÃO --- */}
-          <th className="px-6 py-4 text-right">Ações</th> && (
+                {currentView === 'reproducao' && (
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><HeartPulse className="mr-3 text-pink-600" /> Controlo Reprodutivo</h3>
