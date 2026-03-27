@@ -1,4 +1,4 @@
-// @ts-nocheck
+in // @ts-nocheck
 /* eslint-disable */
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
@@ -114,6 +114,7 @@ export default function App() {
   const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
   const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
   const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
+    const [editingReproducao, setEditingReproducao] = useState(null);
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
   const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
@@ -576,6 +577,53 @@ Equipa BoviGest`);
     if (confirm('Tem a certeza que deseja remover este animal?')) { 
       setAppData(prev => ({ ...prev, animais: prev.animais.filter(a => a.id !== id) })); setSelectedAnimal(null); showSaveSuccess(); 
     } 
+  };
+
+        const handleDeleteNascimento = (id) => {
+    if (confirm('Tem a certeza que deseja remover este nascimento?')) {
+      setAppData(prev => ({ ...prev, nascimentos: prev.nascimentos.filter(n => n.id !== id) }));
+      showSaveSuccess();
+    }
+  };
+
+  const handleDeleteInsumo = (id) => {
+    if (confirm('Tem a certeza que deseja remover este insumo?')) {
+      setAppData(prev => ({ ...prev, insumos: prev.insumos.filter(i => i.id !== id) }));
+      showSaveSuccess();
+    }
+  };
+
+  const handleDeleteVacinacao = (id) => {
+    if (confirm('Tem a certeza que deseja remover este registo de vacinação?')) {
+      setAppData(prev => ({ ...prev, vacinacoes: prev.vacinacoes.filter(v => v.id !== id) }));
+      showSaveSuccess();
+    }
+  };
+
+  const handleDeletePesagem = (id) => {
+    if (confirm('Tem a certeza que deseja remover esta pesagem?')) {
+      setAppData(prev => ({ ...prev, pesagens: prev.pesagens.filter(p => p.id !== id) }));
+      showSaveSuccess();
+    }
+  };
+
+  const handleDeleteFinanceiro = (id) => {
+    if (confirm('Tem a certeza que deseja remover este lançamento?')) {
+      setAppData(prev => ({ ...prev, financeiro: prev.financeiro.filter(f => f.id !== id) }));
+      showSaveSuccess();
+    }
+  };
+
+  const handleDeleteReproducao = (id) => {
+    if (confirm('Tem a certeza que deseja remover este registo de inseminação?')) {
+      setAppData(prev => ({ ...prev, reproducao: prev.reproducao.filter(r => r.id !== id) }));
+      showSaveSuccess();
+    }
+  };
+
+  const handleEditReproducao = (reproducao) => {
+    setEditingReproducao(reproducao);
+    setIsReproducaoFormOpen(true);
   };
 
   const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
@@ -1090,8 +1138,6 @@ Equipa BoviGest`);
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {currentLotes.map(lote => {
                   const animaisNoLote = currentAnimais.filter(a => a.lote === lote.nome).length;
-                  const ocupacao = Math.round((animaisNoLote / lote.capacidade) * 100) || 0;
-                  return (
                     <div key={lote.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                       <div className="flex justify-between items-start mb-4">
                         <h4 className="text-lg font-black text-gray-900">{lote.nome}</h4>
@@ -1113,7 +1159,7 @@ Equipa BoviGest`);
           )}
 
           {/* --- REPRODUÇÃO --- */}
-          {currentView === 'reproducao' && (
+          <th className="px-6 py-4 text-right">Ações</th> && (
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><HeartPulse className="mr-3 text-pink-600" /> Controlo Reprodutivo</h3>
