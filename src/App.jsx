@@ -1168,7 +1168,7 @@ Equipa BoviGest`);
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-pink-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Matriz</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Data / Método</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Prev. Parto</th><th className="px-6 py-4 text-right text-xs font-black text-pink-800 uppercase">Status</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Matriz</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Data / Método</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Prev. Parto</th><th className="px-6 py-4 text-right text-xs font-black text-pink-800 uppercase">Status</th></tr><th className="px-6 py-4 text-right">Ações</th>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentReproducao.map((rep) => (
@@ -1177,7 +1177,8 @@ Equipa BoviGest`);
                         <td className="px-6 py-4"><span className="block font-bold text-gray-700">{rep.dataInseminacao}</span><span className="text-xs text-gray-500">{rep.metodo} - {rep.reprodutor}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{rep.previsaoParto}</td>
                         <td className="px-6 py-4 text-right"><span className={`px-3 py-1 rounded-full text-xs font-bold ${rep.status === 'Prenhe' ? 'bg-green-100 text-green-700' : rep.status === 'Parida' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{rep.status}</span></td>
-                      </tr>
+                                        <td className="px-6 py-4 text-right"><button onClick={() => handleEditReproducao(rep)} className="text-blue-600 hover:text-blue-800 p-2"><Edit size={18} /></button><button onClick={() => handleDeleteReproducao(rep.id)} className="text-red-500 hover:text-red-700 p-2 ml-2"><Trash2 size={18} /></button></td>
+</tr>
                     ))}
                     {currentReproducao.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo reprodutivo.</td></tr>}
                   </tbody>
@@ -1195,7 +1196,7 @@ Equipa BoviGest`);
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-blue-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</th></tr><th className="px-6 py-4 text-right">Ações</th>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentNascimentos.map((nasc) => (
@@ -1204,7 +1205,12 @@ Equipa BoviGest`);
                         <td className="px-6 py-4"><span className="block font-black text-gray-900">M: {nasc.brincoMatriz}</span><span className="text-sm font-bold text-blue-600">B: {nasc.brincoBezerro}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{nasc.sexo}</td>
                         <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
-                      </tr>
+                                        <td className="px-6 py-4 text-right">
+                    <button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700 p-2">
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+</tr>
                     ))}
                     {currentNascimentos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum nascimento registado.</td></tr>}
                   </tbody>
@@ -1232,7 +1238,7 @@ Equipa BoviGest`);
                   <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-red-50">
-                        <tr><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Data / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Lote Alvo</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Carência</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Liberação</th></tr>
+                        <tr><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Data / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Lote Alvo</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Carência</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Liberação</th></tr><th className="px-6 py-4 text-right">Ações</th>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
                         {currentVacinacoes.map((vac) => (
@@ -1241,7 +1247,12 @@ Equipa BoviGest`);
                             <td className="px-6 py-4 font-bold text-gray-700">{vac.lote} ({vac.qtdAnimais} cab.)</td>
                             <td className="px-6 py-4 font-bold text-gray-700">{vac.carenciaDias} dias</td>
                             <td className="px-6 py-4 text-right"><span className="px-3 py-1 rounded-md text-xs font-bold bg-orange-100 text-orange-800">{vac.dataLiberacao || '-'}</span></td>
-                          </tr>
+                                            <td className="px-6 py-4 text-right">
+                    <button onClick={() => handleDeleteVacinacao(vac.id)} className="text-red-500 hover:text-red-700 p-2">
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+</tr>
                         ))}
                         {currentVacinacoes.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo sanitário.</td></tr>}
                       </tbody>
@@ -1294,7 +1305,7 @@ Equipa BoviGest`);
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-orange-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-orange-800 uppercase">Data / Brinco</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Ant.</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Atual</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Evolução</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-orange-800 uppercase">Data / Brinco</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Ant.</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Atual</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Evolução</th></tr><th className="px-6 py-4 text-right">Ações</th>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentPesagens.map((pes) => {
@@ -1305,7 +1316,12 @@ Equipa BoviGest`);
                           <td className="px-6 py-4 text-right font-bold text-gray-600">{pes.pesoAnterior} kg</td>
                           <td className="px-6 py-4 text-right font-black text-gray-900">{pes.pesoAtual} kg</td>
                           <td className="px-6 py-4 text-right font-black"><span className={diff >= 0 ? 'text-green-600' : 'text-red-600'}>{diff > 0 ? '+' : ''}{diff} kg</span></td>
-                        </tr>
+                                          <td className="px-6 py-4 text-right">
+                    <button onClick={() => handleDeletePesagem(pes.id)} className="text-red-500 hover:text-red-700 p-2">
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+</tr>
                       );
                     })}
                     {currentPesagens.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhuma pesagem registada.</td></tr>}
@@ -1325,7 +1341,7 @@ Equipa BoviGest`);
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-purple-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-purple-800 uppercase">Produto / Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Qtd Atual</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Estoque Min.</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Status</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-purple-800 uppercase">Produto / Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Qtd Atual</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Estoque Min.</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Status</th></tr><th className="px-6 py-4 text-right">Ações</th>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentInsumos.map((ins) => {
@@ -1370,13 +1386,13 @@ Equipa BoviGest`);
                 <div className="bg-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-center">
                   <p className="text-sm font-bold text-blue-800 uppercase flex items-center"><Activity size={16} className="mr-2" /> Custo por Arroba (@)</p>
                   <p className="text-3xl font-black text-blue-900 mt-1">{formatCurrency(custoPorArroba)}</p>
-                  <p className="text-xs text-blue-600 mt-1">Base: 30kg peso vivo/cab</p>
+currentReproducao.map
                 </div>
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Data / Descrição</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Valor</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Data / Descrição</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Valor</th></tr><th className="px-6 py-4 text-right">Ações</th>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentFinanceiro.map((fin) => (
@@ -1384,7 +1400,8 @@ Equipa BoviGest`);
                         <td className="px-6 py-4"><span className="block font-bold text-gray-500 text-sm">{fin.data}</span><span className="font-black text-gray-900">{fin.descricao}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{fin.categoria}</td>
                         <td className={`px-6 py-4 text-right font-black ${fin.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}>{fin.tipo === 'receita' ? '+' : '-'}{<td className="px-8 py-5"><button onClick={() => handleDeleteFinanceiro(fin.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
-                      </tr>
+                                        <td className="px-6 py-4 text-right"><button onClick={() => handleDeleteFinanceiro(fin.id)} className="text-red-500 hover:text-red-700 p-2"><Trash2 size={18} /></button></td>
+</tr>
                     ))}
                     {currentFinanceiro.length === 0 && <tr><td colSpan={3} className="text-center py-8 font-bold text-gray-400">Nenhuma transação na propriedade atual.</td></tr>}
                   </tbody>
