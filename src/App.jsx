@@ -19,6 +19,7 @@ const defaultData = {
     { id: 1, nome: "Victor Luiz Gasparini", email: "victorluizgasparini@gmail.com", senha: "Lu1z1502#", role: "Admin", status: "Ativo" },     { id: 2, nome: "Lucas Winter", email: "lucasff99@hotmail.com", senha: "123456", role: "Operador", status: "Ativo" },     { id: 3, nome: "Vivtor", email: "victorluizgasparini@hotmail.com", senha: "22023342", role: "Operador", status: "Ativo" }
   ],
   calendarioSanitario: [
+
     { id: 1, propriedadeId: 1, doenca: "Brucelose", mes: "1º Semestre", publico: "Fêmeas de 3 a 8 meses", obrigatorio: true },
     { id: 2, propriedadeId: 1, doenca: "Raiva", mes: "Maio", publico: "Todo o rebanho", obrigatorio: true },
     { id: 3, propriedadeId: 1, doenca: "Clostridioses", mes: "Novembro", publico: "Todo o rebanho (Reforço)", obrigatorio: false },
@@ -1154,7 +1155,8 @@ return(
                       </div>
                     </div>
                );
-              })}              </div>
+          })}
+              </div>
             </div>
           )}
 
