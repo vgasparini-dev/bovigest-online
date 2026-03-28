@@ -638,7 +638,7 @@ Equipa BoviGest`);
     { id: 'propriedades', icon: MapPin, label: 'Propriedades' },
     { id: 'animais', icon: Beef, label: 'Rebanho Geral', badge: currentAnimais.length },
     { id: 'gado_corte', icon: Target, label: 'Gado de Corte', badge: gadoDeCorte.length },
-    { id: 'pastagens', icon: LayoutGrid, label: 'Pastagens / Lotes', badge: currentLotes.length },
+    // { id: 'pastagens', icon: LayoutGrid, label: 'Pastagens / Lotes', badge: currentLotes.length },
     { id: 'reproducao', icon: HeartPulse, label: 'Inseminações' },
     { id: 'nascimentos', icon: Baby, label: 'Nascimentos', badge: currentNascimentos.length },
     { id: 'sanidade', icon: ShieldAlert, label: 'Sanidade Clínica' },
