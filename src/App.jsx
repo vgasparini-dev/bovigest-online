@@ -1136,7 +1136,7 @@ Equipa BoviGest`);
                 <button onClick={() => setIsLoteFormOpen(true)} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Lote</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {currentLots.map(lote => {
+                {currentLots.map((lote) => {
                   const animaisNoLote = currentAnimais.filter(a => a.lote === lote.nome).length;
 return(
                     <div key={lote.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
@@ -1154,8 +1154,7 @@ return(
                       </div>
                     </div>
                );
-          ))}})}
-              </div>
+              })}              </div>
             </div>
           )}
 
