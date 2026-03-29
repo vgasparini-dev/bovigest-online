@@ -141,7 +141,7 @@ export default function App() {
     const [editingReproducao, setEditingReproducao] = useState(null);
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
-  const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
+  const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);   const [isCalendarioEditFormOpen, setIsCalendarioEditFormOpen] = useState(false);   const [editingCalendario, setEditingCalendario] = useState(null);
     const [animalDetailTab, setAnimalDetailTab] = useState('info');
       const [editingNascimento, setEditingNascimento] = useState(null);
         const [isNascimentoEditFormOpen, setIsNascimentoEditFormOpen] = useState(false);
@@ -1409,7 +1409,7 @@ return(
                           <td className="px-6 py-4"><span className="block font-black text-gray-900">{ins.nome}</span><span className="text-sm font-bold text-gray-500">{ins.categoria}</span></td>
                           <td className="px-6 py-4 text-right font-black text-gray-900">{ins.quantidade} {ins.unidade}</td>
                           <td className="px-6 py-4 text-right font-bold text-gray-500">{ins.estoqueMinimo} {ins.unidade}</td>
-                          <td className="px-6 py-4 text-right">{isCritico ? <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">Crítico</span> : <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded text-xs">Normal</span>}</td><td className="px-8 py-5"><button <button onClick={() => { setConsumoInsumoSelecionado(ins); setIsConsumoFormOpen(true); }} className="text-purple-600 hover:text-purple-800 font-bold text-xs px-3 py-1.5 rounded-lg border border-purple-200 hover:bg-purple-50 mr-2">- Consumo</button><button onClick={() => { setConsumoInsumoSelecionado(ins); setIsConsumoFormOpen(true); }} className="text-purple-600 hover:text-purple-800 font-bold px-3 py-1 rounded-lg border border-purple-200 hover:bg-purple-50 text-xs mr-2">Lançar Consumo</button><button onClick={() => handleDeleteInsumo(ins.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
+                          <td className="px-6 py-4 text-right">{isCritico ? <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">Crítico</span> : <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded text-xs">Normal</span>}</td><td className="px-8 py-5"><button onClick={() => { setConsumoInsumoSelecionado(ins); setIsConsumoFormOpen(true); }} className="text-purple-600 hover:text-purple-800 font-bold text-xs px-3 py-1.5 rounded-lg border border-purple-200 hover:bg-purple-50 mr-2">- Consumo</button><button onClick={() => { setConsumoInsumoSelecionado(ins); setIsConsumoFormOpen(true); }} className="text-purple-600 hover:text-purple-800 font-bold px-3 py-1 rounded-lg border border-purple-200 hover:bg-purple-50 text-xs mr-2">Lançar Consumo</button><button onClick={() => handleDeleteInsumo(ins.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
                         </tr>
                       );
                     })}
