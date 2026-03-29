@@ -85,6 +85,29 @@ const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, mo
   }
 };
 
+// --- COMPONENTE DE OBSERVAÇÕES DO ANIMAL ---
+function ObsEditor({ animal, onSave }) {
+  const [text, setText] = React.useState(animal?.obs || '');
+  React.useEffect(() => { setText(animal?.obs || ''); }, [animal?.id]);
+  return (
+    <div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={4}
+        placeholder="Adicione observações sobre este animal..."
+        className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none outline-none focus:ring-2 focus:ring-green-400 text-sm text-gray-700"
+      />
+      <button
+        type="button"
+        onClick={() => onSave(animal.id, text)}
+        className="mt-2 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold text-sm"
+      >
+        <Save size={14}/> Salvar Observação
+      </button>
+    </div>
+  );
+}
 export default function App() {
   // --- AUTENTICAÇÃO E NAVEGAÇÃO ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -119,6 +142,9 @@ export default function App() {
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
   const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
+    const [animalDetailTab, setAnimalDetailTab] = useState('info');
+      const [editingNascimento, setEditingNascimento] = useState(null);
+        const [isNascimentoEditFormOpen, setIsNascimentoEditFormOpen] = useState(false);
 
   // Estados Nutrição
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
@@ -580,11 +606,40 @@ Equipa BoviGest`);
     } 
   };
 
+    const handleSaveObsAnimal = (animalId, novaObs) => {
+    setAppData(prev => ({ ...prev, animais: prev.animais.map(a => a.id === animalId ? { ...a, obs: novaObs } : a) }));
+    setSelectedAnimal(prev => ({ ...prev, obs: novaObs }));
+    showSaveSuccess();
+  };
+
         const handleDeleteNascimento = (id) => {
     if (confirm('Tem a certeza que deseja remover este nascimento?')) {
       setAppData(prev => ({ ...prev, nascimentos: prev.nascimentos.filter(n => n.id !== id) }));
       showSaveSuccess();
     }
+  };
+
+    const handleEditNascimento = (nasc) => {
+    setEditingNascimento(nasc);
+    setIsNascimentoEditFormOpen(true);
+  };
+
+  const handleSaveNascimentoEdit = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const updated = {
+      ...editingNascimento,
+      data: fd.get('data'),
+      brincoMatriz: fd.get('brincoMatriz'),
+      brincoBezerro: fd.get('brincoBezerro'),
+      sexo: fd.get('sexo'),
+      pesoNascimento: Number(fd.get('pesoNascimento')),
+      obs: fd.get('obs') || ''
+    };
+    setAppData(prev => ({ ...prev, nascimentos: prev.nascimentos.map(n => n.id === updated.id ? updated : n) }));
+    setIsNascimentoEditFormOpen(false);
+    setEditingNascimento(null);
+    showSaveSuccess();
   };
 
   const handleDeleteInsumo = (id) => {
@@ -1206,7 +1261,8 @@ return(
                         <td className="px-6 py-4 font-bold text-gray-700">{nasc.data}</td>
                         <td className="px-6 py-4"><span className="block font-black text-gray-900">M: {nasc.brincoMatriz}</span><span className="text-sm font-bold text-blue-600">B: {nasc.brincoBezerro}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{nasc.sexo}</td>
-                        <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
+                                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{nasc.obs || <span className="text-gray-300 italic">Sem obs.</span>}</td>
+                        <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td><td className="px-8 py-5"><button <button onClick={() => handleEditNascimento(nasc)} className="text-blue-500 hover:text-blue-700 mr-3 p-1"><Edit size={15}/></button>onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
 
                       </tr>                                        
                     ))}
@@ -1531,6 +1587,15 @@ currentReproducao.map
                 </div>
               </div>
             </div>
+                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+              <MessageSquare size={15} className="text-green-600" />
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Observações</span>
+            </div>
+            <div className="p-4">
+                            <ObsEditor animal={selectedAnimal} onSave={handleSaveObsAnimal} />
+            </div>
+          </div>
             <div className="p-6 border-t border-gray-100 bg-white flex justify-between shrink-0">
               <button onClick={() => handleDeleteAnimal(selectedAnimal.id)} className="bg-red-50 hover:bg-red-100 text-red-600 px-6 py-4 rounded-xl font-bold flex items-center transition-colors"><Trash2 size={18} className="mr-2"/> Eliminar</button>
               <button onClick={() => { setSelectedAnimal(null); openEditAnimal(selectedAnimal); }} className="bg-slate-900 hover:bg-black text-white px-8 py-4 rounded-xl font-bold flex items-center transition-colors shadow-lg">
@@ -1780,6 +1845,10 @@ currentReproducao.map
                 <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="data" defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
               <div><label className="block text-sm font-bold mb-1">Raça</label><input required name="raca" defaultValue="Nelore" className="w-full px-4 py-3 border rounded-xl" /></div>
+                            <div className="col-span-2 mt-1">
+                <label className="block text-sm font-bold mb-1">Observações</label>
+                <textarea name="obs" rows={2} placeholder="Observações sobre o nascimento..." className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none outline-none focus:ring-2 focus:ring-blue-400 text-sm"/>
+              </div>
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
               <button onClick={() => setIsNascimentoFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
@@ -1789,6 +1858,31 @@ currentReproducao.map
         </div>
       )}
 
+            {/* MODAL: EDITAR NASCIMENTO */}
+      {isNascimentoEditFormOpen && editingNascimento && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setIsNascimentoEditFormOpen(false)}>
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="border-b border-gray-100 p-6 flex justify-between items-center">
+              <h2 className="text-xl font-black text-blue-900 flex items-center"><Edit className="mr-3 text-blue-600" size={22}/>Editar Nascimento</h2>
+              <button onClick={() => { setIsNascimentoEditFormOpen(false); setEditingNascimento(null); }} className="text-gray-400 hover:text-gray-600"><X size={22}/></button>
+            </div>
+            <form onSubmit={handleSaveNascimentoEdit} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="block text-xs font-bold text-gray-500 mb-1">Brinco Matriz *</label><input required name="brincoMatriz" defaultValue={editingNascimento.brincoMatriz} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400"/></div>
+                <div><label className="block text-xs font-bold text-gray-500 mb-1">Brinco Bezerro *</label><input required name="brincoBezerro" defaultValue={editingNascimento.brincoBezerro} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400"/></div>
+                <div><label className="block text-xs font-bold text-gray-500 mb-1">Sexo</label><select name="sexo" defaultValue={editingNascimento.sexo} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white outline-none"><option value="M">M</option><option value="F">F</option></select></div>
+                <div><label className="block text-xs font-bold text-gray-500 mb-1">Peso Nasc. (kg)</label><input required type="number" name="pesoNascimento" defaultValue={editingNascimento.pesoNascimento} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400"/></div>
+                <div className="col-span-2"><label className="block text-xs font-bold text-gray-500 mb-1">Data *</label><input required type="date" name="data" defaultValue={editingNascimento.data} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400"/></div>
+                <div className="col-span-2"><label className="block text-xs font-bold text-gray-500 mb-1">Observações</label><textarea name="obs" rows={3} defaultValue={editingNascimento.obs || ''} placeholder="Observações sobre o nascimento..." className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none outline-none focus:ring-2 focus:ring-blue-400 text-sm"/></div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => { setIsNascimentoEditFormOpen(false); setEditingNascimento(null); }} className="flex-1 px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700 hover:bg-gray-200">Cancelar</button>
+                <button type="submit" className="flex-1 px-6 py-3 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm">Salvar Alterações</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {/* MODAL: INSUMO */}
       {isInsumoFormOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
