@@ -210,7 +210,7 @@ export default function App() {
   const currentNascimentos = useMemo(() => appData.nascimentos.filter(a => a.propriedadeId === activePropriedadeId), [appData.nascimentos, activePropriedadeId]);
   const currentVacinacoes = useMemo(() => appData.vacinacoes.filter(a => a.propriedadeId === activePropriedadeId), [appData.vacinacoes, activePropriedadeId]);
   const currentInsumos = useMemo(() => appData.insumos.filter(a => a.propriedadeId === activePropriedadeId), [appData.insumos, activePropriedadeId]);
-  const currentCalendario = useMemo(() => appData.calendarioSanitario?.filter(a => a.propriedadeId === activePropriedadeId), [appData.calendarioSanitario, activePropriedadeId]);
+  const currentCalendario = useMemo(() => appData.calendarioSanitario?.filter(a => a.propriedadeId === activePropriedadeId), [appData.calendarioSanitario, activePropriedadeId]); const currentAnotacoes = useMemo(() => appData.anotacoes?.filter(a => a.propriedadeId === activePropriedadeId) || [], [appData.anotacoes, activePropriedadeId]);
 
   // --- CÁLCULOS GERAIS ---
   const totaisFinanceiros = useMemo(() => {
@@ -686,7 +686,7 @@ Equipa BoviGest`);
   const openEditUsuario = (usr) => { setEditingUsuario(usr); setIsUsuarioFormOpen(true); };
 
   // --- NAVEGAÇÃO ---
-  const navItems = [
+  const handleSaveAnotacao = (e) => { e.preventDefault(); const fd = new FormData(e.target); const nova = { id: Date.now(), propriedadeId: activePropriedadeId, titulo: fd.get('titulo'), texto: fd.get('texto'), tag: fd.get('tag') || '', data: new Date().toLocaleDateString('pt-BR'), status: 'aberto' }; setAppData(prev => ({ ...prev, anotacoes: [nova, ...(prev.anotacoes || [])] })); setIsAnotacaoFormOpen(false); showSaveSuccess(); }; const handleDeleteAnotacao = (id) => { if (confirm('Remover esta anotação?')) { setAppData(prev => ({ ...prev, anotacoes: prev.anotacoes.filter(a => a.id !== id) })); showSaveSuccess(); } }; const handleToggleAnotacao = (id) => { setAppData(prev => ({ ...prev, anotacoes: prev.anotacoes.map(a => a.id === id ? { ...a, status: a.status === 'resolvido' ? 'aberto' : 'resolvido' } : a) })); }; const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Painel Central' },
     { id: 'ai-assistant', icon: Sparkles, label: 'Consultor IA' },
     { id: 'nutricao', icon: Wheat, label: 'Nutrição & Dietas' },
