@@ -7,7 +7,7 @@ import {
   Edit, Baby, LayoutDashboard, Scale, Settings,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail
+  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail, MessageSquare, Save
 } from 'lucide-react';
 
 // --- BASE DE DADOS INICIAL ---
@@ -737,6 +737,7 @@ Equipa BoviGest`);
   const insumosCriticos = currentInsumos.filter(i => i.quantidade <= i.estoqueMinimo).length;
 
   return (
+<>
     <div className="min-h-screen bg-slate-50 flex font-sans text-gray-900">
       {/* SIDEBAR */}
       <aside className="w-72 bg-slate-950 border-r border-slate-900 hidden md:flex flex-col shadow-2xl z-20">
@@ -1258,13 +1259,16 @@ return(
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentNascimentos.map((nasc) => (
                       <tr key={nasc.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 font-bold text-gray-700">{nasc.data}</td>
-                        <td className="px-6 py-4"><span className="block font-black text-gray-900">M: {nasc.brincoMatriz}</span><span className="text-sm font-bold text-blue-600">B: {nasc.brincoBezerro}</span></td>
-                        <td className="px-6 py-4 font-bold text-gray-700">{nasc.sexo}</td>
-                                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{nasc.obs || <span className="text-gray-300 italic">Sem obs.</span>}</td>
-                        <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td><td className="px-8 py-5"><button <button onClick={() => handleEditNascimento(nasc)} className="text-blue-500 hover:text-blue-700 mr-3 p-1"><Edit size={15}/></button>onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td><td className="px-8 py-5"><button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
-
-                      </tr>                                        
+                <td className="px-6 py-4 font-bold text-gray-700">{nasc.data}</td>
+                <td className="px-6 py-4"><span className="block font-black text-gray-900">M: {nasc.brincoMatriz}</span><span className="text-sm font-bold text-blue-600">B: {nasc.brincoBezerro}</span></td>
+                <td className="px-6 py-4 font-bold text-gray-700">{nasc.sexo}</td>
+                <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td>
+                <td className="px-6 py-4 text-sm text-gray-500">{nasc.obs}</td>
+                <td className="px-6 py-4 text-right">
+                                    <button onClick={handleEditNascimento.bind(null, nasc)} className="text-blue-500 hover:text-blue-700 mr-3 p-1"><Edit size={15}/></button>
+                  <button onClick={handleDeleteNascimento.bind(null, nasc.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16}/></button>
+                </td>
+              </tr>
                     ))}
                     {currentNascimentos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum nascimento registado.</td></tr>}
                   </tbody>
@@ -2007,7 +2011,6 @@ currentReproducao.map
         </div>
       )}
     </div>
-  );
 
       {/* MODAL: EMAIL NOVO USUÁRIO */}
     {emailModalData && (
@@ -2045,4 +2048,5 @@ currentReproducao.map
         </div>
       </div>
     )}
-}
+  </>
+);}}
