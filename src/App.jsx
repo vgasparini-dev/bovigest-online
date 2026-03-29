@@ -1127,7 +1127,7 @@ Equipa BoviGest`);
                                 <div className={`h-12 w-12 shrink-0 rounded-2xl flex items-center justify-center font-black text-sm mr-5 ${animal.sexo === 'M' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{animal.brinco}</div>
                                 <div>
                                   <div className="text-base font-black text-gray-900">{animal.nome !== '-' ? animal.nome : `BRINCO ${animal.brinco}`}</div>
-                                  <div className="text-sm font-semibold text-gray-500 mt-0.5">{animal.raca} • {animal.categoria}</div>
+                                  <div className="text-sm font-semibold text-gray-500 mt-0.5">{animal.raca} • {animal.categoria}</div>{animal.obs && <div className="text-xs font-medium text-amber-600 mt-1 italic truncate max-w-xs">📝 {animal.obs}</div>}
                                 </div>
                               </div>
                             </td>
