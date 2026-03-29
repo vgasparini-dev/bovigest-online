@@ -7,7 +7,7 @@ import {
   Edit, Baby, LayoutDashboard, Scale, Settings,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail, MessageSquare, Save
+  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail, MessageSquare, Save, NotebookPen
 } from 'lucide-react';
 
 // --- BASE DE DADOS INICIAL ---
@@ -49,7 +49,7 @@ const defaultData = {
   financeiro: [
     { id: 1, propriedadeId: 1, descricao: "Venda lote engorda", categoria: "Venda de Gado", tipo: "receita", valor: 68000, data: "2026-02-18", status: "pago" },
   ],
-  bibliotecaAlimentos: [
+  anotacoes: [],   bibliotecaAlimentos: [
     { id: 1, nome: "Silagem de Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
     { id: 2, nome: "Milho Grão Moído", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 },
   ]
@@ -159,7 +159,7 @@ export default function App() {
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
     const [emailModalData, setEmailModalData] = useState(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);   const [novaAnotacao, setNovaAnotacao] = useState({ titulo: '', texto: '', tag: '' });   const [isAnotacaoFormOpen, setIsAnotacaoFormOpen] = useState(false);   const [filtroAnotacao, setFiltroAnotacao] = useState('');
 
   // --- PERSISTÊNCIA ---
   const [appData, setAppData] = useState(() => {
@@ -700,7 +700,7 @@ Equipa BoviGest`);
     { id: 'pesagens', icon: Scale, label: 'Pesagens' },
     { id: 'insumos', icon: Archive, label: 'Estoque Insumos' },
     { id: 'financeiro', icon: DollarSign, label: 'Financeiro' },
-    { id: 'configuracoes', icon: Settings, label: 'Configurações' },
+    { id: 'anotacoes', icon: NotebookPen, label: 'Anotações' },     { id: 'configuracoes', icon: Settings, label: 'Configurações' },
   ];
 
   if (!isLoggedIn) {
@@ -1468,7 +1468,7 @@ currentReproducao.map
             </div>
           )}
 
-          {/* --- CONFIGURAÇÕES E ACESSOS --- */}
+          {/* --- ANOTAÇÕES GERAIS --- */}       {currentView === 'anotacoes' && (         <div className="animate-in fade-in space-y-6">           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">             <div>               <h3 className="text-2xl font-black text-gray-900 flex items-center"><NotebookPen className="mr-3 text-amber-600" /> Anotações Gerais</h3>               <p className="text-gray-500 text-sm mt-1">Registros livres vinculados à propriedade <b>{propriedadeAtiva.nome}</b></p>             </div>             <button onClick={() => setIsAnotacaoFormOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Nova Anotação</button>           </div>           <div className="relative">             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />             <input type="text" value={filtroAnotacao} onChange={(e) => setFiltroAnotacao(e.target.value)} placeholder="Buscar por título, texto ou tag..." className="w-full pl-12 pr-5 py-3 border border-gray-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-amber-400 shadow-sm" />           </div>           {currentAnotacoes.filter(a => a.titulo.toLowerCase().includes(filtroAnotacao.toLowerCase()) || a.texto.toLowerCase().includes(filtroAnotacao.toLowerCase()) || (a.tag || '').toLowerCase().includes(filtroAnotacao.toLowerCase())).length === 0 && (             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-12 text-center">               <NotebookPen size={48} className="mx-auto text-gray-300 mb-4" />               <p className="text-gray-400 font-bold text-lg">Nenhuma anotação ainda.</p>               <p className="text-gray-400 text-sm mt-1">Clique em "Nova Anotação" para começar.</p>             </div>           )}           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">             {currentAnotacoes.filter(a => a.titulo.toLowerCase().includes(filtroAnotacao.toLowerCase()) || a.texto.toLowerCase().includes(filtroAnotacao.toLowerCase()) || (a.tag || '').toLowerCase().includes(filtroAnotacao.toLowerCase())).map(nota => (               <div key={nota.id} className={`bg-white rounded-2xl border shadow-sm p-6 flex flex-col gap-3 transition-all ${nota.status === 'resolvido' ? 'opacity-60 border-gray-100' : 'border-amber-100'}`}>                 <div className="flex justify-between items-start">                   <div className="flex-1">                     <h4 className={`text-base font-black ${nota.status === 'resolvido' ? 'line-through text-gray-400' : 'text-gray-900'}`}>{nota.titulo}</h4>                     <div className="flex items-center gap-2 mt-1">                       <span className="text-xs text-gray-400 font-medium">{nota.data}</span>                       {nota.tag && <span className="bg-amber-100 text-amber-700 font-bold text-xs px-2 py-0.5 rounded-full">{nota.tag}</span>}                     </div>                   </div>                   <button onClick={() => handleDeleteAnotacao(nota.id)} className="text-red-300 hover:text-red-500 ml-2 shrink-0"><Trash2 size={16}/></button>                 </div>                 <p className="text-sm text-gray-600 flex-1 whitespace-pre-wrap">{nota.texto}</p>                 <button onClick={() => handleToggleAnotacao(nota.id)} className={`w-full py-2 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${nota.status === 'resolvido' ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}`}>                   <CheckCircle2 size={16} />                   {nota.status === 'resolvido' ? 'Reabrir' : 'Marcar como Resolvido'}                 </button>               </div>             ))}           </div>           {isAnotacaoFormOpen && (             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">               <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">                 <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-amber-50 shrink-0">                   <h2 className="text-xl font-black text-amber-900 flex items-center"><NotebookPen className="mr-3 text-amber-600"/> Nova Anotação</h2>                   <button onClick={() => setIsAnotacaoFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>                 </div>                 <form id="anotacaoForm" onSubmit={handleSaveAnotacao} className="p-6 space-y-4">                   <div><label className="block text-sm font-bold mb-1">Título *</label><input required name="titulo" className="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-amber-400" placeholder="Ex: Observação sobre o lote 2..." /></div>                   <div><label className="block text-sm font-bold mb-1">Tag / Categoria</label><input name="tag" className="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-amber-400" placeholder="Ex: sanidade, compra, urgente" /></div>                   <div><label className="block text-sm font-bold mb-1">Anotação *</label><textarea required name="texto" rows={5} className="w-full px-4 py-3 border rounded-xl resize-none outline-none focus:ring-2 focus:ring-amber-400" placeholder="Escreva sua anotação aqui..." /></div>                 </form>                 <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">                   <button onClick={() => setIsAnotacaoFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>                   <button type="submit" form="anotacaoForm" className="px-6 py-3 rounded-xl font-bold bg-amber-600 text-white">Salvar</button>                 </div>               </div>             </div>           )}         </div>       )}        {/* --- CONFIGURAÇÕES E ACESSOS --- */}}
           {currentView === 'configuracoes' && (
             <div className="animate-in fade-in space-y-6">
               
