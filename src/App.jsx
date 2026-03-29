@@ -1747,7 +1747,7 @@ currentReproducao.map
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-red-50 shrink-0">
-              <h2 className="text-xl font-black text-red-900 flex items-center"><Syringe className="mr-3 text-red-600"/> Registar Tratamento</h2>
+              <h2 className="text-xl font-black text-red-900 flex items-center"><ShieldAlert className="mr-3 text-red-600"/> Registar Tratamento</h2>
               <button onClick={() => setIsVaccineFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
             <form id="vaccineForm" onSubmit={handleAddVaccine} className="p-6 space-y-4">
