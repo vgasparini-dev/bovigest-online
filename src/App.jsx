@@ -136,7 +136,7 @@ export default function App() {
   const [isReproducaoFormOpen, setIsReproducaoFormOpen] = useState(false);
   const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
   const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
-  const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
+  const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);   const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);   const [consumoInsumoSelecionado, setConsumoInsumoSelecionado] = useState(null);   const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);   const [consumoInsumoSelecionado, setConsumoInsumoSelecionado] = useState(null);   const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);   const [consumoInsumoSelecionado, setConsumoInsumoSelecionado] = useState(null); const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false); const [consumoInsumoSelecionado, setConsumoInsumoSelecionado] = useState(null);
   const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
     const [editingReproducao, setEditingReproducao] = useState(null);
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
@@ -642,7 +642,7 @@ Equipa BoviGest`);
     showSaveSuccess();
   };
 
-  const handleDeleteInsumo = (id) => {
+  const handleLancarConsumo = (e) => { e.preventDefault(); const fd = new FormData(e.target); const qtd = Number(fd.get('quantidade')); const obs = fd.get('obs') || ''; setAppData(prev => ({ ...prev, insumos: prev.insumos.map(i => i.id === consumoInsumoSelecionado.id ? { ...i, quantidade: Math.max(0, i.quantidade - qtd) } : i) })); setIsConsumoFormOpen(false); setConsumoInsumoSelecionado(null); showSaveSuccess(); }; const handleLancarConsumo = (e) => {     e.preventDefault();     const fd = new FormData(e.target);     const quantidade = Number(fd.get('quantidade'));     setAppData(prev => ({       ...prev,       insumos: prev.insumos.map(i =>         i.id === consumoInsumoSelecionado?.id           ? { ...i, quantidade: Math.max(0, i.quantidade - quantidade) }           : i       )     }));     setIsConsumoFormOpen(false);     setConsumoInsumoSelecionado(null);     showSaveSuccess();   };   const handleDeleteInsumo = (id) => {
     if (confirm('Tem a certeza que deseja remover este insumo?')) {
       setAppData(prev => ({ ...prev, insumos: prev.insumos.filter(i => i.id !== id) }));
       showSaveSuccess();
@@ -1409,7 +1409,7 @@ return(
                           <td className="px-6 py-4"><span className="block font-black text-gray-900">{ins.nome}</span><span className="text-sm font-bold text-gray-500">{ins.categoria}</span></td>
                           <td className="px-6 py-4 text-right font-black text-gray-900">{ins.quantidade} {ins.unidade}</td>
                           <td className="px-6 py-4 text-right font-bold text-gray-500">{ins.estoqueMinimo} {ins.unidade}</td>
-                          <td className="px-6 py-4 text-right">{isCritico ? <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">Crítico</span> : <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded text-xs">Normal</span>}</td><td className="px-8 py-5"><button onClick={() => handleDeleteInsumo(ins.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
+                          <td className="px-6 py-4 text-right">{isCritico ? <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">Crítico</span> : <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded text-xs">Normal</span>}</td><td className="px-8 py-5"><button <button onClick={() => { setConsumoInsumoSelecionado(ins); setIsConsumoFormOpen(true); }} className="text-purple-600 hover:text-purple-800 font-bold text-xs px-3 py-1.5 rounded-lg border border-purple-200 hover:bg-purple-50 mr-2">- Consumo</button><button onClick={() => { setConsumoInsumoSelecionado(ins); setIsConsumoFormOpen(true); }} className="text-purple-600 hover:text-purple-800 font-bold px-3 py-1 rounded-lg border border-purple-200 hover:bg-purple-50 text-xs mr-2">Lançar Consumo</button><button onClick={() => handleDeleteInsumo(ins.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
                         </tr>
                       );
                     })}
@@ -1887,7 +1887,7 @@ currentReproducao.map
           </div>
         </div>
       )}
-      {/* MODAL: INSUMO */}
+      {/* MODAL: LANÇAR CONSUMO */}       {isConsumoFormOpen && consumoInsumoSelecionado && (         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-purple-50 shrink-0">               <h2 className="text-xl font-black text-purple-900 flex items-center"><Archive className="mr-3 text-purple-600"/> Lançar Consumo</h2>               <button onClick={() => { setIsConsumoFormOpen(false); setConsumoInsumoSelecionado(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>             </div>             <form id="consumoForm" onSubmit={handleLancarConsumo} className="p-6 space-y-4">               <div className="bg-purple-50 p-4 rounded-xl">                 <p className="font-black text-purple-900">{consumoInsumoSelecionado.nome}</p>                 <p className="text-sm text-purple-700">Estoque atual: <strong>{consumoInsumoSelecionado.quantidade} {consumoInsumoSelecionado.unidade}</strong></p>               </div>               <div><label className="block text-sm font-bold mb-1">Quantidade Consumida *</label><input required type="number" name="quantidade" min="1" max={consumoInsumoSelecionado.quantidade} className="w-full px-4 py-3 border rounded-xl" placeholder="Ex: 10" /></div>               <div><label className="block text-sm font-bold mb-1">Motivo / Observação</label><input name="motivo" className="w-full px-4 py-3 border rounded-xl" placeholder="Ex: Fornecimento lote Confinamento 1" /></div>             </form>             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">               <button onClick={() => { setIsConsumoFormOpen(false); setConsumoInsumoSelecionado(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>               <button type="submit" form="consumoForm" className="px-6 py-3 rounded-xl font-bold bg-purple-600 text-white">Lançar</button>             </div>           </div>         </div>       )}       {/* MODAL: INSUMO */}
       {isInsumoFormOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
