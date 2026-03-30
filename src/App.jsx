@@ -7,51 +7,36 @@ import {
   Edit, Baby, LayoutDashboard, Scale, Settings,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail, MessageSquare, Save, NotebookPen
+  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail, MinusCircle
 } from 'lucide-react';
 
-// --- BASE DE DADOS INICIAL ---
+// --- BASE DE DADOS INICIAL (Usada apenas se o navegador estiver vazio) ---
 const defaultData = {
   propriedades: [
     { id: 1, nome: "Fazenda São João", responsavel: "Victor Luiz Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" }
   ],
   usuarios: [
-    { id: 1, nome: "Victor Luiz Gasparini", email: "victorluizgasparini@gmail.com", senha: "Lu1z1502#", role: "Admin", status: "Ativo" },     { id: 2, nome: "Lucas Winter", email: "lucasff99@hotmail.com", senha: "123456", role: "Operador", status: "Ativo" },     { id: 3, nome: "Vivtor", email: "victorluizgasparini@hotmail.com", senha: "22023342", role: "Operador", status: "Ativo" }
+    { id: 1, nome: "Victor Luiz Gasparini", email: "victorluizgasparini@gmail.com", senha: "Lu1z1502#", role: "Admin", status: "Ativo" }
   ],
   calendarioSanitario: [
-
     { id: 1, propriedadeId: 1, doenca: "Brucelose", mes: "1º Semestre", publico: "Fêmeas de 3 a 8 meses", obrigatorio: true },
     { id: 2, propriedadeId: 1, doenca: "Raiva", mes: "Maio", publico: "Todo o rebanho", obrigatorio: true },
     { id: 3, propriedadeId: 1, doenca: "Clostridioses", mes: "Novembro", publico: "Todo o rebanho (Reforço)", obrigatorio: false },
     { id: 4, propriedadeId: 1, doenca: "Febre Aftosa", mes: "N/A", publico: "RO Livre sem vacinação", obrigatorio: false }
   ],
-  lotes: [
-    { id: 1, propriedadeId: 1, nome: "Matrizes A", capacidade: 50, tipo: "Pasto", obs: "Pasto Central" },
-    { id: 2, propriedadeId: 1, nome: "Confinamento 1", capacidade: 100, tipo: "Baia", obs: "Terminação" },
-  ],
-  animais: [
-    { id: 1, propriedadeId: 1, brinco: "001", nome: "Mimosa", sexo: "F", categoria: "Vaca", tipo: "Cria", raca: "Nelore", dataNasc: "2020-03-15", peso: 420, ativo: true, lote: "Matrizes A", obs: "Matriz principal." },
-    { id: 2, propriedadeId: 1, brinco: "105", nome: "Soberano", sexo: "M", categoria: "Boi Gordo", tipo: "Corte", raca: "Angus", dataNasc: "2024-01-10", peso: 490, ativo: true, lote: "Confinamento 1", obs: "Fase de terminação." },
-  ],
-  pesagens: [
-    { id: 1, propriedadeId: 1, brinco: "105", data: "2025-11-10", pesoAnterior: 400, pesoAtual: 450, obs: "Entrada seca" },
-  ],
-  reproducao: [
-    { id: 1, propriedadeId: 1, brincoVaca: "001", dataInseminacao: "2025-06-10", previsaoParto: "2026-03-15", metodo: "IA", reprodutor: "Nelore PO", status: "Prenhe" },
-  ],
+  lotes: [],
+  animais: [],
+  pesagens: [],
+  reproducao: [],
   nascimentos: [],
-  vacinacoes: [
-    { id: 1, propriedadeId: 1, vacina: "Ivermectina 1%", lote: "Confinamento 1", dataAplicacao: "2026-03-10", proximaDose: null, qtdAnimais: 80, obs: "Controlo parasitário", carenciaDias: 35, dataLiberacao: "2026-04-14", status: "concluida" },
-  ],
-  insumos: [
-    { id: 1, propriedadeId: 1, nome: "Sal Mineral 80", categoria: "Nutrição", quantidade: 50, unidade: "kg", estoqueMinimo: 100 },
-  ],
-  financeiro: [
-    { id: 1, propriedadeId: 1, descricao: "Venda lote engorda", categoria: "Venda de Gado", tipo: "receita", valor: 68000, data: "2026-02-18", status: "pago" },
-  ],
-  anotacoes: [],   bibliotecaAlimentos: [
+  vacinacoes: [],
+  insumos: [],
+  financeiro: [],
+  bibliotecaAlimentos: [
     { id: 1, nome: "Silagem de Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
     { id: 2, nome: "Milho Grão Moído", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 },
+    { id: 3, nome: "Farelo de Soja (46%)", ms: 89, elm: 2.05, elg: 1.40, pm: 320, ca: 3.5, p: 6.5, precoKg: 2.50 },
+    { id: 4, nome: "Ureia Pecuária", ms: 100, elm: 0, elg: 0, pm: 1200, ca: 0, p: 0, precoKg: 3.80 }
   ]
 };
 
@@ -69,45 +54,32 @@ const calcularExigenciasNASEM = (peso, gpd) => {
 };
 
 const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, modelName) => {
+  if (!userApiKey) {
+    return "⚠️ Atenção Administrador: Para que eu possa analisar os dados e conversar consigo, é necessário configurar a sua Chave API (API Key) do Google Gemini na aba 'Configurações'. Sem ela, o módulo de IA permanece inativo por razões de segurança do servidor.";
+  }
+
+  const apiKey = userApiKey.trim(); 
+  const baseEndpoint = endpointUrl || "https://generativelanguage.googleapis.com/v1beta/models";
+  const model = modelName || "gemini-2.5-flash-preview-09-2025";
+  const cleanEndpoint = baseEndpoint.endsWith('/') ? baseEndpoint.slice(0, -1) : baseEndpoint;
+  const url = `${cleanEndpoint}/${model}:generateContent?key=${apiKey}`;
+  
+  const payload = {
+    contents: [{ parts: [{ text: systemInstruction + "\n\nConsulta do Utilizador: " + prompt }] }]
+  };
+  
   try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, systemInstruction }),
-    });
+    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!response.ok) {
-      return `❌ Erro de Ligação IA (Status ${response.status}). Verifique se a sua Chave API está correta e se o modelo "llama-3.3-70b-versatile" está disponível.`;
+      return `❌ Erro de Ligação IA (Status ${response.status}). Verifique se a sua Chave API está correta e se o modelo "${model}" está disponível para a sua conta.`;
     }
     const result = await response.json();
-    return result.text || 'Sem resposta do modelo.';
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta do modelo.";
   } catch (error) {
-    return `❌ Erro de Comunicação: ${error.message}`;
+    return `❌ Erro de Comunicação: Falha ao ligar ao servidor da Google. Verifique a sua ligação de rede ou as configurações de API.`;
   }
 };
 
-// --- COMPONENTE DE OBSERVAÇÕES DO ANIMAL ---
-function ObsEditor({ animal, onSave }) {
-  const [text, setText] = React.useState(animal?.obs || '');
-  React.useEffect(() => { setText(animal?.obs || ''); }, [animal?.id]);
-  return (
-    <div>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={4}
-        placeholder="Adicione observações sobre este animal..."
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none outline-none focus:ring-2 focus:ring-green-400 text-sm text-gray-700"
-      />
-      <button
-        type="button"
-        onClick={() => onSave(animal.id, text)}
-        className="mt-2 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold text-sm"
-      >
-        <Save size={14}/> Salvar Observação
-      </button>
-    </div>
-  );
-}
 export default function App() {
   // --- AUTENTICAÇÃO E NAVEGAÇÃO ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -136,15 +108,13 @@ export default function App() {
   const [isReproducaoFormOpen, setIsReproducaoFormOpen] = useState(false);
   const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
   const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
-  const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);   const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);   const [consumoInsumoSelecionado, setConsumoInsumoSelecionado] = useState(null);   const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);   const [consumoInsumoSelecionado, setConsumoInsumoSelecionado] = useState(null);   const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);   const [consumoInsumoSelecionado, setConsumoInsumoSelecionado] = useState(null); const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false); const [consumoInsumoSelecionado, setConsumoInsumoSelecionado] = useState(null);
+  const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
+  const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);
+  const [insumoParaConsumo, setInsumoParaConsumo] = useState(null);
   const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
-    const [editingReproducao, setEditingReproducao] = useState(null);
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
-  const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);   const [isCalendarioEditFormOpen, setIsCalendarioEditFormOpen] = useState(false);   const [editingCalendario, setEditingCalendario] = useState(null);
-    const [animalDetailTab, setAnimalDetailTab] = useState('info');
-      const [editingNascimento, setEditingNascimento] = useState(null);
-        const [isNascimentoEditFormOpen, setIsNascimentoEditFormOpen] = useState(false);
+  const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
 
   // Estados Nutrição
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
@@ -158,10 +128,10 @@ export default function App() {
   const [chatMessages, setChatMessages] = useState([{ role: 'model', text: 'Olá! Sou o seu Consultor Agro IA. Como posso ajudar com a gestão da sua fazenda hoje?' }]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
-    const [emailModalData, setEmailModalData] = useState(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);   const [novaAnotacao, setNovaAnotacao] = useState({ titulo: '', texto: '', tag: '' });   const [isAnotacaoFormOpen, setIsAnotacaoFormOpen] = useState(false);   const [filtroAnotacao, setFiltroAnotacao] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // --- PERSISTÊNCIA ---
+  // --- PERSISTÊNCIA CHAVE DE MEMÓRIA ---
+  // ESTA É A CHAVE QUE GARANTE QUE OS SEUS DADOS NÃO SE PERDEM
   const [appData, setAppData] = useState(() => {
     const saved = localStorage.getItem('bovigest_data_pro_master');
     if (saved) {
@@ -176,11 +146,11 @@ export default function App() {
   useEffect(() => { localStorage.setItem('bovigest_ai_model', aiModel); }, [aiModel]);
 
   // --- LOGIN COM VALIDAÇÃO DE CONVITE ---
-  const handleLogin = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
     const email = e.target.email.value;
     const senha = e.target.senha.value;
-    const validUser = appData.usuarios.find(u => u.email === email && u.senha === senha && (u.status === 'Ativo' || u.status === 'Pendente'));
+    const validUser = appData.usuarios.find(u => u.email === email && u.senha === senha);
     
     if (validUser) { 
       if (validUser.status === 'Pendente') {
@@ -195,7 +165,7 @@ export default function App() {
       setLoginError(""); 
     } 
     else { 
-      // Tentar login via API centralizada (usuários de outros dispositivos)       try {         const resp = await fetch(`/api/usuarios?action=login&email=${encodeURIComponent(email)}&senha=${encodeURIComponent(senha)}`);         if (resp.ok) {           const apiResult = await resp.json();           if (apiResult.success && apiResult.user) {             setCurrentUser(apiResult.user);             setIsLoggedIn(true);             setLoginError("");             return;           }         }       } catch (_) {}       setLoginError("Credenciais inválidas. Verifique o email e senha inseridos."); 
+      setLoginError("Credenciais inválidas. Verifique o email e senha inseridos."); 
     }
   };
 
@@ -210,7 +180,7 @@ export default function App() {
   const currentNascimentos = useMemo(() => appData.nascimentos.filter(a => a.propriedadeId === activePropriedadeId), [appData.nascimentos, activePropriedadeId]);
   const currentVacinacoes = useMemo(() => appData.vacinacoes.filter(a => a.propriedadeId === activePropriedadeId), [appData.vacinacoes, activePropriedadeId]);
   const currentInsumos = useMemo(() => appData.insumos.filter(a => a.propriedadeId === activePropriedadeId), [appData.insumos, activePropriedadeId]);
-  const currentCalendario = useMemo(() => appData.calendarioSanitario?.filter(a => a.propriedadeId === activePropriedadeId), [appData.calendarioSanitario, activePropriedadeId]); const currentAnotacoes = useMemo(() => appData.anotacoes?.filter(a => a.propriedadeId === activePropriedadeId) || [], [appData.anotacoes, activePropriedadeId]);
+  const currentCalendario = useMemo(() => appData.calendarioSanitario?.filter(a => a.propriedadeId === activePropriedadeId), [appData.calendarioSanitario, activePropriedadeId]);
 
   // --- CÁLCULOS GERAIS ---
   const totaisFinanceiros = useMemo(() => {
@@ -347,32 +317,8 @@ export default function App() {
   // --- HANDLERS IA ---
   const handleAnalyzeFarm = async () => {
     setIsAnalyzing(true);
-        const context = `
-PROPRIEDADE: ${propriedadeAtiva?.nome}
-LOCALIZAÇÃO: ${propriedadeAtiva?.cidade} - ${propriedadeAtiva?.estado}
-ÁREA: ${propriedadeAtiva?.area_ha} hectares
-
-REBANHO:
-- Total: ${currentAnimais.length} cabeças
-- Peso Médio: ${pesoMedio}kg
-- Distribuição: ${Object.entries(distribuicaoCategorias).map(([cat, qtd]) => `${cat}: ${qtd}`).join(', ')}
-- Gado de Corte: ${gadoDeCorte.length} animais
-
-FINANCEIRO:
-- Receitas: ${formatCurrency(totaisFinanceiros.receitas)}
-- Despesas: ${formatCurrency(totaisFinanceiros.despesas)}
-- Saldo: ${formatCurrency(saldoAtual)}
-- Custo/@: ${formatCurrency(custoPorArroba)}
-
-INFRAESTRUTURA:
-- Lotes/Pastagens: ${currentLotes.length}
-- Capacidade Total: ${currentLotes.reduce((acc, l) => acc + l.capacidade, 0)} cabeças
-
-REPRODUÇÃO:
-- Matrizes Prenhes: ${currentReproducao.filter(r => r.status === 'Prenhe').length}
-- Nascimentos Registados: ${currentNascimentos.length}
-`;
-        const prompt = "Faça uma análise técnica completa da fazenda, incluindo: 1) Indicadores de performance, 2) Pontos de atenção, 3) Oportunidades de melhoria, 4) Estratégias de rentabilidade.";
+    const context = `Rebanho: ${currentAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFinanceiros.receitas)}. Despesas: ${formatCurrency(totaisFinanceiros.despesas)}. Lotes: ${currentLotes.length}. Propriedade: ${propriedadeAtiva?.nome}.`;
+    const prompt = "Faça uma análise executiva e aponte os indicadores positivos e uma estratégia de lucro.";
     const result = await callGemini(prompt, "És um consultor especialista em agronegócio.", geminiApiKey, aiEndpoint, aiModel);
     setAiInsights(result);
     setIsAnalyzing(false);
@@ -487,6 +433,29 @@ REPRODUÇÃO:
     setAppData(prev => ({ ...prev, insumos: [{ id: Date.now(), propriedadeId: activePropriedadeId, nome: fd.get('nome'), categoria: fd.get('categoria'), quantidade: Number(fd.get('quantidade')), unidade: fd.get('unidade'), estoqueMinimo: Number(fd.get('estoqueMinimo')) }, ...prev.insumos] })); 
     setIsInsumoFormOpen(false); showSaveSuccess(); 
   };
+
+  const handleConsumoInsumo = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const qtdConsumida = Number(fd.get('quantidadeConsumo'));
+    
+    setAppData(prev => ({
+      ...prev,
+      insumos: prev.insumos.map(ins => 
+        ins.id === insumoParaConsumo.id 
+          ? { ...ins, quantidade: Math.max(0, ins.quantidade - qtdConsumida) } 
+          : ins
+      )
+    }));
+    setIsConsumoFormOpen(false); setInsumoParaConsumo(null); showSaveSuccess();
+  };
+
+  const handleDeleteInsumo = (id) => {
+    if (confirm('Tem a certeza que deseja remover este insumo do sistema?')) {
+      setAppData(prev => ({ ...prev, insumos: prev.insumos.filter(i => i.id !== id) }));
+      showSaveSuccess();
+    }
+  };
   
   const handleAddReproducao = (e) => { 
     e.preventDefault(); 
@@ -549,41 +518,11 @@ REPRODUÇÃO:
     } else {
       setAppData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
       
-    // Em vez de abrir mailto diretamente, mostrar modal
-    setEmailModalData({
-      nome: novoUsr.nome,
-      email: novoUsr.email,
-      senha: novoUsr.senha,
-      role: novoUsr.role
-    });    }
+      const subject = encodeURIComponent("Convite de Acesso - BoviGest PRO");
+      const body = encodeURIComponent(`Olá ${novoUsr.nome},\n\nFoi convidado a aceder ao sistema BoviGest PRO.\n\nO seu email de acesso: ${novoUsr.email}\nA sua senha provisória: ${novoUsr.senha}\n\nAceda à plataforma e faça login para confirmar o seu registo.\n\nAtenciosamente,\nAdministração`);
+      window.location.href = `mailto:${novoUsr.email}?subject=${subject}&body=${body}`;
+    }
     setIsUsuarioFormOpen(false); setEditingUsuario(null); showSaveSuccess();
-  };
-
-    // Função para enviar email
-  const handleSendEmail = () => {
-    const subject = encodeURIComponent("Convite de Acesso - BoviGest PRO");
-    const body = encodeURIComponent(`Olá ${emailModalData.nome},
-
-Foi convidado(a) a aceder ao sistema BoviGest PRO.
-
-🔑 DADOS DE ACESSO:
-Email: ${emailModalData.email}
-Senha Provisória: ${emailModalData.senha}
-Nível de Acesso: ${emailModalData.role}
-
-🌐 ACEDER AO SISTEMA:
-https://bovigest-online.vercel.app/
-
-⚠️ IMPORTANTE:
-- Recomendamos alterar a senha no primeiro acesso
-- Mantenha suas credenciais em local seguro
-- Em caso de dúvidas, contacte o administrador
-
-Atenciosamente,
-Equipa BoviGest`);
-    
-    window.location.href = `mailto:${emailModalData.email}?subject=${subject}&body=${body}`;
-    setEmailModalData(null);
   };
 
   const handleDeleteUsuario = (id) => {
@@ -606,101 +545,25 @@ Equipa BoviGest`);
     } 
   };
 
-    const handleSaveObsAnimal = (animalId, novaObs) => {
-    setAppData(prev => ({ ...prev, animais: prev.animais.map(a => a.id === animalId ? { ...a, obs: novaObs } : a) }));
-    setSelectedAnimal(prev => ({ ...prev, obs: novaObs }));
-    showSaveSuccess();
-  };
-
-        const handleDeleteNascimento = (id) => {
-    if (confirm('Tem a certeza que deseja remover este nascimento?')) {
-      setAppData(prev => ({ ...prev, nascimentos: prev.nascimentos.filter(n => n.id !== id) }));
-      showSaveSuccess();
-    }
-  };
-
-    const handleEditNascimento = (nasc) => {
-    setEditingNascimento(nasc);
-    setIsNascimentoEditFormOpen(true);
-  };
-
-  const handleSaveNascimentoEdit = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const updated = {
-      ...editingNascimento,
-      data: fd.get('data'),
-      brincoMatriz: fd.get('brincoMatriz'),
-      brincoBezerro: fd.get('brincoBezerro'),
-      sexo: fd.get('sexo'),
-      pesoNascimento: Number(fd.get('pesoNascimento')),
-      obs: fd.get('obs') || ''
-    };
-    setAppData(prev => ({ ...prev, nascimentos: prev.nascimentos.map(n => n.id === updated.id ? updated : n) }));
-    setIsNascimentoEditFormOpen(false);
-    setEditingNascimento(null);
-    showSaveSuccess();
-  };
-
-  const handleLancarConsumo = (e) => { e.preventDefault(); const fd = new FormData(e.target); const qtd = Number(fd.get('quantidade')); const obs = fd.get('obs') || ''; setAppData(prev => ({ ...prev, insumos: prev.insumos.map(i => i.id === consumoInsumoSelecionado.id ? { ...i, quantidade: Math.max(0, i.quantidade - qtd) } : i) })); setIsConsumoFormOpen(false); setConsumoInsumoSelecionado(null); showSaveSuccess(); }; const handleLancarConsumo = (e) => {     e.preventDefault();     const fd = new FormData(e.target);     const quantidade = Number(fd.get('quantidade'));     setAppData(prev => ({       ...prev,       insumos: prev.insumos.map(i =>         i.id === consumoInsumoSelecionado?.id           ? { ...i, quantidade: Math.max(0, i.quantidade - quantidade) }           : i       )     }));     setIsConsumoFormOpen(false);     setConsumoInsumoSelecionado(null);     showSaveSuccess();   };   const handleDeleteInsumo = (id) => {
-    if (confirm('Tem a certeza que deseja remover este insumo?')) {
-      setAppData(prev => ({ ...prev, insumos: prev.insumos.filter(i => i.id !== id) }));
-      showSaveSuccess();
-    }
-  };
-
-  const handleDeleteVacinacao = (id) => {
-    if (confirm('Tem a certeza que deseja remover este registo de vacinação?')) {
-      setAppData(prev => ({ ...prev, vacinacoes: prev.vacinacoes.filter(v => v.id !== id) }));
-      showSaveSuccess();
-    }
-  };
-
-  const handleDeletePesagem = (id) => {
-    if (confirm('Tem a certeza que deseja remover esta pesagem?')) {
-      setAppData(prev => ({ ...prev, pesagens: prev.pesagens.filter(p => p.id !== id) }));
-      showSaveSuccess();
-    }
-  };
-
-  const handleDeleteFinanceiro = (id) => {
-    if (confirm('Tem a certeza que deseja remover este lançamento?')) {
-      setAppData(prev => ({ ...prev, financeiro: prev.financeiro.filter(f => f.id !== id) }));
-      showSaveSuccess();
-    }
-  };
-
-  const handleDeleteReproducao = (id) => {
-    if (confirm('Tem a certeza que deseja remover este registo de inseminação?')) {
-      setAppData(prev => ({ ...prev, reproducao: prev.reproducao.filter(r => r.id !== id) }));
-      showSaveSuccess();
-    }
-  };
-
-  const handleEditReproducao = (reproducao) => {
-    setEditingReproducao(reproducao);
-    setIsReproducaoFormOpen(true);
-  };
-
   const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
   const openEditUsuario = (usr) => { setEditingUsuario(usr); setIsUsuarioFormOpen(true); };
 
   // --- NAVEGAÇÃO ---
-  const handleSaveAnotacao = (e) => { e.preventDefault(); const fd = new FormData(e.target); const nova = { id: Date.now(), propriedadeId: activePropriedadeId, titulo: fd.get('titulo'), texto: fd.get('texto'), tag: fd.get('tag') || '', data: new Date().toLocaleDateString('pt-BR'), status: 'aberto' }; setAppData(prev => ({ ...prev, anotacoes: [nova, ...(prev.anotacoes || [])] })); setIsAnotacaoFormOpen(false); showSaveSuccess(); }; const handleDeleteAnotacao = (id) => { if (confirm('Remover esta anotação?')) { setAppData(prev => ({ ...prev, anotacoes: prev.anotacoes.filter(a => a.id !== id) })); showSaveSuccess(); } }; const handleToggleAnotacao = (id) => { setAppData(prev => ({ ...prev, anotacoes: prev.anotacoes.map(a => a.id === id ? { ...a, status: a.status === 'resolvido' ? 'aberto' : 'resolvido' } : a) })); }; const navItems = [
+  const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Painel Central' },
     { id: 'ai-assistant', icon: Sparkles, label: 'Consultor IA' },
     { id: 'nutricao', icon: Wheat, label: 'Nutrição & Dietas' },
     { id: 'propriedades', icon: MapPin, label: 'Propriedades' },
     { id: 'animais', icon: Beef, label: 'Rebanho Geral', badge: currentAnimais.length },
     { id: 'gado_corte', icon: Target, label: 'Gado de Corte', badge: gadoDeCorte.length },
-    // { id: 'pastagens', icon: LayoutGrid, label: 'Pastagens / Lotes', badge: currentLotes.length },
+    { id: 'pastagens', icon: LayoutGrid, label: 'Pastagens / Lotes', badge: currentLotes.length },
     { id: 'reproducao', icon: HeartPulse, label: 'Inseminações' },
     { id: 'nascimentos', icon: Baby, label: 'Nascimentos', badge: currentNascimentos.length },
     { id: 'sanidade', icon: ShieldAlert, label: 'Sanidade Clínica' },
     { id: 'pesagens', icon: Scale, label: 'Pesagens' },
     { id: 'insumos', icon: Archive, label: 'Estoque Insumos' },
     { id: 'financeiro', icon: DollarSign, label: 'Financeiro' },
-    { id: 'anotacoes', icon: NotebookPen, label: 'Anotações' },     { id: 'configuracoes', icon: Settings, label: 'Configurações' },
+    { id: 'configuracoes', icon: Settings, label: 'Configurações' },
   ];
 
   if (!isLoggedIn) {
@@ -737,7 +600,6 @@ Equipa BoviGest`);
   const insumosCriticos = currentInsumos.filter(i => i.quantidade <= i.estoqueMinimo).length;
 
   return (
-<>
     <div className="min-h-screen bg-slate-50 flex font-sans text-gray-900">
       {/* SIDEBAR */}
       <aside className="w-72 bg-slate-950 border-r border-slate-900 hidden md:flex flex-col shadow-2xl z-20">
@@ -884,7 +746,7 @@ Equipa BoviGest`);
                     <h3 className="text-2xl font-black text-gray-900 flex items-center mb-2">Relatório Inteligente <Sparkles className="ml-3 text-green-500" size={24} /></h3>
                     <p className="text-gray-500 font-medium mb-6">A Inteligência Artificial analisa os seus dados e gera estratégias para otimizar lucro e maneio.</p>
                     
-                    {(false) ? (
+                    {!geminiApiKey ? (
                       <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-200 text-sm font-bold flex items-start">
                         <AlertTriangle className="w-5 h-5 mr-2 shrink-0 mt-0.5" />
                         <p>Para ativar os Relatórios, insira a sua API Key do Gemini na aba <b>Configurações</b>.</p>
@@ -906,65 +768,6 @@ Equipa BoviGest`);
               </div>
             </div>
           )}
-
-                    {/* --- CONSULTOR IA --- */}
-{currentView === 'ai-assistant' && (
-  <div className="max-w-5xl mx-auto space-y-6">
-    <div className="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-2xl p-6 shadow-lg">
-      <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-        <Sparkles className="w-7 h-7 mr-3 text-purple-600" />
-        Análise Inteligente da Propriedade
-      </h3>
-      {(false) ? (
-        <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded-xl">
-          ⚠️ Configure sua API Key do Google Gemini em <strong>Configurações</strong> para ativar a IA.
-        </div>
-      ) : (
-        <button onClick={handleAnalyzeFarm} disabled={isAnalyzing} className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl font-bold shadow-lg flex items-center transition-all disabled:opacity-50">
-          {isAnalyzing ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Bot className="w-5 h-5 mr-2" />}
-          {isAnalyzing ? 'Analisando Dados...' : 'Gerar Análise Completa'}
-        </button>
-      )}
-      {aiInsights && (
-        <div className="mt-6 bg-white border border-gray-200 rounded-xl p-6 whitespace-pre-wrap text-gray-800 shadow-sm">
-          {aiInsights}
-        </div>
-      )}
-    </div>
-    <div className="bg-white border-2 border-gray-200 rounded-2xl shadow-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
-        <h3 className="text-xl font-bold text-white flex items-center">
-          <Bot className="w-6 h-6 mr-2" />
-          Assistente Virtual BoviGest
-        </h3>
-      </div>
-      <div className="h-96 overflow-y-auto p-6 space-y-4 bg-gray-50">
-        {chatMessages.map((msg, idx) => (
-          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-lg px-5 py-3 rounded-2xl shadow-md ${msg.role === 'user' ? 'bg-green-600 text-white' : 'bg-white text-gray-800 border border-gray-200'}`}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        {isChatLoading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-200 px-5 py-3 rounded-2xl flex items-center">
-              <Loader2 className="w-5 h-5 animate-spin text-gray-600" />
-              <span className="ml-2 text-gray-600">Pensando...</span>
-            </div>
-          </div>
-        )}
-      </div>
-      <form onSubmit={handleSendMessage} className="p-4 bg-white border-t-2 border-gray-200 flex gap-3">
-        <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Digite sua pergunta sobre a gestão da fazenda..." className="flex-1 px-5 py-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-green-500" disabled={isChatLoading} />
-        <button type="submit" disabled={isChatLoading || !chatInput.trim() || !geminiApiKey} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-md flex items-center transition-all disabled:opacity-40">
-          <Send className="w-5 h-5" />
-        </button>
-      </form>
-    </div>
-  </div>
-)}
-
 
           {/* --- NUTRIÇÃO (NASEM) --- */}
           {currentView === 'nutricao' && (
@@ -1127,7 +930,7 @@ Equipa BoviGest`);
                                 <div className={`h-12 w-12 shrink-0 rounded-2xl flex items-center justify-center font-black text-sm mr-5 ${animal.sexo === 'M' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{animal.brinco}</div>
                                 <div>
                                   <div className="text-base font-black text-gray-900">{animal.nome !== '-' ? animal.nome : `BRINCO ${animal.brinco}`}</div>
-                                  <div className="text-sm font-semibold text-gray-500 mt-0.5">{animal.raca} • {animal.categoria}</div>{animal.obs && <div className="text-xs font-medium text-amber-600 mt-1 italic truncate max-w-xs">📝 {animal.obs}</div>}
+                                  <div className="text-sm font-semibold text-gray-500 mt-0.5">{animal.raca} • {animal.categoria}</div>
                                 </div>
                               </div>
                             </td>
@@ -1193,9 +996,10 @@ Equipa BoviGest`);
                 <button onClick={() => setIsLoteFormOpen(true)} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Lote</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {currentLotes?.map((lote) => {
+                {currentLotes.map(lote => {
                   const animaisNoLote = currentAnimais.filter(a => a.lote === lote.nome).length;
-return(
+                  const ocupacao = Math.round((animaisNoLote / lote.capacidade) * 100) || 0;
+                  return (
                     <div key={lote.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                       <div className="flex justify-between items-start mb-4">
                         <h4 className="text-lg font-black text-gray-900">{lote.nome}</h4>
@@ -1210,14 +1014,14 @@ return(
                         <div className={`h-full ${ocupacao > 90 ? 'bg-red-500' : 'bg-green-500'}`} style={{width: `${Math.min(ocupacao, 100)}%`}}></div>
                       </div>
                     </div>
-               );
-          })}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* --- REPRODUÇÃO --- */}
-                {currentView === 'reproducao' && (
+          {currentView === 'reproducao' && (
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><HeartPulse className="mr-3 text-pink-600" /> Controlo Reprodutivo</h3>
@@ -1226,7 +1030,7 @@ return(
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-pink-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Matriz</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Data / Método</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Prev. Parto</th><th className="px-6 py-4 text-right text-xs font-black text-pink-800 uppercase">Status</th></tr><th className="px-6 py-4 text-right">Ações</th>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Matriz</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Data / Método</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Prev. Parto</th><th className="px-6 py-4 text-right text-xs font-black text-pink-800 uppercase">Status</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentReproducao.map((rep) => (
@@ -1235,8 +1039,7 @@ return(
                         <td className="px-6 py-4"><span className="block font-bold text-gray-700">{rep.dataInseminacao}</span><span className="text-xs text-gray-500">{rep.metodo} - {rep.reprodutor}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{rep.previsaoParto}</td>
                         <td className="px-6 py-4 text-right"><span className={`px-3 py-1 rounded-full text-xs font-bold ${rep.status === 'Prenhe' ? 'bg-green-100 text-green-700' : rep.status === 'Parida' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{rep.status}</span></td>
-                                        <td className="px-6 py-4 text-right"><button onClick={() => handleEditReproducao(rep)} className="text-blue-600 hover:text-blue-800 p-2"><Edit size={18} /></button><button onClick={() => handleDeleteReproducao(rep.id)} className="text-red-500 hover:text-red-700 p-2 ml-2"><Trash2 size={18} /></button></td>
-</tr>
+                      </tr>
                     ))}
                     {currentReproducao.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo reprodutivo.</td></tr>}
                   </tbody>
@@ -1249,26 +1052,22 @@ return(
           {currentView === 'nascimentos' && (
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-black text-gray-900 flex items-center"><Baby className="mr-3 text-blue-500" /> Nascimentos</h3>
                 <button onClick={() => setIsNascimentoFormOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Nascimento</button>
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-blue-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</th><th className="px-6 py-4 text-left">Observações</th><th className="px-6 py-4 text-right">Ações</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentNascimentos.map((nasc) => (
                       <tr key={nasc.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-bold text-gray-700">{nasc.data}</td>
-                <td className="px-6 py-4"><span className="block font-black text-gray-900">M: {nasc.brincoMatriz}</span><span className="text-sm font-bold text-blue-600">B: {nasc.brincoBezerro}</span></td>
-                <td className="px-6 py-4 font-bold text-gray-700">{nasc.sexo}</td>
-                <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td>
-                <td className="px-6 py-4 text-sm text-gray-500">{nasc.obs}</td>
-                <td className="px-6 py-4 text-right">
-                                    <button onClick={handleEditNascimento.bind(null, nasc)} className="text-blue-500 hover:text-blue-700 mr-3 p-1"><Edit size={15}/></button>
-                  <button onClick={handleDeleteNascimento.bind(null, nasc.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16}/></button>
-                </td>
-              </tr>
+                        <td className="px-6 py-4 font-bold text-gray-700">{nasc.data}</td>
+                        <td className="px-6 py-4"><span className="block font-black text-gray-900">M: {nasc.brincoMatriz}</span><span className="text-sm font-bold text-blue-600">B: {nasc.brincoBezerro}</span></td>
+                        <td className="px-6 py-4 font-bold text-gray-700">{nasc.sexo}</td>
+                        <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td>
+                      </tr>
                     ))}
                     {currentNascimentos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum nascimento registado.</td></tr>}
                   </tbody>
@@ -1296,7 +1095,7 @@ return(
                   <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-red-50">
-                        <tr><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Data / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Lote Alvo</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Carência</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Liberação</th></tr><th className="px-6 py-4 text-right">Ações</th>
+                        <tr><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Data / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Lote Alvo</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Carência</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Liberação</th></tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
                         {currentVacinacoes.map((vac) => (
@@ -1305,12 +1104,7 @@ return(
                             <td className="px-6 py-4 font-bold text-gray-700">{vac.lote} ({vac.qtdAnimais} cab.)</td>
                             <td className="px-6 py-4 font-bold text-gray-700">{vac.carenciaDias} dias</td>
                             <td className="px-6 py-4 text-right"><span className="px-3 py-1 rounded-md text-xs font-bold bg-orange-100 text-orange-800">{vac.dataLiberacao || '-'}</span></td>
-                                            <td className="px-6 py-4 text-right">
-                    <button onClick={() => handleDeleteVacinacao(vac.id)} className="text-red-500 hover:text-red-700 p-2">
-                      <Trash2 size={18} />
-                    </button>
-                  </td>
-</tr>
+                          </tr>
                         ))}
                         {currentVacinacoes.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo sanitário.</td></tr>}
                       </tbody>
@@ -1363,7 +1157,7 @@ return(
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-orange-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-orange-800 uppercase">Data / Brinco</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Ant.</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Atual</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Evolução</th></tr><th className="px-6 py-4 text-right">Ações</th>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-orange-800 uppercase">Data / Brinco</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Ant.</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Atual</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Evolução</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentPesagens.map((pes) => {
@@ -1374,12 +1168,7 @@ return(
                           <td className="px-6 py-4 text-right font-bold text-gray-600">{pes.pesoAnterior} kg</td>
                           <td className="px-6 py-4 text-right font-black text-gray-900">{pes.pesoAtual} kg</td>
                           <td className="px-6 py-4 text-right font-black"><span className={diff >= 0 ? 'text-green-600' : 'text-red-600'}>{diff > 0 ? '+' : ''}{diff} kg</span></td>
-                                          <td className="px-6 py-4 text-right">
-                    <button onClick={() => handleDeletePesagem(pes.id)} className="text-red-500 hover:text-red-700 p-2">
-                      <Trash2 size={18} />
-                    </button>
-                  </td>
-</tr>
+                        </tr>
                       );
                     })}
                     {currentPesagens.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhuma pesagem registada.</td></tr>}
@@ -1399,7 +1188,7 @@ return(
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-purple-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-purple-800 uppercase">Produto / Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Qtd Atual</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Estoque Min.</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Status</th></tr><th className="px-6 py-4 text-right">Ações</th>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-purple-800 uppercase">Produto / Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Qtd Atual</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Estoque Min.</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Status</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Ações</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentInsumos.map((ins) => {
@@ -1409,11 +1198,15 @@ return(
                           <td className="px-6 py-4"><span className="block font-black text-gray-900">{ins.nome}</span><span className="text-sm font-bold text-gray-500">{ins.categoria}</span></td>
                           <td className="px-6 py-4 text-right font-black text-gray-900">{ins.quantidade} {ins.unidade}</td>
                           <td className="px-6 py-4 text-right font-bold text-gray-500">{ins.estoqueMinimo} {ins.unidade}</td>
-                          <td className="px-6 py-4 text-right">{isCritico ? <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">Crítico</span> : <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded text-xs">Normal</span>}</td><td className="px-8 py-5"><button onClick={() => { setConsumoInsumoSelecionado(ins); setIsConsumoFormOpen(true); }} className="text-purple-600 hover:text-purple-800 font-bold text-xs px-3 py-1.5 rounded-lg border border-purple-200 hover:bg-purple-50 mr-2">- Consumo</button><button onClick={() => { setConsumoInsumoSelecionado(ins); setIsConsumoFormOpen(true); }} className="text-purple-600 hover:text-purple-800 font-bold px-3 py-1 rounded-lg border border-purple-200 hover:bg-purple-50 text-xs mr-2">Lançar Consumo</button><button onClick={() => handleDeleteInsumo(ins.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button></td>
+                          <td className="px-6 py-4 text-right">{isCritico ? <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">Crítico</span> : <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded text-xs">Normal</span>}</td>
+                          <td className="px-6 py-4 text-right">
+                            <button onClick={() => { setInsumoParaConsumo(ins); setIsConsumoFormOpen(true); }} className="text-orange-500 hover:text-orange-700 p-2" title="Lançar Consumo"><MinusCircle size={18} /></button>
+                            <button onClick={() => handleDeleteInsumo(ins.id)} className="text-red-500 hover:text-red-700 p-2 ml-1" title="Apagar Insumo"><Trash2 size={18} /></button>
+                          </td>
                         </tr>
                       );
                     })}
-                    {currentInsumos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum insumo registado.</td></tr>}
+                    {currentInsumos.length === 0 && <tr><td colSpan={5} className="text-center py-8 font-bold text-gray-400">Nenhum insumo registado.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1444,22 +1237,21 @@ return(
                 <div className="bg-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-center">
                   <p className="text-sm font-bold text-blue-800 uppercase flex items-center"><Activity size={16} className="mr-2" /> Custo por Arroba (@)</p>
                   <p className="text-3xl font-black text-blue-900 mt-1">{formatCurrency(custoPorArroba)}</p>
-currentReproducao.map
+                  <p className="text-xs text-blue-600 mt-1">Base: 30kg peso vivo/cab</p>
                 </div>
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Data / Descrição</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Valor</th></tr><th className="px-6 py-4 text-right">Ações</th>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Data / Descrição</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Valor</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentFinanceiro.map((fin) => (
                       <tr key={fin.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4"><span className="block font-bold text-gray-500 text-sm">{fin.data}</span><span className="font-black text-gray-900">{fin.descricao}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{fin.categoria}</td>
-                                          <td className="px-6 py-4 text-right font-black text-gray-900">{fin.tipo === 'receita' ? '+' : '-'}{formatCurrency(fin.valor)}</td>
-                                                                                  <td className="px-6 py-4 text-right"><button onClick={() => handleDeleteFinanceiro(fin.id)} className="text-red-500 hover:text-red-700"><Trash2 size={18} /></button></td>
-</tr>
+                        <td className={`px-6 py-4 text-right font-black ${fin.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}>{fin.tipo === 'receita' ? '+' : '-'}{formatCurrency(fin.valor)}</td>
+                      </tr>
                     ))}
                     {currentFinanceiro.length === 0 && <tr><td colSpan={3} className="text-center py-8 font-bold text-gray-400">Nenhuma transação na propriedade atual.</td></tr>}
                   </tbody>
@@ -1468,7 +1260,7 @@ currentReproducao.map
             </div>
           )}
 
-          {/* --- ANOTAÇÕES GERAIS --- */}       {currentView === 'anotacoes' && (         <div className="animate-in fade-in space-y-6">           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">             <div>               <h3 className="text-2xl font-black text-gray-900 flex items-center"><NotebookPen className="mr-3 text-amber-600" /> Anotações Gerais</h3>               <p className="text-gray-500 text-sm mt-1">Registros livres vinculados à propriedade <b>{propriedadeAtiva.nome}</b></p>             </div>             <button onClick={() => setIsAnotacaoFormOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Nova Anotação</button>           </div>           <div className="relative">             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />             <input type="text" value={filtroAnotacao} onChange={(e) => setFiltroAnotacao(e.target.value)} placeholder="Buscar por título, texto ou tag..." className="w-full pl-12 pr-5 py-3 border border-gray-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-amber-400 shadow-sm" />           </div>           {currentAnotacoes.filter(a => a.titulo.toLowerCase().includes(filtroAnotacao.toLowerCase()) || a.texto.toLowerCase().includes(filtroAnotacao.toLowerCase()) || (a.tag || '').toLowerCase().includes(filtroAnotacao.toLowerCase())).length === 0 && (             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-12 text-center">               <NotebookPen size={48} className="mx-auto text-gray-300 mb-4" />               <p className="text-gray-400 font-bold text-lg">Nenhuma anotação ainda.</p>               <p className="text-gray-400 text-sm mt-1">Clique em "Nova Anotação" para começar.</p>             </div>           )}           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">             {currentAnotacoes.filter(a => a.titulo.toLowerCase().includes(filtroAnotacao.toLowerCase()) || a.texto.toLowerCase().includes(filtroAnotacao.toLowerCase()) || (a.tag || '').toLowerCase().includes(filtroAnotacao.toLowerCase())).map(nota => (               <div key={nota.id} className={`bg-white rounded-2xl border shadow-sm p-6 flex flex-col gap-3 transition-all ${nota.status === 'resolvido' ? 'opacity-60 border-gray-100' : 'border-amber-100'}`}>                 <div className="flex justify-between items-start">                   <div className="flex-1">                     <h4 className={`text-base font-black ${nota.status === 'resolvido' ? 'line-through text-gray-400' : 'text-gray-900'}`}>{nota.titulo}</h4>                     <div className="flex items-center gap-2 mt-1">                       <span className="text-xs text-gray-400 font-medium">{nota.data}</span>                       {nota.tag && <span className="bg-amber-100 text-amber-700 font-bold text-xs px-2 py-0.5 rounded-full">{nota.tag}</span>}                     </div>                   </div>                   <button onClick={() => handleDeleteAnotacao(nota.id)} className="text-red-300 hover:text-red-500 ml-2 shrink-0"><Trash2 size={16}/></button>                 </div>                 <p className="text-sm text-gray-600 flex-1 whitespace-pre-wrap">{nota.texto}</p>                 <button onClick={() => handleToggleAnotacao(nota.id)} className={`w-full py-2 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${nota.status === 'resolvido' ? 'bg-gray-100 text-gray-500 hover:bg-gray-200' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}`}>                   <CheckCircle2 size={16} />                   {nota.status === 'resolvido' ? 'Reabrir' : 'Marcar como Resolvido'}                 </button>               </div>             ))}           </div>           {isAnotacaoFormOpen && (             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">               <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col">                 <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-amber-50 shrink-0">                   <h2 className="text-xl font-black text-amber-900 flex items-center"><NotebookPen className="mr-3 text-amber-600"/> Nova Anotação</h2>                   <button onClick={() => setIsAnotacaoFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>                 </div>                 <form id="anotacaoForm" onSubmit={handleSaveAnotacao} className="p-6 space-y-4">                   <div><label className="block text-sm font-bold mb-1">Título *</label><input required name="titulo" className="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-amber-400" placeholder="Ex: Observação sobre o lote 2..." /></div>                   <div><label className="block text-sm font-bold mb-1">Tag / Categoria</label><input name="tag" className="w-full px-4 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-amber-400" placeholder="Ex: sanidade, compra, urgente" /></div>                   <div><label className="block text-sm font-bold mb-1">Anotação *</label><textarea required name="texto" rows={5} className="w-full px-4 py-3 border rounded-xl resize-none outline-none focus:ring-2 focus:ring-amber-400" placeholder="Escreva sua anotação aqui..." /></div>                 </form>                 <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">                   <button onClick={() => setIsAnotacaoFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>                   <button type="submit" form="anotacaoForm" className="px-6 py-3 rounded-xl font-bold bg-amber-600 text-white">Salvar</button>                 </div>               </div>             </div>           )}         </div>       )}        {/* --- CONFIGURAÇÕES E ACESSOS --- */}}
+          {/* --- CONFIGURAÇÕES E ACESSOS --- */}
           {currentView === 'configuracoes' && (
             <div className="animate-in fade-in space-y-6">
               
@@ -1559,6 +1351,52 @@ currentReproducao.map
               </div>
             </div>
           )}
+
+          {/* VISUALIZAÇÃO: AI ASSISTANT */}
+          {currentView === 'ai-assistant' && (
+            <div className="animate-in fade-in flex flex-col h-[calc(100vh-140px)] min-h-[500px] bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between shrink-0">
+                <div className="flex items-center">
+                  <div className="bg-green-500 p-2.5 rounded-xl mr-4 shadow-sm hidden sm:block"><Bot size={28} className="text-white" /></div>
+                  <div>
+                    <h2 className="text-xl font-extrabold flex items-center">Consultor Agro IA <Sparkles size={18} className="ml-2 text-green-300" /></h2>
+                    <p className="text-slate-300 text-sm font-medium mt-0.5">Dúvidas sobre maneio, finanças e dados do seu rebanho.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-50">
+                {!geminiApiKey && (
+                  <div className="bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-200 text-sm font-bold flex items-start mb-6">
+                    <AlertTriangle className="w-5 h-5 mr-2 shrink-0 mt-0.5" />
+                    <p>O Assistente está inativo. Para começar a conversar, insira a sua API Key do Gemini na aba <b>Configurações</b>.</p>
+                  </div>
+                )}
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-4 ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none shadow-md' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'}`}>
+                      <p className="whitespace-pre-wrap font-medium leading-relaxed">{msg.text}</p>
+                    </div>
+                  </div>
+                ))}
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm flex items-center space-x-2">
+                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-4 bg-white border-t border-gray-200 shrink-0">
+                <form onSubmit={handleSendMessage} className="relative flex items-center">
+                  <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Pergunte-me o que quiser..." className="w-full pl-6 pr-16 py-4 border border-gray-300 rounded-full bg-gray-50 focus:bg-white focus:ring-2 focus:ring-green-500 outline-none transition-all shadow-inner font-medium" disabled={isChatLoading || !geminiApiKey} />
+                  <button type="submit" disabled={!chatInput.trim() || isChatLoading || !geminiApiKey} className="absolute right-2 p-3 bg-green-600 text-white rounded-full hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"><Send size={20} /></button>
+                </form>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
 
@@ -1591,15 +1429,6 @@ currentReproducao.map
                 </div>
               </div>
             </div>
-                      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-              <MessageSquare size={15} className="text-green-600" />
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Observações</span>
-            </div>
-            <div className="p-4">
-                            <ObsEditor animal={selectedAnimal} onSave={handleSaveObsAnimal} />
-            </div>
-          </div>
             <div className="p-6 border-t border-gray-100 bg-white flex justify-between shrink-0">
               <button onClick={() => handleDeleteAnimal(selectedAnimal.id)} className="bg-red-50 hover:bg-red-100 text-red-600 px-6 py-4 rounded-xl font-bold flex items-center transition-colors"><Trash2 size={18} className="mr-2"/> Eliminar</button>
               <button onClick={() => { setSelectedAnimal(null); openEditAnimal(selectedAnimal); }} className="bg-slate-900 hover:bg-black text-white px-8 py-4 rounded-xl font-bold flex items-center transition-colors shadow-lg">
@@ -1677,7 +1506,7 @@ currentReproducao.map
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">Categoria</label>
-                    <select name="categoria" className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white outline-none"><option value="Bezerro">Bezerro(a)</option><option value="Novilha">Novilha</option><option value="Garrote">Garrote</option><option value="Vaca">Vaca</option><option value="Novilho">Novilho</option><option value="Boi Gordo">Boi Gordo</option><option value="Touro">Touro</option></select>
+                    <select name="categoria" className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white outline-none"><option value="Bezerro">Bezerro(a)</option><option value="Novilha">Novilha</option><option value="Garrote">Garrote</option></select>
                   </div>
                 </div>
               </form>
@@ -1747,7 +1576,7 @@ currentReproducao.map
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-red-50 shrink-0">
-              <h2 className="text-xl font-black text-red-900 flex items-center"><ShieldAlert className="mr-3 text-red-600"/> Registar Tratamento</h2>
+              <h2 className="text-xl font-black text-red-900 flex items-center"><Syringe className="mr-3 text-red-600"/> Registar Tratamento</h2>
               <button onClick={() => setIsVaccineFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
             <form id="vaccineForm" onSubmit={handleAddVaccine} className="p-6 space-y-4">
@@ -1849,10 +1678,6 @@ currentReproducao.map
                 <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="data" defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
               <div><label className="block text-sm font-bold mb-1">Raça</label><input required name="raca" defaultValue="Nelore" className="w-full px-4 py-3 border rounded-xl" /></div>
-                            <div className="col-span-2 mt-1">
-                <label className="block text-sm font-bold mb-1">Observações</label>
-                <textarea name="obs" rows={2} placeholder="Observações sobre o nascimento..." className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none outline-none focus:ring-2 focus:ring-blue-400 text-sm"/>
-              </div>
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
               <button onClick={() => setIsNascimentoFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
@@ -1862,32 +1687,7 @@ currentReproducao.map
         </div>
       )}
 
-            {/* MODAL: EDITAR NASCIMENTO */}
-      {isNascimentoEditFormOpen && editingNascimento && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setIsNascimentoEditFormOpen(false)}>
-          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="border-b border-gray-100 p-6 flex justify-between items-center">
-              <h2 className="text-xl font-black text-blue-900 flex items-center"><Edit className="mr-3 text-blue-600" size={22}/>Editar Nascimento</h2>
-              <button onClick={() => { setIsNascimentoEditFormOpen(false); setEditingNascimento(null); }} className="text-gray-400 hover:text-gray-600"><X size={22}/></button>
-            </div>
-            <form onSubmit={handleSaveNascimentoEdit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs font-bold text-gray-500 mb-1">Brinco Matriz *</label><input required name="brincoMatriz" defaultValue={editingNascimento.brincoMatriz} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400"/></div>
-                <div><label className="block text-xs font-bold text-gray-500 mb-1">Brinco Bezerro *</label><input required name="brincoBezerro" defaultValue={editingNascimento.brincoBezerro} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400"/></div>
-                <div><label className="block text-xs font-bold text-gray-500 mb-1">Sexo</label><select name="sexo" defaultValue={editingNascimento.sexo} className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white outline-none"><option value="M">M</option><option value="F">F</option></select></div>
-                <div><label className="block text-xs font-bold text-gray-500 mb-1">Peso Nasc. (kg)</label><input required type="number" name="pesoNascimento" defaultValue={editingNascimento.pesoNascimento} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400"/></div>
-                <div className="col-span-2"><label className="block text-xs font-bold text-gray-500 mb-1">Data *</label><input required type="date" name="data" defaultValue={editingNascimento.data} className="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-400"/></div>
-                <div className="col-span-2"><label className="block text-xs font-bold text-gray-500 mb-1">Observações</label><textarea name="obs" rows={3} defaultValue={editingNascimento.obs || ''} placeholder="Observações sobre o nascimento..." className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none outline-none focus:ring-2 focus:ring-blue-400 text-sm"/></div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => { setIsNascimentoEditFormOpen(false); setEditingNascimento(null); }} className="flex-1 px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700 hover:bg-gray-200">Cancelar</button>
-                <button type="submit" className="flex-1 px-6 py-3 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm">Salvar Alterações</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* MODAL: LANÇAR CONSUMO */}       {isConsumoFormOpen && consumoInsumoSelecionado && (         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-purple-50 shrink-0">               <h2 className="text-xl font-black text-purple-900 flex items-center"><Archive className="mr-3 text-purple-600"/> Lançar Consumo</h2>               <button onClick={() => { setIsConsumoFormOpen(false); setConsumoInsumoSelecionado(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>             </div>             <form id="consumoForm" onSubmit={handleLancarConsumo} className="p-6 space-y-4">               <div className="bg-purple-50 p-4 rounded-xl">                 <p className="font-black text-purple-900">{consumoInsumoSelecionado.nome}</p>                 <p className="text-sm text-purple-700">Estoque atual: <strong>{consumoInsumoSelecionado.quantidade} {consumoInsumoSelecionado.unidade}</strong></p>               </div>               <div><label className="block text-sm font-bold mb-1">Quantidade Consumida *</label><input required type="number" name="quantidade" min="1" max={consumoInsumoSelecionado.quantidade} className="w-full px-4 py-3 border rounded-xl" placeholder="Ex: 10" /></div>               <div><label className="block text-sm font-bold mb-1">Motivo / Observação</label><input name="motivo" className="w-full px-4 py-3 border rounded-xl" placeholder="Ex: Fornecimento lote Confinamento 1" /></div>             </form>             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">               <button onClick={() => { setIsConsumoFormOpen(false); setConsumoInsumoSelecionado(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>               <button type="submit" form="consumoForm" className="px-6 py-3 rounded-xl font-bold bg-purple-600 text-white">Lançar</button>             </div>           </div>         </div>       )}       {/* MODAL: INSUMO */}
+      {/* MODAL: INSUMO */}
       {isInsumoFormOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
@@ -1909,6 +1709,42 @@ currentReproducao.map
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
               <button onClick={() => setIsInsumoFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
               <button type="submit" form="insumoForm" className="px-6 py-3 rounded-xl font-bold bg-purple-600 text-white">Adicionar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CONSUMO DE INSUMO */}
+      {isConsumoFormOpen && insumoParaConsumo && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-orange-50 shrink-0">
+              <h2 className="text-xl font-black text-orange-900 flex items-center"><MinusCircle className="mr-3 text-orange-600"/> Lançar Consumo</h2>
+              <button onClick={() => { setIsConsumoFormOpen(false); setInsumoParaConsumo(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+            </div>
+            <form id="consumoForm" onSubmit={handleConsumoInsumo} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold mb-1">Produto</label>
+                <input disabled value={insumoParaConsumo.nome} className="w-full px-4 py-3 border border-gray-200 bg-gray-50 rounded-xl text-gray-500 font-bold" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold mb-1">Estoque Atual</label>
+                  <input disabled value={`${insumoParaConsumo.quantidade} ${insumoParaConsumo.unidade}`} className="w-full px-4 py-3 border border-gray-200 bg-gray-50 rounded-xl text-gray-500 font-bold" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-1 text-orange-600">Qtd. a Consumir *</label>
+                  <input required type="number" step="0.01" max={insumoParaConsumo.quantidade} name="quantidadeConsumo" className="w-full px-4 py-3 border border-orange-300 bg-orange-50 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none font-black text-orange-700" autoFocus />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Data do Consumo *</label>
+                <input required type="date" name="dataConsumo" defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" />
+              </div>
+            </form>
+            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
+              <button onClick={() => { setIsConsumoFormOpen(false); setInsumoParaConsumo(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="consumoForm" className="px-6 py-3 rounded-xl font-bold bg-orange-600 text-white">Registar Consumo</button>
             </div>
           </div>
         </div>
@@ -2011,42 +1847,5 @@ currentReproducao.map
         </div>
       )}
     </div>
-
-      {/* MODAL: EMAIL NOVO USUÁRIO */}
-    {emailModalData && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <Mail className="mr-3 text-indigo-600" /> Credenciais do Novo Usuário
-          </h2>
-          
-          <div className="bg-indigo-50 p-4 rounded-xl mb-6 space-y-2">
-            <p><strong>Nome:</strong> {emailModalData.nome}</p>
-            <p><strong>Email:</strong> {emailModalData.email}</p>
-            <p><strong>Senha:</strong> <code className="bg-white px-2 py-1 rounded">{emailModalData.senha}</code></p>
-            <p><strong>Permissão:</strong> {emailModalData.role}</p>
-          </div>
-          
-          <p className="text-sm text-gray-600 mb-6">
-            Copie estas credenciais antes de enviar o email. Clique abaixo para abrir seu cliente de email com uma mensagem pré-formatada.
-          </p>
-          
-          <div className="flex gap-3">
-            <button
-              onClick={() => setEmailModalData(null)}
-              className="flex-1 px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700 hover:bg-gray-200"
-            >
-              Fechar
-            </button>
-            <button
-              onClick={handleSendEmail}
-              className="flex-1 px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-700 flex items-center justify-center"
-            >
-              <Mail className="mr-2" size={20} /> Enviar Email
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-  </>
-);}
+  );
+}
