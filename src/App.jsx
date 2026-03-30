@@ -1867,4 +1867,86 @@ export default function App() {
                 <div><label className="block text-sm font-bold mb-1">Estado (UF)</label><input required name="estado" maxLength={2} defaultValue={editingPropriedade?.estado || ''} className="w-full px-4 py-3 border rounded-xl uppercase" /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold mb-1">Área Total (ha)</label><input required type="number" name="area_ha" defaultValue={editingPropriedade?.area_ha || ''} className="w-full px-4 py-3
+                <div><label className="block text-sm font-bold mb-1">Área Total (ha)</label><input required type="number" name="area_ha" defaultValue={editingPropriedade?.area_ha || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Insc. Estadual</label><input name="ie" defaultValue={editingPropriedade?.ie || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
+              </div>
+            </form>
+            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
+              <button onClick={() => { setIsPropriedadeFormOpen(false); setEditingPropriedade(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="propriedadeForm" className="px-6 py-3 rounded-xl font-bold bg-blue-600 text-white">Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: UTILIZADOR */}
+      {isUsuarioFormOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-indigo-50 shrink-0">
+              <h2 className="text-xl font-black text-indigo-900 flex items-center"><Users className="mr-3 text-indigo-600"/> {editingUsuario ? 'Editar Operador' : 'Convite de Acesso'}</h2>
+              <button onClick={() => { setIsUsuarioFormOpen(false); setEditingUsuario(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+            </div>
+            <form id="usuarioForm" onSubmit={handleSaveUsuario} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold mb-1">Nome Completo *</label>
+                <input required name="nome" defaultValue={editingUsuario?.nome || ''} className="w-full px-4 py-3 border rounded-xl" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Email de Acesso *</label>
+                <input required type="email" name="email" defaultValue={editingUsuario?.email || ''} className="w-full px-4 py-3 border rounded-xl" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Senha de Acesso *</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input required type="text" name="senha" defaultValue={editingUsuario?.senha || ''} className="w-full pl-10 pr-4 py-3 border rounded-xl" placeholder="Defina a senha..." />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Nível de Permissão</label>
+                <select name="role" defaultValue={editingUsuario?.role || 'Operador'} className="w-full px-4 py-3 border rounded-xl">
+                  <option value="Operador">Operador (Regista dados)</option>
+                  <option value="Admin">Administrador (Acesso total)</option>
+                  <option value="Leitor">Leitor (Apenas visualização)</option>
+                </select>
+              </div>
+            </form>
+            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
+              <button onClick={() => { setIsUsuarioFormOpen(false); setEditingUsuario(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="usuarioForm" className="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white">{editingUsuario ? 'Guardar' : 'Criar e Enviar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CALENDÁRIO SANITÁRIO */}
+      {isCalendarioFormOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-yellow-50 shrink-0">
+              <h2 className="text-xl font-black text-yellow-900 flex items-center"><CalendarDays className="mr-3 text-yellow-600"/> {editingCalendario ? 'Editar Calendário' : 'Adicionar ao Calendário'}</h2>
+              <button onClick={() => { setIsCalendarioFormOpen(false); setEditingCalendario(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+            </div>
+            <form id="calendarioForm" onSubmit={handleSaveCalendario} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Doença / Tratamento *</label><input required name="doenca" defaultValue={editingCalendario?.doenca || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Mês de Aplicação *</label><input required name="mes" defaultValue={editingCalendario?.mes || ''} placeholder="Ex: Maio e Novembro" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Público Alvo</label><input required name="publico" defaultValue={editingCalendario?.publico || ''} placeholder="Ex: Fêmeas 3 a 8 meses" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div>
+                <label className="block text-sm font-bold mb-1">Status IDARON</label>
+                <select name="obrigatorio" defaultValue={editingCalendario ? (editingCalendario.obrigatorio ? 'true' : 'false') : 'true'} className="w-full px-4 py-3 border rounded-xl">
+                  <option value="true">Obrigatório</option>
+                  <option value="false">Recomendado</option>
+                </select>
+              </div>
+            </form>
+            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
+              <button onClick={() => { setIsCalendarioFormOpen(false); setEditingCalendario(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="calendarioForm" className="px-6 py-3 rounded-xl font-bold bg-yellow-600 text-white">Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
