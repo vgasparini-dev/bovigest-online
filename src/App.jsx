@@ -10,7 +10,7 @@ import {
   Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail, MinusCircle
 } from 'lucide-react';
 
-// --- BASE DE DADOS INICIAL (Usada apenas se o navegador estiver vazio) ---
+// --- BASE DE DADOS INICIAL ---
 const defaultData = {
   propriedades: [
     { id: 1, nome: "Fazenda São João", responsavel: "Victor Luiz Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" }
@@ -102,19 +102,39 @@ export default function App() {
   const [isAnimalFormOpen, setIsAnimalFormOpen] = useState(false);
   const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
+  
   const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
+  const [editingFinance, setEditingFinance] = useState(null);
+  
   const [isVaccineFormOpen, setIsVaccineFormOpen] = useState(false);
+  const [editingVaccine, setEditingVaccine] = useState(null);
+
   const [isLoteFormOpen, setIsLoteFormOpen] = useState(false);
+  const [editingLote, setEditingLote] = useState(null);
+
   const [isReproducaoFormOpen, setIsReproducaoFormOpen] = useState(false);
+  const [editingReproducao, setEditingReproducao] = useState(null);
+
   const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
+  const [editingPesagem, setEditingPesagem] = useState(null);
+
   const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
+  const [editingNascimento, setEditingNascimento] = useState(null);
+
   const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
+  const [editingInsumo, setEditingInsumo] = useState(null);
+
   const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);
   const [insumoParaConsumo, setInsumoParaConsumo] = useState(null);
+  
   const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
+  const [editingPropriedade, setEditingPropriedade] = useState(null);
+
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
+  
   const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
+  const [editingCalendario, setEditingCalendario] = useState(null);
 
   // Estados Nutrição
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
@@ -131,7 +151,6 @@ export default function App() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // --- PERSISTÊNCIA CHAVE DE MEMÓRIA ---
-  // ESTA É A CHAVE QUE GARANTE QUE OS SEUS DADOS NÃO SE PERDEM
   const [appData, setAppData] = useState(() => {
     const saved = localStorage.getItem('bovigest_data_pro_master');
     if (saved) {
@@ -169,7 +188,7 @@ export default function App() {
     }
   };
 
-  // --- FILTROS RÍGIDOS POR PROPRIEDADE (Isolamento de Dados) ---
+  // --- FILTROS RÍGIDOS POR PROPRIEDADE ---
   const propriedadeAtiva = useMemo(() => appData.propriedades.find(p => p.id === activePropriedadeId) || appData.propriedades[0], [activePropriedadeId, appData.propriedades]);
   
   const currentAnimais = useMemo(() => appData.animais.filter(a => a.propriedadeId === activePropriedadeId), [appData.animais, activePropriedadeId]);
@@ -245,7 +264,7 @@ export default function App() {
   const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   const showSaveSuccess = () => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); };
 
-  // --- EXPORTAÇÃO CSV PADRONIZADA DOS EXCEIS ---
+  // --- EXPORTAÇÃO CSV PADRONIZADA ---
   const downloadCSV = (filename, headers, rows) => {
     const csvContent = [headers.join(','), ...rows.map(e => e.map(item => `"${item}"`).join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -338,7 +357,7 @@ export default function App() {
     setIsChatLoading(false);
   };
 
-  // --- HANDLERS FORMS (ISOLAMENTO POR PROPRIEDADE ATIVA) ---
+  // --- HANDLERS FORMS (CRIAR/EDITAR) ---
   const handleSaveAnimal = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -374,31 +393,66 @@ export default function App() {
     setIsBatchAnimalFormOpen(false); showSaveSuccess();
   };
 
-  const handleAddPesagem = (e) => {
+  const handleSavePesagem = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const brinco = fd.get('brinco');
     const pesoAtual = Number(fd.get('pesoAtual'));
     const animal = currentAnimais.find(a => a.brinco === brinco);
-    if (!animal) return alert("Animal não encontrado na propriedade atual!");
-    const novaPesagem = { id: Date.now(), propriedadeId: activePropriedadeId, brinco, data: fd.get('data'), pesoAnterior: animal.peso, pesoAtual, obs: fd.get('obs') || "" };
-    setAppData(prev => ({ ...prev, pesagens: [novaPesagem, ...prev.pesagens], animais: prev.animais.map(a => a.brinco === brinco && a.propriedadeId === activePropriedadeId ? { ...a, peso: pesoAtual } : a) }));
-    setIsPesagemFormOpen(false); showSaveSuccess();
+    
+    if (!animal && !editingPesagem) return alert("Animal não encontrado na propriedade atual!");
+    
+    const novaPesagem = { 
+      id: editingPesagem ? editingPesagem.id : Date.now(), 
+      propriedadeId: activePropriedadeId, 
+      brinco, 
+      data: fd.get('data'), 
+      pesoAnterior: editingPesagem ? editingPesagem.pesoAnterior : animal.peso, 
+      pesoAtual, 
+      obs: fd.get('obs') || "" 
+    };
+
+    if (editingPesagem) {
+      setAppData(prev => ({ ...prev, pesagens: prev.pesagens.map(p => p.id === novaPesagem.id ? novaPesagem : p) }));
+    } else {
+      setAppData(prev => ({ 
+        ...prev, 
+        pesagens: [novaPesagem, ...prev.pesagens], 
+        animais: prev.animais.map(a => a.brinco === brinco && a.propriedadeId === activePropriedadeId ? { ...a, peso: pesoAtual } : a) 
+      }));
+    }
+    setIsPesagemFormOpen(false); setEditingPesagem(null); showSaveSuccess();
   };
 
-  const handleAddNascimento = (e) => {
+  const handleSaveNascimento = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const brincoMatriz = fd.get('brincoMatriz');
     const brincoBezerro = fd.get('brincoBezerro');
     const pesoNascer = Number(fd.get('pesoNascimento'));
-    const novoNasc = { id: Date.now(), propriedadeId: activePropriedadeId, data: fd.get('data'), brincoMatriz, brincoBezerro, sexo: fd.get('sexo'), pesoNascimento: pesoNascer, obs: fd.get('obs') || "" };
-    const novoAnimal = { id: Date.now() + 1, propriedadeId: activePropriedadeId, brinco: brincoBezerro, nome: "-", sexo: fd.get('sexo'), categoria: "Bezerro(a)", tipo: "Cria", raca: fd.get('raca'), dataNasc: fd.get('data'), peso: pesoNascer, lote: "Maternidade", obs: `Cria da matriz ${brincoMatriz}`, ativo: true };
-    setAppData(prev => ({ ...prev, nascimentos: [novoNasc, ...prev.nascimentos], animais: [novoAnimal, ...prev.animais], reproducao: prev.reproducao.map(r => r.brincoVaca === brincoMatriz && r.status === 'Prenhe' && r.propriedadeId === activePropriedadeId ? { ...r, status: 'Parida' } : r) }));
-    setIsNascimentoFormOpen(false); showSaveSuccess();
+    
+    const novoNasc = { 
+      id: editingNascimento ? editingNascimento.id : Date.now(), 
+      propriedadeId: activePropriedadeId, 
+      data: fd.get('data'), brincoMatriz, brincoBezerro, sexo: fd.get('sexo'), 
+      pesoNascimento: pesoNascer, obs: fd.get('obs') || "" 
+    };
+
+    if (editingNascimento) {
+      setAppData(prev => ({ ...prev, nascimentos: prev.nascimentos.map(n => n.id === novoNasc.id ? novoNasc : n) }));
+    } else {
+      const novoAnimal = { id: Date.now() + 1, propriedadeId: activePropriedadeId, brinco: brincoBezerro, nome: "-", sexo: fd.get('sexo'), categoria: "Bezerro(a)", tipo: "Cria", raca: fd.get('raca'), dataNasc: fd.get('data'), peso: pesoNascer, lote: "Maternidade", obs: `Cria da matriz ${brincoMatriz}`, ativo: true };
+      setAppData(prev => ({ 
+        ...prev, 
+        nascimentos: [novoNasc, ...prev.nascimentos], 
+        animais: [novoAnimal, ...prev.animais], 
+        reproducao: prev.reproducao.map(r => r.brincoVaca === brincoMatriz && r.status === 'Prenhe' && r.propriedadeId === activePropriedadeId ? { ...r, status: 'Parida' } : r) 
+      }));
+    }
+    setIsNascimentoFormOpen(false); setEditingNascimento(null); showSaveSuccess();
   };
 
-  const handleAddVaccine = (e) => {
+  const handleSaveVaccine = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const carenciaDias = Number(fd.get('carenciaDias'));
@@ -408,78 +462,144 @@ export default function App() {
       libDate.setDate(libDate.getDate() + carenciaDias);
       dataLiberacao = libDate.toISOString().split('T')[0];
     }
-    const novaVacina = { id: Date.now(), propriedadeId: activePropriedadeId, vacina: fd.get('vacina'), lote: fd.get('lote'), dataAplicacao: fd.get('dataAplicacao'), proximaDose: fd.get('proximaDose') || null, qtdAnimais: Number(fd.get('qtdAnimais')), obs: fd.get('obs') || "", carenciaDias, dataLiberacao, status: "concluida" };
-    setAppData(prev => ({ ...prev, vacinacoes: [novaVacina, ...prev.vacinacoes] }));
-    setIsVaccineFormOpen(false); showSaveSuccess();
+    const novaVacina = { 
+      id: editingVaccine ? editingVaccine.id : Date.now(), 
+      propriedadeId: activePropriedadeId, vacina: fd.get('vacina'), lote: fd.get('lote'), dataAplicacao: fd.get('dataAplicacao'), 
+      proximaDose: fd.get('proximaDose') || null, qtdAnimais: Number(fd.get('qtdAnimais')), obs: fd.get('obs') || "", 
+      carenciaDias, dataLiberacao, status: "concluida" 
+    };
+
+    if (editingVaccine) {
+      setAppData(prev => ({ ...prev, vacinacoes: prev.vacinacoes.map(v => v.id === novaVacina.id ? novaVacina : v) }));
+    } else {
+      setAppData(prev => ({ ...prev, vacinacoes: [novaVacina, ...prev.vacinacoes] }));
+    }
+    setIsVaccineFormOpen(false); setEditingVaccine(null); showSaveSuccess();
   };
 
-  const handleAddFinance = (e) => { 
+  const handleSaveFinance = (e) => { 
     e.preventDefault(); 
     const fd = new FormData(e.target); 
-    setAppData(prev => ({ ...prev, financeiro: [{ id: Date.now(), propriedadeId: activePropriedadeId, descricao: fd.get('descricao'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), valor: Number(fd.get('valor')), data: fd.get('data'), status: fd.get('status') }, ...prev.financeiro] })); 
-    setIsFinanceFormOpen(false); showSaveSuccess(); 
+    const novaFin = { 
+      id: editingFinance ? editingFinance.id : Date.now(), 
+      propriedadeId: activePropriedadeId, descricao: fd.get('descricao'), categoria: fd.get('categoria'), 
+      tipo: fd.get('tipo'), valor: Number(fd.get('valor')), data: fd.get('data'), status: fd.get('status') 
+    };
+    if (editingFinance) {
+      setAppData(prev => ({ ...prev, financeiro: prev.financeiro.map(f => f.id === novaFin.id ? novaFin : f) }));
+    } else {
+      setAppData(prev => ({ ...prev, financeiro: [novaFin, ...prev.financeiro] })); 
+    }
+    setIsFinanceFormOpen(false); setEditingFinance(null); showSaveSuccess(); 
   };
   
-  const handleAddLote = (e) => { 
+  const handleSaveLote = (e) => { 
     e.preventDefault(); 
     const fd = new FormData(e.target); 
-    setAppData(prev => ({ ...prev, lotes: [{ id: Date.now(), propriedadeId: activePropriedadeId, nome: fd.get('nome'), capacidade: Number(fd.get('capacidade')), tipo: fd.get('tipo'), obs: fd.get('obs') || "" }, ...prev.lotes] })); 
-    setIsLoteFormOpen(false); showSaveSuccess(); 
+    const novoLote = { 
+      id: editingLote ? editingLote.id : Date.now(), 
+      propriedadeId: activePropriedadeId, nome: fd.get('nome'), capacidade: Number(fd.get('capacidade')), 
+      tipo: fd.get('tipo'), obs: fd.get('obs') || "" 
+    };
+    if (editingLote) {
+      setAppData(prev => ({ ...prev, lotes: prev.lotes.map(l => l.id === novoLote.id ? novoLote : l) }));
+    } else {
+      setAppData(prev => ({ ...prev, lotes: [novoLote, ...prev.lotes] })); 
+    }
+    setIsLoteFormOpen(false); setEditingLote(null); showSaveSuccess(); 
   };
   
-  const handleAddInsumo = (e) => { 
+  const handleSaveInsumo = (e) => { 
     e.preventDefault(); 
     const fd = new FormData(e.target); 
-    setAppData(prev => ({ ...prev, insumos: [{ id: Date.now(), propriedadeId: activePropriedadeId, nome: fd.get('nome'), categoria: fd.get('categoria'), quantidade: Number(fd.get('quantidade')), unidade: fd.get('unidade'), estoqueMinimo: Number(fd.get('estoqueMinimo')) }, ...prev.insumos] })); 
-    setIsInsumoFormOpen(false); showSaveSuccess(); 
+    const novoInsumo = { 
+      id: editingInsumo ? editingInsumo.id : Date.now(), 
+      propriedadeId: activePropriedadeId, nome: fd.get('nome'), categoria: fd.get('categoria'), 
+      quantidade: Number(fd.get('quantidade')), unidade: fd.get('unidade'), estoqueMinimo: Number(fd.get('estoqueMinimo')) 
+    };
+    if (editingInsumo) {
+      setAppData(prev => ({ ...prev, insumos: prev.insumos.map(i => i.id === novoInsumo.id ? novoInsumo : i) }));
+    } else {
+      setAppData(prev => ({ ...prev, insumos: [novoInsumo, ...prev.insumos] })); 
+    }
+    setIsInsumoFormOpen(false); setEditingInsumo(null); showSaveSuccess(); 
   };
 
   const handleConsumoInsumo = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const qtdConsumida = Number(fd.get('quantidadeConsumo'));
-    
     setAppData(prev => ({
       ...prev,
-      insumos: prev.insumos.map(ins => 
-        ins.id === insumoParaConsumo.id 
-          ? { ...ins, quantidade: Math.max(0, ins.quantidade - qtdConsumida) } 
-          : ins
-      )
+      insumos: prev.insumos.map(ins => ins.id === insumoParaConsumo.id ? { ...ins, quantidade: Math.max(0, ins.quantidade - qtdConsumida) } : ins)
     }));
     setIsConsumoFormOpen(false); setInsumoParaConsumo(null); showSaveSuccess();
   };
-
-  const handleDeleteInsumo = (id) => {
-    if (confirm('Tem a certeza que deseja remover este insumo do sistema?')) {
-      setAppData(prev => ({ ...prev, insumos: prev.insumos.filter(i => i.id !== id) }));
-      showSaveSuccess();
-    }
-  };
   
-  const handleAddReproducao = (e) => { 
+  const handleSaveReproducao = (e) => { 
     e.preventDefault(); 
     const fd = new FormData(e.target); 
-    const prevDate = new Date(new Date(fd.get('dataInseminacao')).setDate(new Date(fd.get('dataInseminacao')).getDate() + 290)).toISOString().split('T')[0]; 
-    setAppData(prevData => ({ ...prevData, reproducao: [{ id: Date.now(), propriedadeId: activePropriedadeId, brincoVaca: fd.get('brincoVaca'), dataInseminacao: fd.get('dataInseminacao'), previsaoParto: prevDate, metodo: fd.get('metodo'), reprodutor: fd.get('reprodutor'), status: fd.get('status') }, ...prevData.reproducao] })); 
-    setIsReproducaoFormOpen(false); showSaveSuccess(); 
+    const dataInsem = fd.get('dataInseminacao');
+    const prevDate = new Date(new Date(dataInsem).setDate(new Date(dataInsem).getDate() + 290)).toISOString().split('T')[0]; 
+    const novaRep = { 
+      id: editingReproducao ? editingReproducao.id : Date.now(), 
+      propriedadeId: activePropriedadeId, brincoVaca: fd.get('brincoVaca'), dataInseminacao: dataInsem, 
+      previsaoParto: prevDate, metodo: fd.get('metodo'), reprodutor: fd.get('reprodutor'), status: fd.get('status') 
+    };
+    if (editingReproducao) {
+      setAppData(prevData => ({ ...prevData, reproducao: prevData.reproducao.map(r => r.id === novaRep.id ? novaRep : r) })); 
+    } else {
+      setAppData(prevData => ({ ...prevData, reproducao: [novaRep, ...prevData.reproducao] })); 
+    }
+    setIsReproducaoFormOpen(false); setEditingReproducao(null); showSaveSuccess(); 
   };
 
-  const handleAddPropriedade = (e) => {
+  const handleSavePropriedade = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const novaProp = { id: Date.now(), nome: fd.get('nome'), responsavel: fd.get('responsavel'), cidade: fd.get('cidade'), estado: fd.get('estado'), area_ha: Number(fd.get('area_ha')), ie: fd.get('ie') };
-    setAppData(prev => ({ ...prev, propriedades: [...prev.propriedades, novaProp] }));
-    setActivePropriedadeId(novaProp.id);
-    setIsPropriedadeFormOpen(false); showSaveSuccess();
+    const novaProp = { 
+      id: editingPropriedade ? editingPropriedade.id : Date.now(), 
+      nome: fd.get('nome'), responsavel: fd.get('responsavel'), cidade: fd.get('cidade'), 
+      estado: fd.get('estado'), area_ha: Number(fd.get('area_ha')), ie: fd.get('ie') 
+    };
+    if (editingPropriedade) {
+      setAppData(prev => ({ ...prev, propriedades: prev.propriedades.map(p => p.id === novaProp.id ? novaProp : p) }));
+    } else {
+      setAppData(prev => ({ ...prev, propriedades: [...prev.propriedades, novaProp] }));
+      setActivePropriedadeId(novaProp.id);
+    }
+    setIsPropriedadeFormOpen(false); setEditingPropriedade(null); showSaveSuccess();
   };
 
-  const handleDeletePropriedade = (id) => {
-    if (appData.propriedades.length === 1) {
-      alert("Não é possível excluir a única propriedade do sistema.");
-      return;
+  const handleSaveCalendario = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const novoEvento = { 
+      id: editingCalendario ? editingCalendario.id : Date.now(), 
+      propriedadeId: activePropriedadeId, doenca: fd.get('doenca'), mes: fd.get('mes'), publico: fd.get('publico'), obrigatorio: fd.get('obrigatorio') === 'true' 
+    };
+    if (editingCalendario) {
+      setAppData(prev => ({ ...prev, calendarioSanitario: prev.calendarioSanitario.map(c => c.id === novoEvento.id ? novoEvento : c) }));
+    } else {
+      setAppData(prev => ({ ...prev, calendarioSanitario: [...(prev.calendarioSanitario || []), novoEvento] }));
     }
-    if (confirm('🚨 ATENÇÃO: Deseja apagar esta propriedade e TODOS os animais, lotes, finanças e registos associados a ela? Esta ação é irreversível!')) {
+    setIsCalendarioFormOpen(false); setEditingCalendario(null); showSaveSuccess();
+  };
+
+  // --- HANDLERS DE EXCLUSÃO ---
+  const handleDeleteAnimal = (id) => { if (confirm('Excluir animal permanentemente?')) { setAppData(prev => ({ ...prev, animais: prev.animais.filter(a => a.id !== id) })); setSelectedAnimal(null); showSaveSuccess(); } };
+  const handleDeleteFinance = (id) => { if (confirm('Excluir registo financeiro?')) { setAppData(prev => ({ ...prev, financeiro: prev.financeiro.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteVaccine = (id) => { if (confirm('Excluir registo sanitário?')) { setAppData(prev => ({ ...prev, vacinacoes: prev.vacinacoes.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteLote = (id) => { if (confirm('Excluir pastagem/lote?')) { setAppData(prev => ({ ...prev, lotes: prev.lotes.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteReproducao = (id) => { if (confirm('Excluir registo de reprodução?')) { setAppData(prev => ({ ...prev, reproducao: prev.reproducao.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeletePesagem = (id) => { if (confirm('Excluir pesagem?')) { setAppData(prev => ({ ...prev, pesagens: prev.pesagens.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteNascimento = (id) => { if (confirm('Excluir nascimento?')) { setAppData(prev => ({ ...prev, nascimentos: prev.nascimentos.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteInsumo = (id) => { if (confirm('Excluir insumo do sistema?')) { setAppData(prev => ({ ...prev, insumos: prev.insumos.filter(i => i.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteCalendario = (id) => { if (confirm('Excluir evento do calendário?')) { setAppData(prev => ({ ...prev, calendarioSanitario: prev.calendarioSanitario.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  
+  const handleDeletePropriedade = (id) => {
+    if (appData.propriedades.length === 1) return alert("Não é possível excluir a única propriedade do sistema.");
+    if (confirm('🚨 ATENÇÃO: Deseja apagar esta propriedade e TODOS os registos associados a ela? Esta ação é irreversível!')) {
       setAppData(prev => ({
         ...prev,
         propriedades: prev.propriedades.filter(p => p.id !== id),
@@ -500,53 +620,6 @@ export default function App() {
       showSaveSuccess();
     }
   };
-
-  const handleSaveUsuario = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const novoUsr = { 
-      id: editingUsuario ? editingUsuario.id : Date.now(), 
-      nome: fd.get('nome'), 
-      email: fd.get('email'), 
-      senha: fd.get('senha'), 
-      role: fd.get('role'),
-      status: editingUsuario ? editingUsuario.status : 'Pendente'
-    };
-    
-    if (editingUsuario) {
-      setAppData(prev => ({ ...prev, usuarios: prev.usuarios.map(u => u.id === novoUsr.id ? novoUsr : u) }));
-    } else {
-      setAppData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
-      
-      const subject = encodeURIComponent("Convite de Acesso - BoviGest PRO");
-      const body = encodeURIComponent(`Olá ${novoUsr.nome},\n\nFoi convidado a aceder ao sistema BoviGest PRO.\n\nO seu email de acesso: ${novoUsr.email}\nA sua senha provisória: ${novoUsr.senha}\n\nAceda à plataforma e faça login para confirmar o seu registo.\n\nAtenciosamente,\nAdministração`);
-      window.location.href = `mailto:${novoUsr.email}?subject=${subject}&body=${body}`;
-    }
-    setIsUsuarioFormOpen(false); setEditingUsuario(null); showSaveSuccess();
-  };
-
-  const handleDeleteUsuario = (id) => {
-    if (confirm('Tem a certeza que deseja remover este utilizador?')) {
-      setAppData(prev => ({ ...prev, usuarios: prev.usuarios.filter(u => u.id !== id) })); showSaveSuccess();
-    }
-  };
-
-  const handleAddCalendario = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const novoEvento = { id: Date.now(), propriedadeId: activePropriedadeId, doenca: fd.get('doenca'), mes: fd.get('mes'), publico: fd.get('publico'), obrigatorio: fd.get('obrigatorio') === 'true' };
-    setAppData(prev => ({ ...prev, calendarioSanitario: [...(prev.calendarioSanitario || []), novoEvento] }));
-    setIsCalendarioFormOpen(false); showSaveSuccess();
-  };
-
-  const handleDeleteAnimal = (id) => { 
-    if (confirm('Tem a certeza que deseja remover este animal?')) { 
-      setAppData(prev => ({ ...prev, animais: prev.animais.filter(a => a.id !== id) })); setSelectedAnimal(null); showSaveSuccess(); 
-    } 
-  };
-
-  const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
-  const openEditUsuario = (usr) => { setEditingUsuario(usr); setIsUsuarioFormOpen(true); };
 
   // --- NAVEGAÇÃO ---
   const navItems = [
@@ -608,9 +681,8 @@ export default function App() {
           <span className="text-2xl font-black tracking-tight text-white block leading-none">BoviGest</span>
         </div>
         
-        {/* Seletor de Propriedade Isolada */}
         <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Propriedade Ativa</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Propriedade Isolada</label>
           <select 
             value={activePropriedadeId} 
             onChange={(e) => setActivePropriedadeId(Number(e.target.value))}
@@ -866,7 +938,7 @@ export default function App() {
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><MapPin className="mr-3 text-blue-500" /> Gestão de Propriedades</h3>
-                <button onClick={() => setIsPropriedadeFormOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Nova Propriedade</button>
+                <button onClick={() => { setEditingPropriedade(null); setIsPropriedadeFormOpen(true); }} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Nova Propriedade</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {appData.propriedades.map((prop) => (
@@ -875,6 +947,7 @@ export default function App() {
                       <h4 className="text-2xl font-black text-gray-900">{prop.nome}</h4>
                       <div className="flex items-center space-x-2">
                         {activePropriedadeId === prop.id && <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Ativa</span>}
+                        <button onClick={() => { setEditingPropriedade(prop); setIsPropriedadeFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-1"><Edit size={18}/></button>
                         <button onClick={() => handleDeletePropriedade(prop.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={18}/></button>
                       </div>
                     </div>
@@ -993,7 +1066,7 @@ export default function App() {
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><LayoutGrid className="mr-3 text-green-600" /> Mapa de Lotes</h3>
-                <button onClick={() => setIsLoteFormOpen(true)} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Lote</button>
+                <button onClick={() => { setEditingLote(null); setIsLoteFormOpen(true); }} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Lote</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {currentLotes.map(lote => {
@@ -1003,7 +1076,10 @@ export default function App() {
                     <div key={lote.id} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200">
                       <div className="flex justify-between items-start mb-4">
                         <h4 className="text-lg font-black text-gray-900">{lote.nome}</h4>
-                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">{lote.tipo}</span>
+                        <div className="flex space-x-1">
+                          <button onClick={() => { setEditingLote(lote); setIsLoteFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-1"><Edit size={18} /></button>
+                          <button onClick={() => handleDeleteLote(lote.id)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={18} /></button>
+                        </div>
                       </div>
                       <p className="text-sm text-gray-500 font-medium mb-6 min-h-[40px]">{lote.obs}</p>
                       <div className="mb-2 flex justify-between items-end">
@@ -1025,12 +1101,12 @@ export default function App() {
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><HeartPulse className="mr-3 text-pink-600" /> Controlo Reprodutivo</h3>
-                <button onClick={() => setIsReproducaoFormOpen(true)} className="bg-pink-600 hover:bg-pink-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Inseminação</button>
+                <button onClick={() => { setEditingReproducao(null); setIsReproducaoFormOpen(true); }} className="bg-pink-600 hover:bg-pink-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Inseminação</button>
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-pink-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Matriz</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Data / Método</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Prev. Parto</th><th className="px-6 py-4 text-right text-xs font-black text-pink-800 uppercase">Status</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Matriz</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Data / Método</th><th className="px-6 py-4 text-left text-xs font-black text-pink-800 uppercase">Prev. Parto</th><th className="px-6 py-4 text-right text-xs font-black text-pink-800 uppercase">Status</th><th className="px-6 py-4 text-right text-xs font-black text-pink-800 uppercase">Ações</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentReproducao.map((rep) => (
@@ -1039,9 +1115,13 @@ export default function App() {
                         <td className="px-6 py-4"><span className="block font-bold text-gray-700">{rep.dataInseminacao}</span><span className="text-xs text-gray-500">{rep.metodo} - {rep.reprodutor}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{rep.previsaoParto}</td>
                         <td className="px-6 py-4 text-right"><span className={`px-3 py-1 rounded-full text-xs font-bold ${rep.status === 'Prenhe' ? 'bg-green-100 text-green-700' : rep.status === 'Parida' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>{rep.status}</span></td>
+                        <td className="px-6 py-4 text-right">
+                            <button onClick={() => { setEditingReproducao(rep); setIsReproducaoFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-2"><Edit size={18} /></button>
+                            <button onClick={() => handleDeleteReproducao(rep.id)} className="text-red-500 hover:text-red-700 p-2 ml-1"><Trash2 size={18} /></button>
+                        </td>
                       </tr>
                     ))}
-                    {currentReproducao.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo reprodutivo.</td></tr>}
+                    {currentReproducao.length === 0 && <tr><td colSpan={5} className="text-center py-8 font-bold text-gray-400">Nenhum registo reprodutivo.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1053,12 +1133,12 @@ export default function App() {
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><Baby className="mr-3 text-blue-500" /> Nascimentos</h3>
-                <button onClick={() => setIsNascimentoFormOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Nascimento</button>
+                <button onClick={() => { setEditingNascimento(null); setIsNascimentoFormOpen(true); }} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Nascimento</button>
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-blue-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Data</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Matriz &rarr; Bezerro</th><th className="px-6 py-4 text-left text-xs font-black text-blue-800 uppercase">Sexo</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Peso Nasc.</th><th className="px-6 py-4 text-right text-xs font-black text-blue-800 uppercase">Ações</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentNascimentos.map((nasc) => (
@@ -1067,9 +1147,13 @@ export default function App() {
                         <td className="px-6 py-4"><span className="block font-black text-gray-900">M: {nasc.brincoMatriz}</span><span className="text-sm font-bold text-blue-600">B: {nasc.brincoBezerro}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{nasc.sexo}</td>
                         <td className="px-6 py-4 text-right font-black text-gray-900">{nasc.pesoNascimento} kg</td>
+                        <td className="px-6 py-4 text-right">
+                            <button onClick={() => { setEditingNascimento(nasc); setIsNascimentoFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-2"><Edit size={18} /></button>
+                            <button onClick={() => handleDeleteNascimento(nasc.id)} className="text-red-500 hover:text-red-700 p-2 ml-1"><Trash2 size={18} /></button>
+                        </td>
                       </tr>
                     ))}
-                    {currentNascimentos.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum nascimento registado.</td></tr>}
+                    {currentNascimentos.length === 0 && <tr><td colSpan={5} className="text-center py-8 font-bold text-gray-400">Nenhum nascimento registado.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1090,12 +1174,12 @@ export default function App() {
               {sanidadeTab === 'registos' ? (
                 <>
                   <div className="flex justify-end mb-4">
-                    <button onClick={() => setIsVaccineFormOpen(true)} className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Tratamento de Lote</button>
+                    <button onClick={() => { setEditingVaccine(null); setIsVaccineFormOpen(true); }} className="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Tratamento de Lote</button>
                   </div>
                   <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-red-50">
-                        <tr><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Data / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Lote Alvo</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Carência</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Liberação</th></tr>
+                        <tr><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Data / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Lote Alvo</th><th className="px-6 py-4 text-left text-xs font-black text-red-800 uppercase">Carência</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Liberação</th><th className="px-6 py-4 text-right text-xs font-black text-red-800 uppercase">Ações</th></tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
                         {currentVacinacoes.map((vac) => (
@@ -1104,9 +1188,13 @@ export default function App() {
                             <td className="px-6 py-4 font-bold text-gray-700">{vac.lote} ({vac.qtdAnimais} cab.)</td>
                             <td className="px-6 py-4 font-bold text-gray-700">{vac.carenciaDias} dias</td>
                             <td className="px-6 py-4 text-right"><span className="px-3 py-1 rounded-md text-xs font-bold bg-orange-100 text-orange-800">{vac.dataLiberacao || '-'}</span></td>
+                            <td className="px-6 py-4 text-right">
+                              <button onClick={() => { setEditingVaccine(vac); setIsVaccineFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-2"><Edit size={18} /></button>
+                              <button onClick={() => handleDeleteVaccine(vac.id)} className="text-red-500 hover:text-red-700 p-2 ml-1"><Trash2 size={18} /></button>
+                            </td>
                           </tr>
                         ))}
-                        {currentVacinacoes.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhum registo sanitário.</td></tr>}
+                        {currentVacinacoes.length === 0 && <tr><td colSpan={5} className="text-center py-8 font-bold text-gray-400">Nenhum registo sanitário.</td></tr>}
                       </tbody>
                     </table>
                   </div>
@@ -1121,12 +1209,12 @@ export default function App() {
                         <p className="text-sm">Rondônia é área livre de febre aftosa sem vacinação. Consulte o calendário para outras obrigações.</p>
                       </div>
                     </div>
-                    <button onClick={() => setIsCalendarioFormOpen(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-xl font-bold shadow-sm flex items-center text-sm"><Plus className="w-4 h-4 mr-1" /> Adicionar Evento</button>
+                    <button onClick={() => { setEditingCalendario(null); setIsCalendarioFormOpen(true); }} className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-xl font-bold shadow-sm flex items-center text-sm"><Plus className="w-4 h-4 mr-1" /> Adicionar Evento</button>
                   </div>
                   <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
-                        <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Doença / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Mês(es)</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Público Alvo</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Status IDARON</th></tr>
+                        <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Doença / Vacina</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Mês(es)</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Público Alvo</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Status IDARON</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Ações</th></tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
                         {currentCalendario?.map((cal) => (
@@ -1136,6 +1224,10 @@ export default function App() {
                             <td className="px-6 py-4 font-medium text-gray-600">{cal.publico}</td>
                             <td className="px-6 py-4 text-right">
                               {cal.obrigatorio ? <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">Obrigatório</span> : <span className="bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded text-xs">Recomendado</span>}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button onClick={() => { setEditingCalendario(cal); setIsCalendarioFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-2"><Edit size={18} /></button>
+                              <button onClick={() => handleDeleteCalendario(cal.id)} className="text-red-500 hover:text-red-700 p-2 ml-1"><Trash2 size={18} /></button>
                             </td>
                           </tr>
                         ))}
@@ -1152,12 +1244,12 @@ export default function App() {
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><Scale className="mr-3 text-orange-500" /> Histórico de Pesagens</h3>
-                <button onClick={() => setIsPesagemFormOpen(true)} className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Nova Pesagem</button>
+                <button onClick={() => { setEditingPesagem(null); setIsPesagemFormOpen(true); }} className="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Nova Pesagem</button>
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-orange-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-orange-800 uppercase">Data / Brinco</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Ant.</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Atual</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Evolução</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-orange-800 uppercase">Data / Brinco</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Ant.</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Peso Atual</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Evolução</th><th className="px-6 py-4 text-right text-xs font-black text-orange-800 uppercase">Ações</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentPesagens.map((pes) => {
@@ -1168,10 +1260,14 @@ export default function App() {
                           <td className="px-6 py-4 text-right font-bold text-gray-600">{pes.pesoAnterior} kg</td>
                           <td className="px-6 py-4 text-right font-black text-gray-900">{pes.pesoAtual} kg</td>
                           <td className="px-6 py-4 text-right font-black"><span className={diff >= 0 ? 'text-green-600' : 'text-red-600'}>{diff > 0 ? '+' : ''}{diff} kg</span></td>
+                          <td className="px-6 py-4 text-right">
+                            <button onClick={() => { setEditingPesagem(pes); setIsPesagemFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-2"><Edit size={18} /></button>
+                            <button onClick={() => handleDeletePesagem(pes.id)} className="text-red-500 hover:text-red-700 p-2 ml-1"><Trash2 size={18} /></button>
+                          </td>
                         </tr>
                       );
                     })}
-                    {currentPesagens.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhuma pesagem registada.</td></tr>}
+                    {currentPesagens.length === 0 && <tr><td colSpan={5} className="text-center py-8 font-bold text-gray-400">Nenhuma pesagem registada.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1183,7 +1279,7 @@ export default function App() {
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><Archive className="mr-3 text-purple-600" /> Estoque de Insumos</h3>
-                <button onClick={() => setIsInsumoFormOpen(true)} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Insumo</button>
+                <button onClick={() => { setEditingInsumo(null); setIsInsumoFormOpen(true); }} className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Insumo</button>
               </div>
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -1201,6 +1297,7 @@ export default function App() {
                           <td className="px-6 py-4 text-right">{isCritico ? <span className="bg-red-100 text-red-700 font-bold px-2 py-1 rounded text-xs">Crítico</span> : <span className="bg-green-100 text-green-700 font-bold px-2 py-1 rounded text-xs">Normal</span>}</td>
                           <td className="px-6 py-4 text-right">
                             <button onClick={() => { setInsumoParaConsumo(ins); setIsConsumoFormOpen(true); }} className="text-orange-500 hover:text-orange-700 p-2" title="Lançar Consumo"><MinusCircle size={18} /></button>
+                            <button onClick={() => { setEditingInsumo(ins); setIsInsumoFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-2 ml-1" title="Editar"><Edit size={18} /></button>
                             <button onClick={() => handleDeleteInsumo(ins.id)} className="text-red-500 hover:text-red-700 p-2 ml-1" title="Apagar Insumo"><Trash2 size={18} /></button>
                           </td>
                         </tr>
@@ -1218,7 +1315,7 @@ export default function App() {
             <div className="animate-in fade-in space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-black text-gray-900 flex items-center"><DollarSign className="mr-3 text-green-600" /> Gestão Financeira</h3>
-                <button onClick={() => setIsFinanceFormOpen(true)} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Lançamento</button>
+                <button onClick={() => { setEditingFinance(null); setIsFinanceFormOpen(true); }} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm flex items-center"><Plus className="w-5 h-5 mr-2" /> Lançamento</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
@@ -1243,7 +1340,7 @@ export default function App() {
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
-                    <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Data / Descrição</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Valor</th></tr>
+                    <tr><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Data / Descrição</th><th className="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase">Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Valor</th><th className="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase">Ações</th></tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 bg-white">
                     {currentFinanceiro.map((fin) => (
@@ -1251,9 +1348,13 @@ export default function App() {
                         <td className="px-6 py-4"><span className="block font-bold text-gray-500 text-sm">{fin.data}</span><span className="font-black text-gray-900">{fin.descricao}</span></td>
                         <td className="px-6 py-4 font-bold text-gray-700">{fin.categoria}</td>
                         <td className={`px-6 py-4 text-right font-black ${fin.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}`}>{fin.tipo === 'receita' ? '+' : '-'}{formatCurrency(fin.valor)}</td>
+                        <td className="px-6 py-4 text-right">
+                            <button onClick={() => { setEditingFinance(fin); setIsFinanceFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-2"><Edit size={18} /></button>
+                            <button onClick={() => handleDeleteFinance(fin.id)} className="text-red-500 hover:text-red-700 p-2 ml-1"><Trash2 size={18} /></button>
+                        </td>
                       </tr>
                     ))}
-                    {currentFinanceiro.length === 0 && <tr><td colSpan={3} className="text-center py-8 font-bold text-gray-400">Nenhuma transação na propriedade atual.</td></tr>}
+                    {currentFinanceiro.length === 0 && <tr><td colSpan={4} className="text-center py-8 font-bold text-gray-400">Nenhuma transação na propriedade atual.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1524,16 +1625,16 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-orange-50 shrink-0">
-              <h2 className="text-xl font-black text-orange-900 flex items-center"><Scale className="mr-3 text-orange-600"/> Registar Pesagem</h2>
-              <button onClick={() => setIsPesagemFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+              <h2 className="text-xl font-black text-orange-900 flex items-center"><Scale className="mr-3 text-orange-600"/> {editingPesagem ? 'Editar Pesagem' : 'Registar Pesagem'}</h2>
+              <button onClick={() => { setIsPesagemFormOpen(false); setEditingPesagem(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
-            <form id="pesagemForm" onSubmit={handleAddPesagem} className="p-6 space-y-4">
-              <div><label className="block text-sm font-bold mb-1">Brinco *</label><input required name="brinco" className="w-full px-4 py-3 border rounded-xl" placeholder="Ex: 105" /></div>
-              <div><label className="block text-sm font-bold mb-1">Peso Atual (kg) *</label><input required type="number" name="pesoAtual" className="w-full px-4 py-3 border rounded-xl" /></div>
-              <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="data" defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
+            <form id="pesagemForm" onSubmit={handleSavePesagem} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Brinco *</label><input required name="brinco" defaultValue={editingPesagem?.brinco || ''} className="w-full px-4 py-3 border rounded-xl" placeholder="Ex: 105" /></div>
+              <div><label className="block text-sm font-bold mb-1">Peso Atual (kg) *</label><input required type="number" name="pesoAtual" defaultValue={editingPesagem?.pesoAtual || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="data" defaultValue={editingPesagem?.data || new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => setIsPesagemFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button onClick={() => { setIsPesagemFormOpen(false); setEditingPesagem(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
               <button type="submit" form="pesagemForm" className="px-6 py-3 rounded-xl font-bold bg-orange-600 text-white">Gravar Peso</button>
             </div>
           </div>
@@ -1545,26 +1646,26 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-green-50 shrink-0">
-              <h2 className="text-xl font-black text-green-900 flex items-center"><DollarSign className="mr-3 text-green-600"/> Lançamento Financeiro</h2>
-              <button onClick={() => setIsFinanceFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+              <h2 className="text-xl font-black text-green-900 flex items-center"><DollarSign className="mr-3 text-green-600"/> {editingFinance ? 'Editar Lançamento' : 'Lançamento Financeiro'}</h2>
+              <button onClick={() => { setIsFinanceFormOpen(false); setEditingFinance(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
-            <form id="financeForm" onSubmit={handleAddFinance} className="p-6 space-y-4">
-              <div><label className="block text-sm font-bold mb-1">Descrição *</label><input required name="descricao" className="w-full px-4 py-3 border rounded-xl" placeholder="Ex: Venda Bezerras" /></div>
+            <form id="financeForm" onSubmit={handleSaveFinance} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Descrição *</label><input required name="descricao" defaultValue={editingFinance?.descricao || ''} className="w-full px-4 py-3 border rounded-xl" placeholder="Ex: Venda Bezerras" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold mb-1">Tipo</label>
-                  <select name="tipo" className="w-full px-4 py-3 border rounded-xl"><option value="receita">Receita (+)</option><option value="despesa">Despesa (-)</option></select>
+                  <select name="tipo" defaultValue={editingFinance?.tipo || 'receita'} className="w-full px-4 py-3 border rounded-xl"><option value="receita">Receita (+)</option><option value="despesa">Despesa (-)</option></select>
                 </div>
-                <div><label className="block text-sm font-bold mb-1">Valor (R$) *</label><input required type="number" name="valor" className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Valor (R$) *</label><input required type="number" name="valor" defaultValue={editingFinance?.valor || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold mb-1">Categoria</label><input required name="categoria" defaultValue="Venda" className="w-full px-4 py-3 border rounded-xl" /></div>
-                <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="data" defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Categoria</label><input required name="categoria" defaultValue={editingFinance?.categoria || 'Venda'} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="data" defaultValue={editingFinance?.data || new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
               <input type="hidden" name="status" value="pago" />
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => setIsFinanceFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button onClick={() => { setIsFinanceFormOpen(false); setEditingFinance(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
               <button type="submit" form="financeForm" className="px-6 py-3 rounded-xl font-bold bg-green-600 text-white">Lançar</button>
             </div>
           </div>
@@ -1576,25 +1677,25 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-red-50 shrink-0">
-              <h2 className="text-xl font-black text-red-900 flex items-center"><Syringe className="mr-3 text-red-600"/> Registar Tratamento</h2>
-              <button onClick={() => setIsVaccineFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+              <h2 className="text-xl font-black text-red-900 flex items-center"><Syringe className="mr-3 text-red-600"/> {editingVaccine ? 'Editar Tratamento' : 'Registar Tratamento'}</h2>
+              <button onClick={() => { setIsVaccineFormOpen(false); setEditingVaccine(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
-            <form id="vaccineForm" onSubmit={handleAddVaccine} className="p-6 space-y-4">
-              <div><label className="block text-sm font-bold mb-1">Vacina / Medicamento *</label><input required name="vacina" className="w-full px-4 py-3 border rounded-xl" /></div>
+            <form id="vaccineForm" onSubmit={handleSaveVaccine} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Vacina / Medicamento *</label><input required name="vacina" defaultValue={editingVaccine?.vacina || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold mb-1">Lote Alvo</label>
-                  <select name="lote" className="w-full px-4 py-3 border rounded-xl"><option value="Todo o Rebanho">Todo o Rebanho</option>{currentLotes.map(l=><option key={l.id} value={l.nome}>{l.nome}</option>)}</select>
+                  <select name="lote" defaultValue={editingVaccine?.lote || 'Todo o Rebanho'} className="w-full px-4 py-3 border rounded-xl"><option value="Todo o Rebanho">Todo o Rebanho</option>{currentLotes.map(l=><option key={l.id} value={l.nome}>{l.nome}</option>)}</select>
                 </div>
-                <div><label className="block text-sm font-bold mb-1">Qtd. Animais</label><input required type="number" name="qtdAnimais" defaultValue="1" className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Qtd. Animais</label><input required type="number" name="qtdAnimais" defaultValue={editingVaccine?.qtdAnimais || 1} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold mb-1">Data Aplic.</label><input required type="date" name="dataAplicacao" defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
-                <div><label className="block text-sm font-bold mb-1">Carência (Dias)</label><input required type="number" name="carenciaDias" defaultValue="0" className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Data Aplic.</label><input required type="date" name="dataAplicacao" defaultValue={editingVaccine?.dataAplicacao || new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Carência (Dias)</label><input required type="number" name="carenciaDias" defaultValue={editingVaccine?.carenciaDias || 0} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => setIsVaccineFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button onClick={() => { setIsVaccineFormOpen(false); setEditingVaccine(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
               <button type="submit" form="vaccineForm" className="px-6 py-3 rounded-xl font-bold bg-red-600 text-white">Aplicar</button>
             </div>
           </div>
@@ -1606,23 +1707,23 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-green-50 shrink-0">
-              <h2 className="text-xl font-black text-green-900 flex items-center"><LayoutGrid className="mr-3 text-green-600"/> Adicionar Pastagem</h2>
-              <button onClick={() => setIsLoteFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+              <h2 className="text-xl font-black text-green-900 flex items-center"><LayoutGrid className="mr-3 text-green-600"/> {editingLote ? 'Editar Pastagem' : 'Adicionar Pastagem'}</h2>
+              <button onClick={() => { setIsLoteFormOpen(false); setEditingLote(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
-            <form id="loteForm" onSubmit={handleAddLote} className="p-6 space-y-4">
-              <div><label className="block text-sm font-bold mb-1">Nome do Lote/Piquete *</label><input required name="nome" className="w-full px-4 py-3 border rounded-xl" /></div>
+            <form id="loteForm" onSubmit={handleSaveLote} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Nome do Lote/Piquete *</label><input required name="nome" defaultValue={editingLote?.nome || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold mb-1">Capacidade (Cab.) *</label><input required type="number" name="capacidade" className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Capacidade (Cab.) *</label><input required type="number" name="capacidade" defaultValue={editingLote?.capacidade || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
                 <div>
                   <label className="block text-sm font-bold mb-1">Tipo</label>
-                  <select name="tipo" className="w-full px-4 py-3 border rounded-xl"><option value="Pasto">Pasto</option><option value="Baia">Baia / Confinamento</option></select>
+                  <select name="tipo" defaultValue={editingLote?.tipo || 'Pasto'} className="w-full px-4 py-3 border rounded-xl"><option value="Pasto">Pasto</option><option value="Baia">Baia / Confinamento</option></select>
                 </div>
               </div>
-              <div><label className="block text-sm font-bold mb-1">Observações</label><input name="obs" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Observações</label><input name="obs" defaultValue={editingLote?.obs || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => setIsLoteFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
-              <button type="submit" form="loteForm" className="px-6 py-3 rounded-xl font-bold bg-green-600 text-white">Criar Lote</button>
+              <button onClick={() => { setIsLoteFormOpen(false); setEditingLote(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="loteForm" className="px-6 py-3 rounded-xl font-bold bg-green-600 text-white">Salvar Lote</button>
             </div>
           </div>
         </div>
@@ -1633,23 +1734,23 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-pink-50 shrink-0">
-              <h2 className="text-xl font-black text-pink-900 flex items-center"><HeartPulse className="mr-3 text-pink-600"/> Registar Inseminação</h2>
-              <button onClick={() => setIsReproducaoFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+              <h2 className="text-xl font-black text-pink-900 flex items-center"><HeartPulse className="mr-3 text-pink-600"/> {editingReproducao ? 'Editar Inseminação' : 'Registar Inseminação'}</h2>
+              <button onClick={() => { setIsReproducaoFormOpen(false); setEditingReproducao(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
-            <form id="reproducaoForm" onSubmit={handleAddReproducao} className="p-6 space-y-4">
-              <div><label className="block text-sm font-bold mb-1">Brinco da Matriz *</label><input required name="brincoVaca" className="w-full px-4 py-3 border rounded-xl" /></div>
+            <form id="reproducaoForm" onSubmit={handleSaveReproducao} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Brinco da Matriz *</label><input required name="brincoVaca" defaultValue={editingReproducao?.brincoVaca || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold mb-1">Método</label>
-                  <select name="metodo" className="w-full px-4 py-3 border rounded-xl"><option value="IA">IA</option><option value="Monta Natural">Monta Natural</option><option value="TE">TE</option></select>
+                  <select name="metodo" defaultValue={editingReproducao?.metodo || 'IA'} className="w-full px-4 py-3 border rounded-xl"><option value="IA">IA</option><option value="Monta Natural">Monta Natural</option><option value="TE">TE</option></select>
                 </div>
-                <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="dataInseminacao" defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="dataInseminacao" defaultValue={editingReproducao?.dataInseminacao || new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
-              <div><label className="block text-sm font-bold mb-1">Touro / Semen</label><input name="reprodutor" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Touro / Semen</label><input name="reprodutor" defaultValue={editingReproducao?.reprodutor || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
               <input type="hidden" name="status" value="Prenhe" />
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => setIsReproducaoFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button onClick={() => { setIsReproducaoFormOpen(false); setEditingReproducao(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
               <button type="submit" form="reproducaoForm" className="px-6 py-3 rounded-xl font-bold bg-pink-600 text-white">Registar</button>
             </div>
           </div>
@@ -1661,27 +1762,27 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-blue-50 shrink-0">
-              <h2 className="text-xl font-black text-blue-900 flex items-center"><Baby className="mr-3 text-blue-600"/> Registar Nascimento</h2>
-              <button onClick={() => setIsNascimentoFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+              <h2 className="text-xl font-black text-blue-900 flex items-center"><Baby className="mr-3 text-blue-600"/> {editingNascimento ? 'Editar Nascimento' : 'Registar Nascimento'}</h2>
+              <button onClick={() => { setIsNascimentoFormOpen(false); setEditingNascimento(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
-            <form id="nascForm" onSubmit={handleAddNascimento} className="p-6 space-y-4">
+            <form id="nascForm" onSubmit={handleSaveNascimento} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold mb-1">Brinco Matriz *</label><input required name="brincoMatriz" className="w-full px-4 py-3 border rounded-xl" /></div>
-                <div><label className="block text-sm font-bold mb-1">Brinco Bezerro *</label><input required name="brincoBezerro" className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Brinco Matriz *</label><input required name="brincoMatriz" defaultValue={editingNascimento?.brincoMatriz || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Brinco Bezerro *</label><input required name="brincoBezerro" defaultValue={editingNascimento?.brincoBezerro || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-bold mb-1">Sexo</label>
-                  <select name="sexo" className="w-full px-4 py-3 border rounded-xl"><option value="M">M</option><option value="F">F</option></select>
+                  <select name="sexo" defaultValue={editingNascimento?.sexo || 'M'} className="w-full px-4 py-3 border rounded-xl"><option value="M">M</option><option value="F">F</option></select>
                 </div>
-                <div><label className="block text-sm font-bold mb-1">Peso (kg)</label><input required type="number" name="pesoNascimento" defaultValue="35" className="w-full px-4 py-3 border rounded-xl" /></div>
-                <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="data" defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Peso (kg)</label><input required type="number" name="pesoNascimento" defaultValue={editingNascimento?.pesoNascimento || 35} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Data *</label><input required type="date" name="data" defaultValue={editingNascimento?.data || new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
-              <div><label className="block text-sm font-bold mb-1">Raça</label><input required name="raca" defaultValue="Nelore" className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Raça</label><input required name="raca" defaultValue={editingNascimento?.raca || 'Nelore'} className="w-full px-4 py-3 border rounded-xl" /></div>
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => setIsNascimentoFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
-              <button type="submit" form="nascForm" className="px-6 py-3 rounded-xl font-bold bg-blue-600 text-white">Registar</button>
+              <button onClick={() => { setIsNascimentoFormOpen(false); setEditingNascimento(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="nascForm" className="px-6 py-3 rounded-xl font-bold bg-blue-600 text-white">Salvar</button>
             </div>
           </div>
         </div>
@@ -1692,23 +1793,23 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-purple-50 shrink-0">
-              <h2 className="text-xl font-black text-purple-900 flex items-center"><Archive className="mr-3 text-purple-600"/> Entrada de Insumo</h2>
-              <button onClick={() => setIsInsumoFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+              <h2 className="text-xl font-black text-purple-900 flex items-center"><Archive className="mr-3 text-purple-600"/> {editingInsumo ? 'Editar Insumo' : 'Entrada de Insumo'}</h2>
+              <button onClick={() => { setIsInsumoFormOpen(false); setEditingInsumo(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
-            <form id="insumoForm" onSubmit={handleAddInsumo} className="p-6 space-y-4">
-              <div><label className="block text-sm font-bold mb-1">Nome do Produto *</label><input required name="nome" className="w-full px-4 py-3 border rounded-xl" /></div>
+            <form id="insumoForm" onSubmit={handleSaveInsumo} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Nome do Produto *</label><input required name="nome" defaultValue={editingInsumo?.nome || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold mb-1">Categoria</label><input required name="categoria" defaultValue="Nutrição" className="w-full px-4 py-3 border rounded-xl" /></div>
-                <div><label className="block text-sm font-bold mb-1">Unidade</label><input required name="unidade" placeholder="kg, litros..." className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Categoria</label><input required name="categoria" defaultValue={editingInsumo?.categoria || 'Nutrição'} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Unidade</label><input required name="unidade" defaultValue={editingInsumo?.unidade || ''} placeholder="kg, litros..." className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold mb-1">Qtd Adquirida *</label><input required type="number" name="quantidade" className="w-full px-4 py-3 border rounded-xl" /></div>
-                <div><label className="block text-sm font-bold mb-1">Alerta Mínimo *</label><input required type="number" name="estoqueMinimo" defaultValue="10" className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Qtd Adquirida *</label><input required type="number" name="quantidade" defaultValue={editingInsumo?.quantidade || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Alerta Mínimo *</label><input required type="number" name="estoqueMinimo" defaultValue={editingInsumo?.estoqueMinimo || 10} className="w-full px-4 py-3 border rounded-xl" /></div>
               </div>
             </form>
             <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => setIsInsumoFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
-              <button type="submit" form="insumoForm" className="px-6 py-3 rounded-xl font-bold bg-purple-600 text-white">Adicionar</button>
+              <button onClick={() => { setIsInsumoFormOpen(false); setEditingInsumo(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
+              <button type="submit" form="insumoForm" className="px-6 py-3 rounded-xl font-bold bg-purple-600 text-white">Salvar</button>
             </div>
           </div>
         </div>
@@ -1755,97 +1856,15 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
             <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-blue-50 shrink-0">
-              <h2 className="text-xl font-black text-blue-900 flex items-center"><MapPin className="mr-3 text-blue-600"/> Adicionar Propriedade</h2>
-              <button onClick={() => setIsPropriedadeFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+              <h2 className="text-xl font-black text-blue-900 flex items-center"><MapPin className="mr-3 text-blue-600"/> {editingPropriedade ? 'Editar Propriedade' : 'Adicionar Propriedade'}</h2>
+              <button onClick={() => { setIsPropriedadeFormOpen(false); setEditingPropriedade(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
             </div>
-            <form id="propriedadeForm" onSubmit={handleAddPropriedade} className="p-6 space-y-4">
-              <div><label className="block text-sm font-bold mb-1">Nome da Fazenda *</label><input required name="nome" className="w-full px-4 py-3 border rounded-xl" /></div>
-              <div><label className="block text-sm font-bold mb-1">Responsável *</label><input required name="responsavel" className="w-full px-4 py-3 border rounded-xl" /></div>
+            <form id="propriedadeForm" onSubmit={handleSavePropriedade} className="p-6 space-y-4">
+              <div><label className="block text-sm font-bold mb-1">Nome da Fazenda *</label><input required name="nome" defaultValue={editingPropriedade?.nome || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
+              <div><label className="block text-sm font-bold mb-1">Responsável *</label><input required name="responsavel" defaultValue={editingPropriedade?.responsavel || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold mb-1">Cidade</label><input required name="cidade" className="w-full px-4 py-3 border rounded-xl" /></div>
-                <div><label className="block text-sm font-bold mb-1">Estado (UF)</label><input required name="estado" maxLength={2} className="w-full px-4 py-3 border rounded-xl uppercase" /></div>
+                <div><label className="block text-sm font-bold mb-1">Cidade</label><input required name="cidade" defaultValue={editingPropriedade?.cidade || ''} className="w-full px-4 py-3 border rounded-xl" /></div>
+                <div><label className="block text-sm font-bold mb-1">Estado (UF)</label><input required name="estado" maxLength={2} defaultValue={editingPropriedade?.estado || ''} className="w-full px-4 py-3 border rounded-xl uppercase" /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-bold mb-1">Área Total (ha)</label><input required type="number" name="area_ha" className="w-full px-4 py-3 border rounded-xl" /></div>
-                <div><label className="block text-sm font-bold mb-1">Insc. Estadual</label><input name="ie" className="w-full px-4 py-3 border rounded-xl" /></div>
-              </div>
-            </form>
-            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => setIsPropriedadeFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
-              <button type="submit" form="propriedadeForm" className="px-6 py-3 rounded-xl font-bold bg-blue-600 text-white">Salvar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: UTILIZADOR */}
-      {isUsuarioFormOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
-            <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-indigo-50 shrink-0">
-              <h2 className="text-xl font-black text-indigo-900 flex items-center"><Users className="mr-3 text-indigo-600"/> {editingUsuario ? 'Editar Operador' : 'Convite de Acesso'}</h2>
-              <button onClick={() => { setIsUsuarioFormOpen(false); setEditingUsuario(null); }} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
-            </div>
-            <form id="usuarioForm" onSubmit={handleSaveUsuario} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold mb-1">Nome Completo *</label>
-                <input required name="nome" defaultValue={editingUsuario?.nome || ''} className="w-full px-4 py-3 border rounded-xl" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold mb-1">Email de Acesso *</label>
-                <input required type="email" name="email" defaultValue={editingUsuario?.email || ''} className="w-full px-4 py-3 border rounded-xl" />
-              </div>
-              <div>
-                <label className="block text-sm font-bold mb-1">Senha de Acesso *</label>
-                <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input required type="text" name="senha" defaultValue={editingUsuario?.senha || ''} className="w-full pl-10 pr-4 py-3 border rounded-xl" placeholder="Defina a senha..." />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold mb-1">Nível de Permissão</label>
-                <select name="role" defaultValue={editingUsuario?.role || 'Operador'} className="w-full px-4 py-3 border rounded-xl">
-                  <option value="Operador">Operador (Regista dados)</option>
-                  <option value="Admin">Administrador (Acesso total)</option>
-                  <option value="Leitor">Leitor (Apenas visualização)</option>
-                </select>
-              </div>
-            </form>
-            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => { setIsUsuarioFormOpen(false); setEditingUsuario(null); }} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
-              <button type="submit" form="usuarioForm" className="px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white">{editingUsuario ? 'Guardar' : 'Criar e Enviar'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: CALENDÁRIO SANITÁRIO */}
-      {isCalendarioFormOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
-            <div className="border-b border-gray-100 p-6 flex justify-between items-center bg-yellow-50 shrink-0">
-              <h2 className="text-xl font-black text-yellow-900 flex items-center"><CalendarDays className="mr-3 text-yellow-600"/> Adicionar ao Calendário</h2>
-              <button onClick={() => setIsCalendarioFormOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
-            </div>
-            <form id="calendarioForm" onSubmit={handleAddCalendario} className="p-6 space-y-4">
-              <div><label className="block text-sm font-bold mb-1">Doença / Tratamento *</label><input required name="doenca" className="w-full px-4 py-3 border rounded-xl" /></div>
-              <div><label className="block text-sm font-bold mb-1">Mês de Aplicação *</label><input required name="mes" placeholder="Ex: Maio e Novembro" className="w-full px-4 py-3 border rounded-xl" /></div>
-              <div><label className="block text-sm font-bold mb-1">Público Alvo</label><input required name="publico" placeholder="Ex: Fêmeas 3 a 8 meses" className="w-full px-4 py-3 border rounded-xl" /></div>
-              <div>
-                <label className="block text-sm font-bold mb-1">Status IDARON</label>
-                <select name="obrigatorio" className="w-full px-4 py-3 border rounded-xl">
-                  <option value="true">Obrigatório</option>
-                  <option value="false">Recomendado</option>
-                </select>
-              </div>
-            </form>
-            <div className="flex justify-end p-6 border-t border-gray-100 space-x-3">
-              <button onClick={() => setIsCalendarioFormOpen(false)} className="px-6 py-3 rounded-xl font-bold bg-gray-100 text-gray-700">Cancelar</button>
-              <button type="submit" form="calendarioForm" className="px-6 py-3 rounded-xl font-bold bg-yellow-600 text-white">Adicionar</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+                <div><label className="block text-sm font-bold mb-1">Área Total (ha)</label><input required type="number" name="area_ha" defaultValue={editingPropriedade?.area_ha || ''} className="w-full px-4 py-3
