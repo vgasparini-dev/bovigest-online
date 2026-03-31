@@ -16,12 +16,24 @@ import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged }
 import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 // --- CONFIGURAÇÃO DA NUVEM ---
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'bovigest-pro-app';
+let app, auth, db;
+let firebaseAvailable = false;
 
+try {
+  const _fbConfig = typeof __firebase_config !== 'undefined' && __firebase_config
+    ? JSON.parse(__firebase_config)
+    : null;
+  if (_fbConfig && _fbConfig.projectId) {
+    app = initializeApp(_fbConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    firebaseAvailable = true;
+  }
+} catch (err) {
+  console.warn('Firebase nao inicializado, modo local ativo:', err);
+}
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'bovigest-pro-app';
 // --- BASE DE DADOS INICIAL (Usada apenas na primeira vez que a nuvem é criada) ---
 const defaultData = {
   propriedades: [
@@ -143,50 +155,57 @@ export default function App() {
   const [appData, setAppData] = useState(defaultData);
 
   // --- EFEITOS DE INICIALIZAÇÃO DA NUVEM ---
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) {
-        console.error("Erro na autenticação:", err);
+    useEffect(() => {
+      if (!firebaseAvailable) {
         setCloudStatus('error');
+        setIsDbLoading(false);
+        return;
       }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, setFirebaseUser);
-    return () => unsubscribe();
-  }, []);
+      const initAuth = async () => {
+        try {
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+        } catch (err) {
+          console.error("Erro na autenticacao:", err);
+          setCloudStatus('error');
+          setIsDbLoading(false);
+        }
+      };
+      initAuth();
+      const unsubscribe = onAuthStateChanged(auth, setFirebaseUser);
+      return () => unsubscribe();
+    }, []);
 
-  useEffect(() => {
-    if (!firebaseUser) return;
-    
-    // Conectar à Base de Dados partilhada da sua Aplicação
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bovigest', 'main');
-    
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setAppData(docSnap.data());
-        setCloudStatus('online');
-      } else {
-        // Se a nuvem estiver vazia, inicializa com a base de dados padrão
-        setDoc(docRef, defaultData).catch(console.error);
-        setAppData(defaultData);
-        setCloudStatus('online');
+    useEffect(() => {
+      if (!firebaseAvailable || !firebaseUser) {
+        if (!firebaseAvailable) setIsDbLoading(false);
+        return;
       }
-      setIsDbLoading(false);
-    }, (error) => {
-      console.error("Erro no Firestore:", error);
-      setCloudStatus('error');
-      setIsDbLoading(false);
-    });
 
-    return () => unsubscribe();
-  }, [firebaseUser]);
+      // Conectar à Base de Dados partilhada da sua Aplicação
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bovigest', 'main');
 
+      const unsubscribe = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setAppData(docSnap.data());
+          setCloudStatus('online');
+        } else {
+          // Se a nuvem estiver vazia, inicializa com a base de dados padrão
+          setDoc(docRef, defaultData).catch(console.error);
+          setAppData(defaultData);
+          setCloudStatus('online');
+        }
+        setIsDbLoading(false);
+      }, (error) => {
+        console.error("Erro no Firestore:", error);
+        setCloudStatus('error');
+        setIsDbLoading(false);
+      });
+      return () => unsubscribe();
+    }, [firebaseUser]);
   // Persistência local de configs privadas
   useEffect(() => { localStorage.setItem('bovigest_gemini_api_key', geminiApiKey); }, [geminiApiKey]);
   useEffect(() => { localStorage.setItem('bovigest_ai_endpoint', aiEndpoint); }, [aiEndpoint]);
@@ -194,18 +213,18 @@ export default function App() {
 
   // --- FUNÇÃO CENTRAL DE ATUALIZAÇÃO DA NUVEM ---
   const updateCloudData = (updater) => {
-    setAppData(prev => {
-      const newData = typeof updater === 'function' ? updater(prev) : updater;
-      // Guarda assincronamente na nuvem (Sincronização)
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bovigest', 'main');
-      setDoc(docRef, newData).catch(err => {
-        console.error("Erro ao guardar na nuvem:", err);
-        alert("Erro ao sincronizar com a nuvem. Verifique a sua internet.");
+      setAppData(prev => {
+        const newData = typeof updater === 'function' ? updater(prev) : updater;
+        // Guarda assincronamente na nuvem (Sincronização)
+        if (firebaseAvailable && db) {
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bovigest', 'main');
+          setDoc(docRef, newData).catch(err => {
+            console.error("Erro ao guardar na nuvem:", err);
+          });
+        }
+        return newData; // Atualização otimista imediata no ecrã
       });
-      return newData; // Atualização otimista imediata no ecrã
-    });
-  };
-
+    };
   // --- LOGIN COM VALIDAÇÃO DE CONVITE ---
   const handleLogin = (e) => {
     e.preventDefault();
