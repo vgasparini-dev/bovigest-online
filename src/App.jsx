@@ -194,8 +194,8 @@ export default function App() {
           setCloudStatus('online');
         } else {
           // Se a nuvem estiver vazia, inicializa com a base de dados padrão
-          setDoc(docRef, defaultData).catch(console.error);
-          setAppData(defaultData);
+          const _localRaw = localStorage.getItem('bovigest_data_pro_master'); const _initData = _localRaw ? { ...defaultData, ...JSON.parse(_localRaw) } : defaultData; setDoc(docRef, _initData).catch(console.error);
+          setAppData(_initData);
           setCloudStatus('online');
         }
         setIsDbLoading(false);
