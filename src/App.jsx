@@ -7,10 +7,22 @@ import {
   Edit, Baby, LayoutDashboard, Scale, Settings,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail, MinusCircle
+  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, CloudCloud, CloudOff
 } from 'lucide-react';
 
-// --- BASE DE DADOS INICIAL ---
+// --- IMPORTS DA NUVEM (FIREBASE/FIRESTORE) ---
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
+
+// --- CONFIGURAÇÃO DA NUVEM ---
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'bovigest-pro-app';
+
+// --- BASE DE DADOS INICIAL (Usada apenas na primeira vez que a nuvem é criada) ---
 const defaultData = {
   propriedades: [
     { id: 1, nome: "Fazenda São João", responsavel: "Victor Luiz Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" }
@@ -24,14 +36,8 @@ const defaultData = {
     { id: 3, propriedadeId: 1, doenca: "Clostridioses", mes: "Novembro", publico: "Todo o rebanho (Reforço)", obrigatorio: false },
     { id: 4, propriedadeId: 1, doenca: "Febre Aftosa", mes: "N/A", publico: "RO Livre sem vacinação", obrigatorio: false }
   ],
-  lotes: [],
-  animais: [],
-  pesagens: [],
-  reproducao: [],
-  nascimentos: [],
-  vacinacoes: [],
-  insumos: [],
-  financeiro: [],
+  lotes: [], animais: [], pesagens: [], reproducao: [],
+  nascimentos: [], vacinacoes: [], insumos: [], financeiro: [],
   bibliotecaAlimentos: [
     { id: 1, nome: "Silagem de Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
     { id: 2, nome: "Milho Grão Moído", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 },
@@ -44,44 +50,40 @@ const defaultData = {
 const calcularExigenciasNASEM = (peso, gpd) => {
   const pesoMetabolico = Math.pow(peso, 0.75);
   return {
-    cms: peso * 0.022,
-    elm: 0.077 * pesoMetabolico,
-    elg: 0.063 * pesoMetabolico * Math.pow(gpd, 1.097),
-    pm: (3.8 * pesoMetabolico) + (gpd * 250),
-    ca: 15 + (gpd * 10),
-    p: 10 + (gpd * 8),
+    cms: peso * 0.022, elm: 0.077 * pesoMetabolico, elg: 0.063 * pesoMetabolico * Math.pow(gpd, 1.097),
+    pm: (3.8 * pesoMetabolico) + (gpd * 250), ca: 15 + (gpd * 10), p: 10 + (gpd * 8),
   };
 };
 
 const callGemini = async (prompt, systemInstruction, userApiKey, endpointUrl, modelName) => {
   if (!userApiKey) {
-    return "⚠️ Atenção Administrador: Para que eu possa analisar os dados e conversar consigo, é necessário configurar a sua Chave API (API Key) do Google Gemini na aba 'Configurações'. Sem ela, o módulo de IA permanece inativo por razões de segurança do servidor.";
+    return "⚠️ Atenção Administrador: Configure a sua Chave API (API Key) do Google Gemini na aba 'Configurações' para ativar a Inteligência Artificial.";
   }
-
   const apiKey = userApiKey.trim(); 
   const baseEndpoint = endpointUrl || "https://generativelanguage.googleapis.com/v1beta/models";
   const model = modelName || "gemini-2.5-flash-preview-09-2025";
   const cleanEndpoint = baseEndpoint.endsWith('/') ? baseEndpoint.slice(0, -1) : baseEndpoint;
   const url = `${cleanEndpoint}/${model}:generateContent?key=${apiKey}`;
   
-  const payload = {
-    contents: [{ parts: [{ text: systemInstruction + "\n\nConsulta do Utilizador: " + prompt }] }]
-  };
+  const payload = { contents: [{ parts: [{ text: systemInstruction + "\n\nConsulta do Utilizador: " + prompt }] }] };
   
   try {
     const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!response.ok) {
-      return `❌ Erro de Ligação IA (Status ${response.status}). Verifique se a sua Chave API está correta e se o modelo "${model}" está disponível para a sua conta.`;
-    }
+    if (!response.ok) return `❌ Erro de Ligação IA (Status ${response.status}). Verifique se a sua Chave API está correta.`;
     const result = await response.json();
     return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta do modelo.";
   } catch (error) {
-    return `❌ Erro de Comunicação: Falha ao ligar ao servidor da Google. Verifique a sua ligação de rede ou as configurações de API.`;
+    return `❌ Erro de Comunicação com o servidor da Google.`;
   }
 };
 
 export default function App() {
-  // --- AUTENTICAÇÃO E NAVEGAÇÃO ---
+  // --- AUTENTICAÇÃO DA NUVEM (FIREBASE) ---
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [isDbLoading, setIsDbLoading] = useState(true);
+  const [cloudStatus, setCloudStatus] = useState('connecting'); // connecting, online, error
+
+  // --- AUTENTICAÇÃO E NAVEGAÇÃO DA APLICAÇÃO ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
@@ -92,7 +94,7 @@ export default function App() {
   const [sanidadeTab, setSanidadeTab] = useState('registos');
   const [activePropriedadeId, setActivePropriedadeId] = useState(1);
 
-  // Configurações Pessoais IA
+  // Configurações Pessoais IA (Mantidas no navegador pois são privadas)
   const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('bovigest_gemini_api_key') || '');
   const [aiEndpoint, setAiEndpoint] = useState(() => localStorage.getItem('bovigest_ai_endpoint') || 'https://generativelanguage.googleapis.com/v1beta/models');
   const [aiModel, setAiModel] = useState(() => localStorage.getItem('bovigest_ai_model') || 'gemini-2.5-flash-preview-09-2025');
@@ -102,47 +104,34 @@ export default function App() {
   const [isAnimalFormOpen, setIsAnimalFormOpen] = useState(false);
   const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
   const [editingAnimal, setEditingAnimal] = useState(null);
-  
   const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
   const [editingFinance, setEditingFinance] = useState(null);
-  
   const [isVaccineFormOpen, setIsVaccineFormOpen] = useState(false);
   const [editingVaccine, setEditingVaccine] = useState(null);
-
   const [isLoteFormOpen, setIsLoteFormOpen] = useState(false);
   const [editingLote, setEditingLote] = useState(null);
-
   const [isReproducaoFormOpen, setIsReproducaoFormOpen] = useState(false);
   const [editingReproducao, setEditingReproducao] = useState(null);
-
   const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
   const [editingPesagem, setEditingPesagem] = useState(null);
-
   const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
   const [editingNascimento, setEditingNascimento] = useState(null);
-
   const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
   const [editingInsumo, setEditingInsumo] = useState(null);
-
   const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);
   const [insumoParaConsumo, setInsumoParaConsumo] = useState(null);
-  
   const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
   const [editingPropriedade, setEditingPropriedade] = useState(null);
-
   const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState(null);
-  
   const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
   const [editingCalendario, setEditingCalendario] = useState(null);
 
-  // Estados Nutrição
+  // Estados Nutrição & IA
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
   const [nutriAlvoGPD, setNutriAlvoGPD] = useState(1.2);
   const [dietaAtual, setDietaAtual] = useState([]);
   const [insumoSelecionado, setInsumoSelecionado] = useState("");
-
-  // Estados IA
   const [aiInsights, setAiInsights] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [chatMessages, setChatMessages] = useState([{ role: 'model', text: 'Olá! Sou o seu Consultor Agro IA. Como posso ajudar com a gestão da sua fazenda hoje?' }]);
@@ -150,19 +139,72 @@ export default function App() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // --- PERSISTÊNCIA CHAVE DE MEMÓRIA ---
-  const [appData, setAppData] = useState(() => {
-    const saved = localStorage.getItem('bovigest_data_pro_master');
-    if (saved) {
-      try { return { ...defaultData, ...JSON.parse(saved) }; } catch (e) { return defaultData; }
-    }
-    return defaultData;
-  });
+  // --- DADOS DA APLICAÇÃO ---
+  const [appData, setAppData] = useState(defaultData);
 
-  useEffect(() => { localStorage.setItem('bovigest_data_pro_master', JSON.stringify(appData)); }, [appData]);
+  // --- EFEITOS DE INICIALIZAÇÃO DA NUVEM ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.error("Erro na autenticação:", err);
+        setCloudStatus('error');
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setFirebaseUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    
+    // Conectar à Base de Dados partilhada da sua Aplicação
+    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bovigest', 'main');
+    
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setAppData(docSnap.data());
+        setCloudStatus('online');
+      } else {
+        // Se a nuvem estiver vazia, inicializa com a base de dados padrão
+        setDoc(docRef, defaultData).catch(console.error);
+        setAppData(defaultData);
+        setCloudStatus('online');
+      }
+      setIsDbLoading(false);
+    }, (error) => {
+      console.error("Erro no Firestore:", error);
+      setCloudStatus('error');
+      setIsDbLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [firebaseUser]);
+
+  // Persistência local de configs privadas
   useEffect(() => { localStorage.setItem('bovigest_gemini_api_key', geminiApiKey); }, [geminiApiKey]);
   useEffect(() => { localStorage.setItem('bovigest_ai_endpoint', aiEndpoint); }, [aiEndpoint]);
   useEffect(() => { localStorage.setItem('bovigest_ai_model', aiModel); }, [aiModel]);
+
+  // --- FUNÇÃO CENTRAL DE ATUALIZAÇÃO DA NUVEM ---
+  const updateCloudData = (updater) => {
+    setAppData(prev => {
+      const newData = typeof updater === 'function' ? updater(prev) : updater;
+      // Guarda assincronamente na nuvem (Sincronização)
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'bovigest', 'main');
+      setDoc(docRef, newData).catch(err => {
+        console.error("Erro ao guardar na nuvem:", err);
+        alert("Erro ao sincronizar com a nuvem. Verifique a sua internet.");
+      });
+      return newData; // Atualização otimista imediata no ecrã
+    });
+  };
 
   // --- LOGIN COM VALIDAÇÃO DE CONVITE ---
   const handleLogin = (e) => {
@@ -174,8 +216,10 @@ export default function App() {
     if (validUser) { 
       if (validUser.status === 'Pendente') {
         alert(`Bem-vindo(a), ${validUser.nome.split(' ')[0]}! O seu convite foi confirmado com sucesso.`);
-        const updatedUsers = appData.usuarios.map(u => u.id === validUser.id ? { ...u, status: 'Ativo' } : u);
-        setAppData(prev => ({ ...prev, usuarios: updatedUsers }));
+        updateCloudData(prev => ({
+          ...prev, 
+          usuarios: prev.usuarios.map(u => u.id === validUser.id ? { ...u, status: 'Ativo' } : u)
+        }));
         setCurrentUser({ ...validUser, status: 'Ativo' });
       } else {
         setCurrentUser(validUser);
@@ -264,7 +308,7 @@ export default function App() {
   const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   const showSaveSuccess = () => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); };
 
-  // --- EXPORTAÇÃO CSV PADRONIZADA ---
+  // --- EXPORTAÇÃO CSV PADRONIZADA DOS EXCEIS ---
   const downloadCSV = (filename, headers, rows) => {
     const csvContent = [headers.join(','), ...rows.map(e => e.map(item => `"${item}"`).join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -357,7 +401,7 @@ export default function App() {
     setIsChatLoading(false);
   };
 
-  // --- HANDLERS FORMS (CRIAR/EDITAR) ---
+  // --- HANDLERS DE FORMULÁRIOS (GRAVAÇÃO NA NUVEM) ---
   const handleSaveAnimal = (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
@@ -369,8 +413,8 @@ export default function App() {
       dataNasc: fd.get('dataNasc'), peso: Number(fd.get('peso')), lote: fd.get('lote') || "Sem Lote",
       obs: fd.get('obs') || "", ativo: true
     };
-    if (editingAnimal) setAppData(prev => ({ ...prev, animais: prev.animais.map(a => a.id === animalData.id ? animalData : a) }));
-    else setAppData(prev => ({ ...prev, animais: [animalData, ...prev.animais] }));
+    if (editingAnimal) updateCloudData(prev => ({ ...prev, animais: prev.animais.map(a => a.id === animalData.id ? animalData : a) }));
+    else updateCloudData(prev => ({ ...prev, animais: [animalData, ...prev.animais] }));
     setIsAnimalFormOpen(false); setEditingAnimal(null); setSelectedAnimal(null); showSaveSuccess();
   };
 
@@ -389,7 +433,7 @@ export default function App() {
         dataNasc: fd.get('dataNasc'), peso: Number(fd.get('peso')), lote, obs: "Cadastrado em lote.", ativo: true
       });
     }
-    setAppData(prev => ({ ...prev, animais: [...novosAnimais, ...prev.animais] }));
+    updateCloudData(prev => ({ ...prev, animais: [...novosAnimais, ...prev.animais] }));
     setIsBatchAnimalFormOpen(false); showSaveSuccess();
   };
 
@@ -413,9 +457,9 @@ export default function App() {
     };
 
     if (editingPesagem) {
-      setAppData(prev => ({ ...prev, pesagens: prev.pesagens.map(p => p.id === novaPesagem.id ? novaPesagem : p) }));
+      updateCloudData(prev => ({ ...prev, pesagens: prev.pesagens.map(p => p.id === novaPesagem.id ? novaPesagem : p) }));
     } else {
-      setAppData(prev => ({ 
+      updateCloudData(prev => ({ 
         ...prev, 
         pesagens: [novaPesagem, ...prev.pesagens], 
         animais: prev.animais.map(a => a.brinco === brinco && a.propriedadeId === activePropriedadeId ? { ...a, peso: pesoAtual } : a) 
@@ -439,10 +483,10 @@ export default function App() {
     };
 
     if (editingNascimento) {
-      setAppData(prev => ({ ...prev, nascimentos: prev.nascimentos.map(n => n.id === novoNasc.id ? novoNasc : n) }));
+      updateCloudData(prev => ({ ...prev, nascimentos: prev.nascimentos.map(n => n.id === novoNasc.id ? novoNasc : n) }));
     } else {
       const novoAnimal = { id: Date.now() + 1, propriedadeId: activePropriedadeId, brinco: brincoBezerro, nome: "-", sexo: fd.get('sexo'), categoria: "Bezerro(a)", tipo: "Cria", raca: fd.get('raca'), dataNasc: fd.get('data'), peso: pesoNascer, lote: "Maternidade", obs: `Cria da matriz ${brincoMatriz}`, ativo: true };
-      setAppData(prev => ({ 
+      updateCloudData(prev => ({ 
         ...prev, 
         nascimentos: [novoNasc, ...prev.nascimentos], 
         animais: [novoAnimal, ...prev.animais], 
@@ -470,9 +514,9 @@ export default function App() {
     };
 
     if (editingVaccine) {
-      setAppData(prev => ({ ...prev, vacinacoes: prev.vacinacoes.map(v => v.id === novaVacina.id ? novaVacina : v) }));
+      updateCloudData(prev => ({ ...prev, vacinacoes: prev.vacinacoes.map(v => v.id === novaVacina.id ? novaVacina : v) }));
     } else {
-      setAppData(prev => ({ ...prev, vacinacoes: [novaVacina, ...prev.vacinacoes] }));
+      updateCloudData(prev => ({ ...prev, vacinacoes: [novaVacina, ...prev.vacinacoes] }));
     }
     setIsVaccineFormOpen(false); setEditingVaccine(null); showSaveSuccess();
   };
@@ -486,9 +530,9 @@ export default function App() {
       tipo: fd.get('tipo'), valor: Number(fd.get('valor')), data: fd.get('data'), status: fd.get('status') 
     };
     if (editingFinance) {
-      setAppData(prev => ({ ...prev, financeiro: prev.financeiro.map(f => f.id === novaFin.id ? novaFin : f) }));
+      updateCloudData(prev => ({ ...prev, financeiro: prev.financeiro.map(f => f.id === novaFin.id ? novaFin : f) }));
     } else {
-      setAppData(prev => ({ ...prev, financeiro: [novaFin, ...prev.financeiro] })); 
+      updateCloudData(prev => ({ ...prev, financeiro: [novaFin, ...prev.financeiro] })); 
     }
     setIsFinanceFormOpen(false); setEditingFinance(null); showSaveSuccess(); 
   };
@@ -502,9 +546,9 @@ export default function App() {
       tipo: fd.get('tipo'), obs: fd.get('obs') || "" 
     };
     if (editingLote) {
-      setAppData(prev => ({ ...prev, lotes: prev.lotes.map(l => l.id === novoLote.id ? novoLote : l) }));
+      updateCloudData(prev => ({ ...prev, lotes: prev.lotes.map(l => l.id === novoLote.id ? novoLote : l) }));
     } else {
-      setAppData(prev => ({ ...prev, lotes: [novoLote, ...prev.lotes] })); 
+      updateCloudData(prev => ({ ...prev, lotes: [novoLote, ...prev.lotes] })); 
     }
     setIsLoteFormOpen(false); setEditingLote(null); showSaveSuccess(); 
   };
@@ -518,9 +562,9 @@ export default function App() {
       quantidade: Number(fd.get('quantidade')), unidade: fd.get('unidade'), estoqueMinimo: Number(fd.get('estoqueMinimo')) 
     };
     if (editingInsumo) {
-      setAppData(prev => ({ ...prev, insumos: prev.insumos.map(i => i.id === novoInsumo.id ? novoInsumo : i) }));
+      updateCloudData(prev => ({ ...prev, insumos: prev.insumos.map(i => i.id === novoInsumo.id ? novoInsumo : i) }));
     } else {
-      setAppData(prev => ({ ...prev, insumos: [novoInsumo, ...prev.insumos] })); 
+      updateCloudData(prev => ({ ...prev, insumos: [novoInsumo, ...prev.insumos] })); 
     }
     setIsInsumoFormOpen(false); setEditingInsumo(null); showSaveSuccess(); 
   };
@@ -529,7 +573,7 @@ export default function App() {
     e.preventDefault();
     const fd = new FormData(e.target);
     const qtdConsumida = Number(fd.get('quantidadeConsumo'));
-    setAppData(prev => ({
+    updateCloudData(prev => ({
       ...prev,
       insumos: prev.insumos.map(ins => ins.id === insumoParaConsumo.id ? { ...ins, quantidade: Math.max(0, ins.quantidade - qtdConsumida) } : ins)
     }));
@@ -547,9 +591,9 @@ export default function App() {
       previsaoParto: prevDate, metodo: fd.get('metodo'), reprodutor: fd.get('reprodutor'), status: fd.get('status') 
     };
     if (editingReproducao) {
-      setAppData(prevData => ({ ...prevData, reproducao: prevData.reproducao.map(r => r.id === novaRep.id ? novaRep : r) })); 
+      updateCloudData(prevData => ({ ...prevData, reproducao: prevData.reproducao.map(r => r.id === novaRep.id ? novaRep : r) })); 
     } else {
-      setAppData(prevData => ({ ...prevData, reproducao: [novaRep, ...prevData.reproducao] })); 
+      updateCloudData(prevData => ({ ...prevData, reproducao: [novaRep, ...prevData.reproducao] })); 
     }
     setIsReproducaoFormOpen(false); setEditingReproducao(null); showSaveSuccess(); 
   };
@@ -563,9 +607,9 @@ export default function App() {
       estado: fd.get('estado'), area_ha: Number(fd.get('area_ha')), ie: fd.get('ie') 
     };
     if (editingPropriedade) {
-      setAppData(prev => ({ ...prev, propriedades: prev.propriedades.map(p => p.id === novaProp.id ? novaProp : p) }));
+      updateCloudData(prev => ({ ...prev, propriedades: prev.propriedades.map(p => p.id === novaProp.id ? novaProp : p) }));
     } else {
-      setAppData(prev => ({ ...prev, propriedades: [...prev.propriedades, novaProp] }));
+      updateCloudData(prev => ({ ...prev, propriedades: [...prev.propriedades, novaProp] }));
       setActivePropriedadeId(novaProp.id);
     }
     setIsPropriedadeFormOpen(false); setEditingPropriedade(null); showSaveSuccess();
@@ -579,28 +623,52 @@ export default function App() {
       propriedadeId: activePropriedadeId, doenca: fd.get('doenca'), mes: fd.get('mes'), publico: fd.get('publico'), obrigatorio: fd.get('obrigatorio') === 'true' 
     };
     if (editingCalendario) {
-      setAppData(prev => ({ ...prev, calendarioSanitario: prev.calendarioSanitario.map(c => c.id === novoEvento.id ? novoEvento : c) }));
+      updateCloudData(prev => ({ ...prev, calendarioSanitario: prev.calendarioSanitario.map(c => c.id === novoEvento.id ? novoEvento : c) }));
     } else {
-      setAppData(prev => ({ ...prev, calendarioSanitario: [...(prev.calendarioSanitario || []), novoEvento] }));
+      updateCloudData(prev => ({ ...prev, calendarioSanitario: [...(prev.calendarioSanitario || []), novoEvento] }));
     }
     setIsCalendarioFormOpen(false); setEditingCalendario(null); showSaveSuccess();
   };
 
+  const handleSaveUsuario = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const novoUsr = { 
+      id: editingUsuario ? editingUsuario.id : Date.now(), 
+      nome: fd.get('nome'), 
+      email: fd.get('email'), 
+      senha: fd.get('senha'), 
+      role: fd.get('role'),
+      status: editingUsuario ? editingUsuario.status : 'Pendente'
+    };
+    
+    if (editingUsuario) {
+      updateCloudData(prev => ({ ...prev, usuarios: prev.usuarios.map(u => u.id === novoUsr.id ? novoUsr : u) }));
+    } else {
+      updateCloudData(prev => ({ ...prev, usuarios: [...(prev.usuarios || []), novoUsr] }));
+      const subject = encodeURIComponent("Convite de Acesso - BoviGest PRO");
+      const body = encodeURIComponent(`Olá ${novoUsr.nome},\n\nFoi convidado a aceder ao sistema BoviGest PRO.\n\nO seu email de acesso: ${novoUsr.email}\nA sua senha provisória: ${novoUsr.senha}\n\nAceda à plataforma e faça login para confirmar o seu registo.\n\nAtenciosamente,\nAdministração`);
+      window.location.href = `mailto:${novoUsr.email}?subject=${subject}&body=${body}`;
+    }
+    setIsUsuarioFormOpen(false); setEditingUsuario(null); showSaveSuccess();
+  };
+
   // --- HANDLERS DE EXCLUSÃO ---
-  const handleDeleteAnimal = (id) => { if (confirm('Excluir animal permanentemente?')) { setAppData(prev => ({ ...prev, animais: prev.animais.filter(a => a.id !== id) })); setSelectedAnimal(null); showSaveSuccess(); } };
-  const handleDeleteFinance = (id) => { if (confirm('Excluir registo financeiro?')) { setAppData(prev => ({ ...prev, financeiro: prev.financeiro.filter(x => x.id !== id) })); showSaveSuccess(); } };
-  const handleDeleteVaccine = (id) => { if (confirm('Excluir registo sanitário?')) { setAppData(prev => ({ ...prev, vacinacoes: prev.vacinacoes.filter(x => x.id !== id) })); showSaveSuccess(); } };
-  const handleDeleteLote = (id) => { if (confirm('Excluir pastagem/lote?')) { setAppData(prev => ({ ...prev, lotes: prev.lotes.filter(x => x.id !== id) })); showSaveSuccess(); } };
-  const handleDeleteReproducao = (id) => { if (confirm('Excluir registo de reprodução?')) { setAppData(prev => ({ ...prev, reproducao: prev.reproducao.filter(x => x.id !== id) })); showSaveSuccess(); } };
-  const handleDeletePesagem = (id) => { if (confirm('Excluir pesagem?')) { setAppData(prev => ({ ...prev, pesagens: prev.pesagens.filter(x => x.id !== id) })); showSaveSuccess(); } };
-  const handleDeleteNascimento = (id) => { if (confirm('Excluir nascimento?')) { setAppData(prev => ({ ...prev, nascimentos: prev.nascimentos.filter(x => x.id !== id) })); showSaveSuccess(); } };
-  const handleDeleteInsumo = (id) => { if (confirm('Excluir insumo do sistema?')) { setAppData(prev => ({ ...prev, insumos: prev.insumos.filter(i => i.id !== id) })); showSaveSuccess(); } };
-  const handleDeleteCalendario = (id) => { if (confirm('Excluir evento do calendário?')) { setAppData(prev => ({ ...prev, calendarioSanitario: prev.calendarioSanitario.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteAnimal = (id) => { if (confirm('Excluir animal permanentemente?')) { updateCloudData(prev => ({ ...prev, animais: prev.animais.filter(a => a.id !== id) })); setSelectedAnimal(null); showSaveSuccess(); } };
+  const handleDeleteFinance = (id) => { if (confirm('Excluir registo financeiro?')) { updateCloudData(prev => ({ ...prev, financeiro: prev.financeiro.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteVaccine = (id) => { if (confirm('Excluir registo sanitário?')) { updateCloudData(prev => ({ ...prev, vacinacoes: prev.vacinacoes.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteLote = (id) => { if (confirm('Excluir pastagem/lote?')) { updateCloudData(prev => ({ ...prev, lotes: prev.lotes.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteReproducao = (id) => { if (confirm('Excluir registo de reprodução?')) { updateCloudData(prev => ({ ...prev, reproducao: prev.reproducao.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeletePesagem = (id) => { if (confirm('Excluir pesagem?')) { updateCloudData(prev => ({ ...prev, pesagens: prev.pesagens.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteNascimento = (id) => { if (confirm('Excluir nascimento?')) { updateCloudData(prev => ({ ...prev, nascimentos: prev.nascimentos.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteInsumo = (id) => { if (confirm('Excluir insumo do sistema?')) { updateCloudData(prev => ({ ...prev, insumos: prev.insumos.filter(i => i.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteCalendario = (id) => { if (confirm('Excluir evento do calendário?')) { updateCloudData(prev => ({ ...prev, calendarioSanitario: prev.calendarioSanitario.filter(x => x.id !== id) })); showSaveSuccess(); } };
+  const handleDeleteUsuario = (id) => { if (confirm('Tem a certeza que deseja remover este utilizador?')) { updateCloudData(prev => ({ ...prev, usuarios: prev.usuarios.filter(u => u.id !== id) })); showSaveSuccess(); } };
   
   const handleDeletePropriedade = (id) => {
     if (appData.propriedades.length === 1) return alert("Não é possível excluir a única propriedade do sistema.");
     if (confirm('🚨 ATENÇÃO: Deseja apagar esta propriedade e TODOS os registos associados a ela? Esta ação é irreversível!')) {
-      setAppData(prev => ({
+      updateCloudData(prev => ({
         ...prev,
         propriedades: prev.propriedades.filter(p => p.id !== id),
         lotes: prev.lotes.filter(x => x.propriedadeId !== id),
@@ -620,6 +688,20 @@ export default function App() {
       showSaveSuccess();
     }
   };
+
+  const openEditAnimal = (animal) => { setEditingAnimal(animal); setIsAnimalFormOpen(true); };
+  const openEditUsuario = (usr) => { setEditingUsuario(usr); setIsUsuarioFormOpen(true); };
+
+  // --- ECRÃ DE LOADING DA NUVEM ---
+  if (isDbLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+        <Loader2 className="w-12 h-12 text-green-500 animate-spin mb-4" />
+        <h2 className="text-xl font-bold">A Sincronizar BoviGest PRO com a Nuvem...</h2>
+        <p className="text-slate-400 mt-2 text-sm">Por favor aguarde, a carregar os dados da fazenda.</p>
+      </div>
+    );
+  }
 
   // --- NAVEGAÇÃO ---
   const navItems = [
@@ -661,7 +743,7 @@ export default function App() {
               <div>
                 <input type="password" name="senha" required className="block w-full px-5 py-4 bg-slate-800 border-none text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder-slate-500" placeholder="Senha" />
               </div>
-              <button type="submit" className="w-full flex justify-center py-4 px-4 rounded-xl text-base font-bold text-white bg-green-600 hover:bg-green-500 transition-all shadow-lg">Aceder ao Portal Seguro</button>
+              <button type="submit" className="w-full flex justify-center py-4 px-4 rounded-xl text-base font-bold text-white bg-green-600 hover:bg-green-500 transition-all shadow-lg">Aceder ao Portal Cloud</button>
             </form>
           </div>
         </div>
@@ -681,8 +763,9 @@ export default function App() {
           <span className="text-2xl font-black tracking-tight text-white block leading-none">BoviGest</span>
         </div>
         
+        {/* Seletor de Propriedade Isolada */}
         <div className="px-6 py-4 border-b border-slate-800/50 bg-slate-900/50 shrink-0">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Propriedade Isolada</label>
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Propriedade Ativa</label>
           <select 
             value={activePropriedadeId} 
             onChange={(e) => setActivePropriedadeId(Number(e.target.value))}
@@ -731,7 +814,17 @@ export default function App() {
             </h2>
           </div>
           <div className="flex items-center space-x-4">
-            {saveSuccess && (<span className="text-sm font-bold text-green-700 flex items-center bg-green-50 px-4 py-2 rounded-full animate-in fade-in shadow-sm"><CheckCircle2 size={18} className="mr-2" /> Gravado</span>)}
+            {cloudStatus === 'online' && (
+              <span className="text-xs font-bold text-blue-600 flex items-center bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm">
+                <CloudCloud size={14} className="mr-1.5" /> Nuvem Ativa
+              </span>
+            )}
+            {cloudStatus === 'error' && (
+              <span className="text-xs font-bold text-red-600 flex items-center bg-red-50 px-3 py-1.5 rounded-full border border-red-100 shadow-sm">
+                <CloudOff size={14} className="mr-1.5" /> Erro Nuvem
+              </span>
+            )}
+            {saveSuccess && (<span className="text-sm font-bold text-green-700 flex items-center bg-green-50 px-4 py-2 rounded-full animate-in fade-in shadow-sm"><CheckCircle2 size={18} className="mr-2" /> Guardado na Nuvem</span>)}
             <button className="text-gray-400 hover:text-gray-800 relative p-3 bg-white border border-gray-200 hover:bg-gray-50 rounded-full transition-colors shadow-sm">
               <Bell className="h-5 w-5" />
               {(animaisEmCarencia > 0 || insumosCriticos > 0) && <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-red-500 border-2 border-white"></span>}
@@ -1330,7 +1423,6 @@ export default function App() {
                   <p className="text-sm font-bold text-slate-400 uppercase">Saldo Líquido</p>
                   <p className={`text-3xl font-black ${saldoAtual >= 0 ? 'text-white' : 'text-red-400'}`}>{formatCurrency(saldoAtual)}</p>
                 </div>
-                {/* Card: Custo por Arroba */}
                 <div className="bg-blue-50 p-6 rounded-2xl shadow-sm border border-blue-100 flex flex-col justify-center">
                   <p className="text-sm font-bold text-blue-800 uppercase flex items-center"><Activity size={16} className="mr-2" /> Custo por Arroba (@)</p>
                   <p className="text-3xl font-black text-blue-900 mt-1">{formatCurrency(custoPorArroba)}</p>
