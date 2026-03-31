@@ -7,7 +7,7 @@ import {
   Edit, Baby, LayoutDashboard, Scale, Settings,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, CloudCloud, CloudOff
+    Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Cloud, CloudOff
 } from 'lucide-react';
 
 // --- IMPORTS DA NUVEM (FIREBASE/FIRESTORE) ---
