@@ -7,7 +7,7 @@ import {
   Edit, Baby, LayoutDashboard, Scale, Settings,
   Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
   Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-    Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Cloud, CloudOff
+    Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Cloud, CloudOff, MinusCircle, Syringe
 } from 'lucide-react';
 
 // --- IMPORTS DA NUVEM (FIREBASE/FIRESTORE) ---
@@ -835,7 +835,7 @@ export default function App() {
           <div className="flex items-center space-x-4">
             {cloudStatus === 'online' && (
               <span className="text-xs font-bold text-blue-600 flex items-center bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm">
-                <CloudCloud size={14} className="mr-1.5" /> Nuvem Ativa
+                <Cloud size={14} className="mr-1.5" /> Nuvem Ativa
               </span>
             )}
             {cloudStatus === 'error' && (
