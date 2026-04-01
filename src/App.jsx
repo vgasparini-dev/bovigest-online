@@ -2,13 +2,11 @@
 /* eslint-disable */
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Tractor, Beef, Activity, LogOut, Bell, Search,
-  Plus, MapPin, DollarSign, HeartPulse, LayoutGrid, X, Trash2,
-  Edit, Baby, LayoutDashboard, Scale, Settings,
-  Sparkles, Bot, Send, Loader2, CheckCircle2, Download,
-  Archive, Target, PackagePlus, AlertTriangle, ListPlus, ShieldAlert,
-  Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, 
-  Mail, MessageSquare, Save, NotebookPen, Cloud, CloudOff, MinusCircle
+  Tractor, Beef, Activity, LogOut, Bell, Search, Plus, MapPin, DollarSign, HeartPulse, 
+  LayoutGrid, X, Trash2, Edit, Baby, LayoutDashboard, Scale, Settings, Sparkles, Bot, Send, 
+  Loader2, CheckCircle2, Download, Archive, Target, PackagePlus, AlertTriangle, ListPlus, 
+  ShieldAlert, Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail, 
+  MessageSquare, Save, NotebookPen, Cloud, CloudOff, MinusCircle
 } from 'lucide-react';
 
 // --- IMPORTAÇÕES DA NUVEM (FIREBASE) ---
@@ -31,27 +29,21 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- BASE DE DADOS INICIAL ---
+// --- BASE DE DADOS INICIAL SEGURA ---
 const defaultData = {
-  propriedades: [
-    { id: 1, nome: "Fazenda São João", responsavel: "Victor Luiz Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" }
-  ],
+  propriedades: [{ id: 1, nome: "Fazenda São João", responsavel: "Victor Luiz Gasparini", cidade: "Jaru", estado: "RO", area_ha: 350, ie: "123.456.789-00" }],
   usuarios: [
     { id: 1, nome: "Victor Luiz Gasparini", email: "victorluizgasparini@gmail.com", senha: "Lu1z1502#", role: "Admin", status: "Ativo" },     
     { id: 2, nome: "Lucas Winter", email: "lucasff99@hotmail.com", senha: "123456", role: "Operador", status: "Ativo" }
   ],
   calendarioSanitario: [
     { id: 1, propriedadeId: 1, doenca: "Brucelose", mes: "1º Semestre", publico: "Fêmeas de 3 a 8 meses", obrigatorio: true },
-    { id: 2, propriedadeId: 1, doenca: "Raiva", mes: "Maio", publico: "Todo o rebanho", obrigatorio: true },
-    { id: 3, propriedadeId: 1, doenca: "Clostridioses", mes: "Novembro", publico: "Todo o rebanho (Reforço)", obrigatorio: false },
-    { id: 4, propriedadeId: 1, doenca: "Febre Aftosa", mes: "N/A", publico: "RO Livre sem vacinação", obrigatorio: false }
+    { id: 2, propriedadeId: 1, doenca: "Raiva", mes: "Maio", publico: "Todo o rebanho", obrigatorio: true }
   ],
   lotes: [], animais: [], pesagens: [], reproducao: [], nascimentos: [], vacinacoes: [], insumos: [], financeiro: [], anotacoes: [],
   bibliotecaAlimentos: [
     { id: 1, nome: "Silagem de Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
-    { id: 2, nome: "Milho Grão Moído", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 },
-    { id: 3, nome: "Farelo de Soja (46%)", ms: 89, elm: 2.05, elg: 1.40, pm: 320, ca: 3.5, p: 6.5, precoKg: 2.50 },
-    { id: 4, nome: "Ureia Pecuária", ms: 100, elm: 0, elg: 0, pm: 1200, ca: 0, p: 0, precoKg: 3.80 }
+    { id: 2, nome: "Milho Grão Moído", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 }
   ]
 };
 
@@ -76,38 +68,12 @@ const callGemini = async (prompt, sys, userApiKey, url, model) => {
   } catch (e) { return "❌ Falha de comunicação."; }
 };
 
-// --- COMPONENTE DE OBSERVAÇÕES DO ANIMAL ---
-function ObsEditor({ animal, onSave }) {
-  const [text, setText] = React.useState(animal?.obs || '');
-  React.useEffect(() => { setText(animal?.obs || ''); }, [animal?.id]);
-  return (
-    <div>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={4}
-        placeholder="Adicione observações sobre este animal..."
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none outline-none focus:ring-2 focus:ring-green-400 text-sm text-gray-700"
-      />
-      <button
-        type="button"
-        onClick={() => onSave(animal.id, text)}
-        className="mt-2 flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold text-sm"
-      >
-        <Save size={14}/> Salvar Observação
-      </button>
-    </div>
-  );
-}
-
 export default function App() {
-  // --- AUTENTICAÇÃO E NAVEGAÇÃO ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
-  
   const [sanidadeTab, setSanidadeTab] = useState('registos');
   const [activePropriedadeId, setActivePropriedadeId] = useState(1);
 
@@ -238,53 +204,66 @@ export default function App() {
     e.preventDefault();
     const email = e.target.email.value;
     const senha = e.target.senha.value;
-    const validUser = (appData.usuarios || []).find(u => u.email === email && u.senha === senha && (u.status === 'Ativo' || u.status === 'Pendente'));
+    const validUser = (appData?.usuarios || []).find(u => u.email === email && u.senha === senha && (u.status === 'Ativo' || u.status === 'Pendente'));
     
     if (validUser) { 
       if (validUser.status === 'Pendente') {
-        alert(`Bem-vindo(a), ${validUser.nome.split(' ')[0]}! O seu convite foi confirmado com sucesso.`);
+        alert(`Bem-vindo(a), ${(validUser.nome || 'Utilizador').split(' ')[0]}! A sua conta foi ativada com sucesso.`);
         updateAppData(p => ({ ...p, usuarios: (p.usuarios || []).map(u => u.id === validUser.id ? { ...u, status: 'Ativo' } : u) }));
       }
       setCurrentUser({ ...validUser, status: 'Ativo' }); setIsLoggedIn(true); setLoginError(""); 
     } else { 
-      setLoginError("Credenciais inválidas. Verifique o email e senha inseridos."); 
+      setLoginError("Credenciais inválidas. Verifique o email e a senha."); 
     }
   };
 
-  // --- ACESSO SEGURO AOS DADOS ---
-  const propriedadeAtiva = useMemo(() => (appData.propriedades || []).find(p => p.id === activePropriedadeId) || (appData.propriedades || [])[0] || {}, [activePropriedadeId, appData.propriedades]);
-  const cAnimais = useMemo(() => (appData.animais || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.animais, activePropriedadeId]);
-  const cLotes = useMemo(() => (appData.lotes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.lotes, activePropriedadeId]);
-  const cFinanceiro = useMemo(() => (appData.financeiro || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.financeiro, activePropriedadeId]);
-  const cPesagens = useMemo(() => (appData.pesagens || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.pesagens, activePropriedadeId]);
-  const cReproducao = useMemo(() => (appData.reproducao || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.reproducao, activePropriedadeId]);
-  const cNascimentos = useMemo(() => (appData.nascimentos || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.nascimentos, activePropriedadeId]);
-  const cVacinacoes = useMemo(() => (appData.vacinacoes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.vacinacoes, activePropriedadeId]);
-  const cInsumos = useMemo(() => (appData.insumos || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.insumos, activePropriedadeId]);
-  const cCalendario = useMemo(() => (appData.calendarioSanitario || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.calendarioSanitario, activePropriedadeId]);
-  const cAnotacoes = useMemo(() => (appData.anotacoes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.anotacoes, activePropriedadeId]);
+  // --- ACESSO SEGURO AOS DADOS (BLINDAGEM CONTRA TELA BRANCA) ---
+  const propriedadeAtiva = useMemo(() => (appData?.propriedades || []).find(p => p.id === activePropriedadeId) || (appData?.propriedades || [])[0] || { nome: 'Fazenda BoviGest', responsavel: 'Gestor' }, [activePropriedadeId, appData?.propriedades]);
+  const cAnimais = useMemo(() => (appData?.animais || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.animais, activePropriedadeId]);
+  const cLotes = useMemo(() => (appData?.lotes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.lotes, activePropriedadeId]);
+  const cFinanceiro = useMemo(() => (appData?.financeiro || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.financeiro, activePropriedadeId]);
+  const cPesagens = useMemo(() => (appData?.pesagens || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.pesagens, activePropriedadeId]);
+  const cReproducao = useMemo(() => (appData?.reproducao || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.reproducao, activePropriedadeId]);
+  const cNascimentos = useMemo(() => (appData?.nascimentos || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.nascimentos, activePropriedadeId]);
+  const cVacinacoes = useMemo(() => (appData?.vacinacoes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.vacinacoes, activePropriedadeId]);
+  const cInsumos = useMemo(() => (appData?.insumos || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.insumos, activePropriedadeId]);
+  const cCalendario = useMemo(() => (appData?.calendarioSanitario || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.calendarioSanitario, activePropriedadeId]);
+  const cAnotacoes = useMemo(() => (appData?.anotacoes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.anotacoes, activePropriedadeId]);
 
   const totaisFin = useMemo(() => cFinanceiro.reduce((acc, item) => {
-    if (item.status === 'pago') {
-      if (item.tipo === 'receita') acc.rec += Number(item.valor);
-      if (item.tipo === 'despesa') acc.desp += Number(item.valor);
+    if (item?.status === 'pago') {
+      if (item.tipo === 'receita') acc.rec += Number(item.valor || 0);
+      if (item.tipo === 'despesa') acc.desp += Number(item.valor || 0);
     }
     return acc;
   }, { rec: 0, desp: 0 }), [cFinanceiro]);
   
   const saldoAtual = totaisFin.rec - totaisFin.desp;
-  const pesoMedio = cAnimais.length === 0 ? 0 : Math.round(cAnimais.reduce((acc, a) => acc + Number(a.peso), 0) / cAnimais.length);
-  const custoPorArroba = cAnimais.length === 0 ? 0 : totaisFin.desp / (cAnimais.reduce((acc, a) => acc + Number(a.peso), 0) / 30);
+  
+  const pesoMedio = cAnimais.length === 0 ? 0 : Math.round(cAnimais.reduce((acc, a) => acc + (Number(a.peso) || 0), 0) / cAnimais.length);
+  
+  // Proteção contra divisão por Zero (Infinity)
+  const custoPorArroba = useMemo(() => {
+    if (cAnimais.length === 0 || totaisFin.desp === 0) return 0;
+    const pesoTotal = cAnimais.reduce((acc, a) => acc + (Number(a.peso) || 0), 0);
+    if (pesoTotal === 0) return 0;
+    return totaisFin.desp / (pesoTotal / 30);
+  }, [cAnimais, totaisFin.desp]);
 
   const distribuicaoCategorias = useMemo(() => {
     const counts = {};
-    cAnimais.forEach(a => { counts[a.categoria] = (counts[a.categoria] || 0) + 1; });
+    cAnimais.forEach(a => { 
+      const cat = a.categoria || 'Sem Categoria';
+      counts[cat] = (counts[cat] || 0) + 1; 
+    });
     return counts;
   }, [cAnimais]);
 
   const filteredAnimais = useMemo(() => cAnimais.filter(a => 
-    a.brinco.includes(searchQuery) || a.nome.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    a.categoria.toLowerCase().includes(searchQuery.toLowerCase()) || a.lote.toLowerCase().includes(searchQuery.toLowerCase())
+    (a.brinco || '').includes(searchQuery) || 
+    (a.nome || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (a.categoria || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (a.lote || '').toLowerCase().includes(searchQuery.toLowerCase())
   ), [searchQuery, cAnimais]);
 
   const gadoDeCorte = useMemo(() => cAnimais.filter(a => a.tipo === 'Corte'), [cAnimais]);
@@ -302,14 +281,20 @@ export default function App() {
   const getGPD = (brinco) => {
     const pesagensAnimal = cPesagens.filter(p => p.brinco === brinco).sort((a,b) => new Date(b.data) - new Date(a.data));
     if (pesagensAnimal.length >= 2) {
-      const diffPeso = pesagensAnimal[0].pesoAtual - pesagensAnimal[1].pesoAtual;
-      const diffDias = (new Date(pesagensAnimal[0].data) - new Date(pesagensAnimal[1].data)) / (1000 * 60 * 60 * 24);
+      const diffPeso = (pesagensAnimal[0]?.pesoAtual || 0) - (pesagensAnimal[1]?.pesoAtual || 0);
+      const diffDias = (new Date(pesagensAnimal[0]?.data) - new Date(pesagensAnimal[1]?.data)) / (1000 * 60 * 60 * 24);
       if (diffDias > 0) return (diffPeso / diffDias).toFixed(2);
     }
     return null;
   };
 
-  const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+  // Formatação segura
+  const formatCurrency = (val) => {
+    const num = Number(val);
+    if (!Number.isFinite(num)) return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(0);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
+  };
+  
   const showSaveSuccess = () => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); };
 
   // --- NUTRIÇÃO ---
@@ -317,7 +302,7 @@ export default function App() {
   const nutricaoFornecida = useMemo(() => {
     let cms = 0, elm = 0, elg = 0, pm = 0, ca = 0, p = 0, custoDiario = 0;
     dietaAtual.forEach(item => {
-      const alimento = (appData.bibliotecaAlimentos || []).find(a => a.id === item.idInsumo);
+      const alimento = (appData?.bibliotecaAlimentos || []).find(a => a.id === item.idInsumo);
       if(alimento) {
         const kgMS = item.kgMN * (alimento.ms / 100);
         cms += kgMS; elm += kgMS * alimento.elm; elg += kgMS * alimento.elg;
@@ -326,7 +311,7 @@ export default function App() {
       }
     });
     return { cms, elm, elg, pm, ca, p, custoDiario };
-  }, [dietaAtual, appData.bibliotecaAlimentos]);
+  }, [dietaAtual, appData?.bibliotecaAlimentos]);
 
   const handleAddInsumoDieta = () => {
     if (!insumoSelecionado) return;
@@ -339,8 +324,8 @@ export default function App() {
   // --- HANDLERS IA ---
   const handleAnalyzeFarm = async () => {
     setIsAnalyzing(true);
-    const context = `Rebanho: ${cAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFin.rec)}. Despesas: ${formatCurrency(totaisFin.desp)}. Lotes: ${cLotes.length}. Propriedade: ${propriedadeAtiva?.nome}.`;
-    const prompt = "Faça uma análise executiva e aponte os indicadores positivos e uma estratégia de lucro.";
+    const context = `Rebanho: ${cAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFin.rec)}. Despesas: ${formatCurrency(totaisFin.desp)}. Lotes: ${cLotes.length}. Propriedade: ${propriedadeAtiva?.nome || 'Fazenda'}.`;
+    const prompt = "Faça uma análise executiva e aponte os indicadores positivos e uma estratégia de lucro baseada nestes dados: " + context;
     const result = await callGemini(prompt, "És um consultor especialista em agronegócio.", geminiApiKey, aiEndpoint, aiModel);
     setAiInsights(result);
     setIsAnalyzing(false);
@@ -353,9 +338,9 @@ export default function App() {
     setChatMessages(prev => [...prev, { role: 'user', text: userText }]);
     setChatInput("");
     setIsChatLoading(true);
-    const context = `Animais: ${cAnimais.length}. Custo/@: ${custoPorArroba}. Lotes: ${cLotes.map(l=>l.nome).join(', ')}. Propriedade: ${propriedadeAtiva?.nome}`;
+    const context = `Animais: ${cAnimais.length}. Custo/@: ${formatCurrency(custoPorArroba)}. Lotes: ${cLotes.map(l=>l.nome).join(', ')}. Propriedade: ${propriedadeAtiva?.nome || 'Fazenda'}`;
     const historyText = chatMessages.map(m => `${m.role === 'user' ? 'Utilizador' : 'Assistente'}: ${m.text}`).join("\n");
-    const result = await callGemini(`Histórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente agropecuário.", geminiApiKey, aiEndpoint, aiModel);
+    const result = await callGemini(`Contexto Atual da Fazenda: ${context}\n\nHistórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente agropecuário.", geminiApiKey, aiEndpoint, aiModel);
     setChatMessages(prev => [...prev, { role: 'model', text: result }]);
     setIsChatLoading(false);
   };
@@ -499,7 +484,12 @@ export default function App() {
   }; 
   
   const handleToggleAnotacao = (id) => { updateAppData(p => ({ ...p, anotacoes: (p.anotacoes || []).map(a => a.id === id ? { ...a, status: a.status === 'resolvido' ? 'aberto' : 'resolvido' } : a) })); };
-  const handleSaveObsAnimal = (animalId, novaObs) => { updateAppData(p => ({ ...p, animais: (p.animais || []).map(a => a.id === animalId ? { ...a, obs: novaObs } : a) })); setSelectedAnimal(prev => ({ ...prev, obs: novaObs })); showSaveSuccess(); };
+  
+  const handleSaveObsAnimal = (animalId, novaObs) => { 
+    updateAppData(p => ({ ...p, animais: (p.animais || []).map(a => a.id === animalId ? { ...a, obs: novaObs } : a) })); 
+    setSelectedAnimal(prev => ({ ...prev, obs: novaObs })); 
+    showSaveSuccess(); 
+  };
   
   const handleSendEmail = () => {
     const subject = encodeURIComponent("Convite de Acesso - BoviGest PRO");
@@ -523,17 +513,17 @@ export default function App() {
       const pesoAnt = pAnimal.length > 0 ? pAnimal[0].pesoAnterior : '';
       return [a.brinco, a.nome, a.raca, a.dataNasc, ageMonths, a.categoria, a.sexo, a.peso, pesoAnt, getGPD(a.brinco) || '', a.ativo ? 'Ativo' : 'Inativo', a.lote, a.obs || ''];
     });
-    downloadCSV(`Rebanho_${propriedadeAtiva?.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, headers, rows);
+    downloadCSV(`Rebanho_${propriedadeAtiva.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, headers, rows);
   };
   const exportFinanceiro = () => {
     const headers = ['Data', 'Descrição', 'Tipo', 'Categoria', 'Valor (R$)', 'Status', 'Observações'];
     const rows = cFinanceiro.map(f => [f.data, f.descricao, f.tipo, f.categoria, f.valor, f.status, f.obs || '']);
-    downloadCSV(`Financeiro_${propriedadeAtiva?.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, headers, rows);
+    downloadCSV(`Financeiro_${propriedadeAtiva.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, headers, rows);
   };
   const exportReproducao = () => {
     const headers = ['Nº Brinco', 'Data IA/Monta', 'Tipo', 'Touro/Sêmen', 'Data Prev. Parto', 'Status Final'];
     const rows = cReproducao.map(r => [r.brincoVaca, r.dataInseminacao, r.metodo, r.reprodutor, r.previsaoParto, r.status]);
-    downloadCSV(`Reproducao_${propriedadeAtiva?.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, headers, rows);
+    downloadCSV(`Reproducao_${propriedadeAtiva.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, headers, rows);
   };
 
   // --- HANDLERS DE EXCLUSÃO ---
@@ -589,24 +579,24 @@ export default function App() {
         <div className="px-6 py-4 bg-slate-900/50 shrink-0">
           <label className="text-xs font-bold text-slate-500 uppercase block mb-2">Propriedade Ativa</label>
           <select value={activePropriedadeId} onChange={(e) => setActivePropriedadeId(Number(e.target.value))} className="w-full bg-slate-800 text-white font-bold px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500">
-            {(appData.propriedades || []).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            {(appData?.propriedades || []).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
         </div>
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
           {navItems.map((item) => { 
             const Icon = item.icon; 
             return (
-              <button key={item.id} onClick={() => setCurrentView(item.id)} className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${currentView === item.id ? 'bg-green-600 text-white' : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}>
-                <Icon className="mr-3 h-5 w-5" />
+              <button key={item.id} onClick={() => setCurrentView(item.id)} className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${currentView === item.id ? 'bg-green-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}>
+                <Icon className="mr-3 h-5 w-5 shrink-0" />
                 <span className="font-bold text-sm truncate">{item.label}</span>
-                {item.badge > 0 && <span className="ml-auto py-0.5 px-2.5 rounded-full text-xs font-bold bg-white/20 text-white">{item.badge}</span>}
+                {item.badge !== undefined && item.badge > 0 && <span className="ml-auto py-0.5 px-2.5 rounded-full text-xs font-bold bg-white/20 text-white">{item.badge}</span>}
               </button>
             ); 
           })}
         </nav>
-        <div className="p-6 shrink-0">
-          <button onClick={() => { setIsLoggedIn(false); setCurrentUser(null); }} className="w-full py-3 text-slate-400 border border-slate-700/50 hover:text-red-400 rounded-xl font-bold flex justify-center items-center">
-            <LogOut className="mr-2 h-4 w-4" /> Sair ({currentUser?.nome.split(' ')[0]})
+        <div className="p-6 shrink-0 border-t border-slate-800/50">
+          <button onClick={() => { setIsLoggedIn(false); setCurrentUser(null); }} className="w-full py-3 text-slate-400 border border-slate-700/50 hover:text-red-400 rounded-xl font-bold flex justify-center items-center transition-colors">
+            <LogOut className="mr-2 h-4 w-4" /> Sair ({currentUser ? currentUser.nome.split(' ')[0] : 'Utilizador'})
           </button>
         </div>
       </aside>
@@ -628,23 +618,6 @@ export default function App() {
           
           {currentView === 'dashboard' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-              {(animaisEmCarencia > 0 || insumosCriticos > 0) && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {animaisEmCarencia > 0 && (
-                    <div className="bg-red-50 border border-red-200 p-5 rounded-2xl flex items-start">
-                      <div className="bg-red-100 p-3 rounded-xl text-red-600 mr-4"><AlertTriangle size={24} /></div>
-                      <div><h4 className="text-red-900 font-extrabold text-lg">Atenção: Carência</h4><p className="text-red-700 font-medium text-sm mt-1"><b>{animaisEmCarencia} animais</b> sob efeito de medicamentos.</p></div>
-                    </div>
-                  )}
-                  {insumosCriticos > 0 && (
-                    <div className="bg-yellow-50 border border-yellow-200 p-5 rounded-2xl flex items-start">
-                      <div className="bg-yellow-100 p-3 rounded-xl text-yellow-600 mr-4"><PackagePlus size={24} /></div>
-                      <div><h4 className="text-yellow-900 font-extrabold text-lg">Insumos no Fim</h4><p className="text-yellow-700 font-medium text-sm mt-1">Tem <b>{insumosCriticos} produto(s)</b> com stock crítico.</p></div>
-                    </div>
-                  )}
-                </div>
-              )}
-
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col"><div className="bg-blue-50 p-4 rounded-2xl text-blue-600 w-16 mb-4"><Beef size={28} /></div><h3 className="text-5xl font-black">{cAnimais.length}</h3><p className="text-sm font-bold text-gray-400 uppercase mt-2">Total Cabeças</p></div>
                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col"><div className="bg-green-50 p-4 rounded-2xl text-green-600 w-16 mb-4"><DollarSign size={28} /></div><h3 className="text-3xl font-black mt-2">{formatCurrency(saldoAtual)}</h3><p className="text-sm font-bold text-gray-400 uppercase mt-2">Saldo Global</p></div>
@@ -656,12 +629,16 @@ export default function App() {
                 <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
                   <h3 className="text-xl font-black text-gray-900 mb-6">Distribuição por Categoria</h3>
                   <div className="space-y-4">
-                    {Object.entries(distribuicaoCategorias).map(([cat, qtd]) => {
-                      const pct = Math.round((qtd / cAnimais.length) * 100) || 0;
-                      return (
-                        <div key={cat}><div className="flex justify-between mb-1"><span className="font-bold text-gray-700">{cat}</span><span className="font-black text-gray-900">{pct}% ({qtd})</span></div><div className="w-full bg-gray-100 rounded-full h-3"><div className="bg-green-500 h-full rounded-full" style={{ width: `${pct}%` }}></div></div></div>
-                      );
-                    })}
+                    {Object.keys(distribuicaoCategorias).length === 0 ? (
+                      <p className="text-gray-400 italic">Sem animais registados para calcular distribuição.</p>
+                    ) : (
+                      Object.entries(distribuicaoCategorias).map(([cat, qtd]) => {
+                        const pct = Math.round((qtd / cAnimais.length) * 100) || 0;
+                        return (
+                          <div key={cat}><div className="flex justify-between mb-1"><span className="font-bold text-gray-700">{cat}</span><span className="font-black text-gray-900">{pct}% ({qtd})</span></div><div className="w-full bg-gray-100 rounded-full h-3"><div className="bg-green-500 h-full rounded-full" style={{ width: `${pct}%` }}></div></div></div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
@@ -848,7 +825,7 @@ export default function App() {
                         const ali = (appData.bibliotecaAlimentos || []).find(a => a.id === item.idInsumo);
                         return (
                           <div key={item.idInsumo} className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-200">
-                            <div className="flex-1"><p className="font-bold text-gray-900 text-sm">{ali.nome}</p><p className="text-xs font-medium text-gray-500">{ali.ms}% MS • R$ {ali.precoKg}/kg</p></div>
+                            <div className="flex-1"><p className="font-bold text-gray-900 text-sm">{ali?.nome}</p><p className="text-xs font-medium text-gray-500">{ali?.ms}% MS • R$ {ali?.precoKg}/kg</p></div>
                             <div className="flex items-center space-x-3">
                               <div className="flex items-center bg-white border border-gray-300 rounded-lg px-2 overflow-hidden"><input type="number" step="0.1" value={item.kgMN} onChange={(e)=>handleUpdateKgMN(item.idInsumo, e.target.value)} className="w-16 py-2 text-right font-bold text-gray-900 outline-none" /><span className="text-xs font-bold text-gray-400 ml-1">kg MN</span></div>
                               <button onClick={()=>handleRemoveInsumoDieta(item.idInsumo)} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={18}/></button>
@@ -880,10 +857,7 @@ export default function App() {
                           <div key={idx}>
                             <div className="flex justify-between items-end mb-2">
                               <h4 className="font-bold text-gray-900 text-sm">{bar.label}</h4>
-                              <div className="text-right">
-                                <span className={`text-xl font-black ${isIdeal ? 'text-green-600' : `text-${bar.col}-500`}`}>{bar.val.toFixed(bar.val > 100 ? 0 : 2)}</span>
-                                <span className="text-sm font-bold text-gray-400"> / {bar.target.toFixed(bar.target > 100 ? 0 : 2)} {bar.unit}</span>
-                              </div>
+                              <div className="text-right"><span className={`text-xl font-black ${isIdeal ? 'text-green-600' : `text-${bar.col}-500`}`}>{bar.val.toFixed(bar.val > 100 ? 0 : 2)}</span><span className="text-sm font-bold text-gray-400"> / {bar.target.toFixed(bar.target > 100 ? 0 : 2)} {bar.unit}</span></div>
                             </div>
                             <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden border border-gray-200 relative">
                               <div className={`h-full transition-all duration-500 ${isIdeal ? 'bg-green-500' : `bg-${bar.col}-500`}`} style={{ width: `${pct}%` }}></div>
@@ -976,7 +950,7 @@ export default function App() {
                   </thead>
                   <tbody className="divide-y bg-white">
                     {cPesagens.map((pes) => {
-                      const diff = pes.pesoAtual - pes.pesoAnterior;
+                      const diff = (pes.pesoAtual || 0) - (pes.pesoAnterior || 0);
                       return (
                         <tr key={pes.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4"><span className="block font-bold text-gray-500 text-sm">{pes.data}</span><span className="font-black text-gray-900">BRINCO {pes.brinco}</span></td>
@@ -1151,13 +1125,13 @@ export default function App() {
                 <button onClick={() => { setEditingInsumo(null); setIsInsumoFormOpen(true); }} className="bg-purple-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center shadow-sm hover:bg-purple-700 transition-colors"><Plus className="mr-2" /> Novo Insumo</button>
               </div>
               <div className="bg-white rounded-3xl border overflow-hidden shadow-sm">
-                <table className="min-w-full divide-y">
+                <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-purple-50">
                     <tr><th className="px-6 py-4 text-left text-xs font-black text-purple-800 uppercase">Produto / Categoria</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Qtd Atual</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Estoque Min.</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Status</th><th className="px-6 py-4 text-right text-xs font-black text-purple-800 uppercase">Ações</th></tr>
                   </thead>
                   <tbody className="divide-y bg-white">
                     {cInsumos.map((ins) => {
-                      const isCritico = ins.quantidade <= ins.estoqueMinimo;
+                      const isCritico = ins.quantidade <= (ins.estoqueMinimo || 0);
                       return (
                         <tr key={ins.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4"><span className="block font-black text-gray-900">{ins.nome}</span><span className="text-sm font-bold text-gray-500">{ins.categoria}</span></td>
@@ -1183,7 +1157,7 @@ export default function App() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h3 className="text-2xl font-black text-gray-900 flex items-center"><NotebookPen className="mr-3 text-amber-600" /> Anotações Gerais</h3>
-                  <p className="text-gray-500 text-sm mt-1">Registros livres vinculados à propriedade <b>{propriedadeAtiva?.nome}</b></p>
+                  <p className="text-gray-500 text-sm mt-1">Registros livres vinculados à propriedade <b>{propriedadeAtiva.nome || 'Fazenda'}</b></p>
                 </div>
                 <button onClick={() => setIsAnotacaoFormOpen(true)} className="bg-amber-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center shadow-sm hover:bg-amber-700 transition-colors"><Plus className="mr-2" /> Nova Anotação</button>
               </div>
@@ -1192,7 +1166,7 @@ export default function App() {
                 <input type="text" value={filtroAnotacao} onChange={(e) => setFiltroAnotacao(e.target.value)} placeholder="Buscar por título, texto ou tag..." className="w-full pl-12 pr-5 py-4 border border-gray-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-amber-400 shadow-sm" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {cAnotacoes.filter(a => a.titulo.toLowerCase().includes(filtroAnotacao.toLowerCase()) || a.texto.toLowerCase().includes(filtroAnotacao.toLowerCase()) || (a.tag || '').toLowerCase().includes(filtroAnotacao.toLowerCase())).map(nota => (
+                {cAnotacoes.filter(a => (a.titulo || '').toLowerCase().includes(filtroAnotacao.toLowerCase()) || (a.texto || '').toLowerCase().includes(filtroAnotacao.toLowerCase()) || (a.tag || '').toLowerCase().includes(filtroAnotacao.toLowerCase())).map(nota => (
                   <div key={nota.id} className={`bg-white rounded-2xl border shadow-sm p-6 flex flex-col gap-3 transition-all ${nota.status === 'resolvido' ? 'opacity-60 border-gray-100' : 'border-amber-100'}`}>
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -1228,7 +1202,7 @@ export default function App() {
                     <div className="flex items-center space-x-2">
                       {activePropriedadeId === p.id && <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Ativa</span>}
                       <button onClick={() => { setEditingPropriedade(p); setIsPropriedadeFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"><Edit size={18}/></button>
-                      <button onClick={() => del('propriedades', p.id, 'Excluir Propriedade?', () => { if(activePropriedadeId === p.id) setActivePropriedadeId(appData.propriedades.find(x=>x.id!==p.id)?.id || 1); })} className="text-red-500 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={18}/></button>
+                      <button onClick={() => del('propriedades', p.id, 'Excluir Propriedade?', () => { if(activePropriedadeId === p.id) setActivePropriedadeId((appData.propriedades || []).find(x=>x.id!==p.id)?.id || 1); })} className="text-red-500 p-2 hover:bg-red-50 rounded-lg"><Trash2 size={18}/></button>
                     </div>
                   </div>
                   <div className="space-y-2 text-sm font-medium text-gray-600">
@@ -1306,7 +1280,7 @@ export default function App() {
               <div className="bg-white rounded-3xl shadow-sm border border-gray-200 p-8 text-center">
                 <FileSpreadsheet size={48} className="mx-auto text-green-600 mb-4" />
                 <h3 className="text-2xl font-black text-gray-900 mb-2">Exportação de Planilhas</h3>
-                <p className="text-gray-500 font-medium mb-8">Descarregue os dados da propriedade <b className="text-gray-900">{propriedadeAtiva?.nome}</b> em formato CSV.</p>
+                <p className="text-gray-500 font-medium mb-8">Descarregue os dados da propriedade <b className="text-gray-900">{propriedadeAtiva.nome || 'Fazenda'}</b> em formato CSV.</p>
                 <div className="flex flex-wrap justify-center gap-4 mt-6">
                   <button onClick={exportRebanho} className="bg-green-50 hover:bg-green-100 text-green-800 font-bold px-6 py-3 rounded-xl shadow-sm border border-green-200 transition-colors flex items-center"><Download size={18} className="mr-2"/> Rebanho</button>
                   <button onClick={exportFinanceiro} className="bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold px-6 py-3 rounded-xl shadow-sm border border-blue-200 transition-colors flex items-center"><Download size={18} className="mr-2"/> Financeiro</button>
