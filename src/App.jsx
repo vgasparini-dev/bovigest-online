@@ -11,9 +11,10 @@ import {
 
 // --- IMPORTAÇÕES DA NUVEM (FIREBASE) ---
 import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 
-// --- CONFIGURAÇÃO FIREBASE (Chaves da sua Imagem) ---
+// --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyCn_eHREYCqtCxOtM4ShWmW_O--AX-6O5I",
   authDomain: "fluent-radar-319304.firebaseapp.com",
@@ -25,6 +26,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
 
 // --- BASE DE DADOS INICIAL ---
@@ -107,6 +109,7 @@ export default function App() {
   const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
   const [editingCalendario, setEditingCalendario] = useState(null);
   const [emailModalData, setEmailModalData] = useState(null);
+  const [isNascimentoEditFormOpen, setIsNascimentoEditFormOpen] = useState(false);
 
   const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
   const [nutriAlvoGPD, setNutriAlvoGPD] = useState(1.2);
@@ -124,9 +127,29 @@ export default function App() {
   const [appData, setAppData] = useState(defaultData);
   const [isCloudReady, setIsCloudReady] = useState(false);
   const [cloudStatus, setCloudStatus] = useState('connecting');
+  const [firebaseUser, setFirebaseUser] = useState(null);
 
+  // 1. Inicializar Autenticação Invisível (Resolve o erro "Missing Permissions")
   useEffect(() => {
+    const initAuth = async () => {
+      try {
+        await signInAnonymously(auth);
+      } catch (err) {
+        console.error("Erro na autenticação:", err);
+        setCloudStatus('error');
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setFirebaseUser);
+    return () => unsubscribe();
+  }, []);
+
+  // 2. Conectar à Nuvem após Autenticação
+  useEffect(() => {
+    if (!firebaseUser) return;
+    
     const docRef = doc(db, 'bovigest', 'dados_principais');
+    
     const initCloud = async () => {
       try {
         const snap = await getDoc(docRef);
@@ -136,13 +159,16 @@ export default function App() {
           await setDoc(docRef, dataToSave);
           setAppData(dataToSave);
         }
+        
         onSnapshot(docRef, (docSnap) => {
           if (docSnap.exists()) {
-             // FUNDAMENTAL: Garantir que se a nuvem vier incompleta, faz fallback para defaultData
              setAppData(prev => ({ ...defaultData, ...docSnap.data() }));
           }
           setIsCloudReady(true);
           setCloudStatus('online');
+        }, (error) => {
+          console.error("Erro no Snapshot Firestore:", error);
+          setCloudStatus('error');
         });
       } catch (error) {
         console.error("Erro Firebase:", error);
@@ -152,12 +178,15 @@ export default function App() {
       }
     };
     initCloud();
-  }, []);
+  }, [firebaseUser]);
 
   const updateAppData = (updater) => {
     setAppData(prev => {
       const newData = typeof updater === 'function' ? updater(prev) : updater;
-      if (isCloudReady) setDoc(doc(db, 'bovigest', 'dados_principais'), newData).catch(console.error);
+      if (isCloudReady && firebaseUser) {
+        const docRef = doc(db, 'bovigest', 'dados_principais');
+        setDoc(docRef, newData).catch(console.error);
+      }
       localStorage.setItem('bovigest_data_pro_master', JSON.stringify(newData));
       return newData;
     });
@@ -181,7 +210,7 @@ export default function App() {
     } else { setLoginError("Credenciais inválidas."); }
   };
 
-  // --- ACESSO SEGURO AOS DADOS COM FALLBACK (Prevenção de Tela Branca) ---
+  // --- ACESSO SEGURO AOS DADOS ---
   const propriedadeAtiva = useMemo(() => (appData.propriedades || []).find(p => p.id === activePropriedadeId) || (appData.propriedades || [])[0] || {}, [activePropriedadeId, appData.propriedades]);
   const cAnimais = useMemo(() => (appData.animais || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.animais, activePropriedadeId]);
   const cLotes = useMemo(() => (appData.lotes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.lotes, activePropriedadeId]);
@@ -211,12 +240,31 @@ export default function App() {
     return v || false;
   };
 
-  // --- HANDLERS FORMS (GRAVAÇÃO NA NUVEM) ---
+  // --- HANDLERS FORMS ---
   const handleSaveAnimal = (e) => {
     e.preventDefault(); const fd = new FormData(e.target);
     const obj = { id: editingAnimal ? editingAnimal.id : Date.now(), propriedadeId: activePropriedadeId, brinco: fd.get('brinco'), nome: fd.get('nome') || "-", sexo: fd.get('sexo'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), raca: fd.get('raca'), dataNasc: fd.get('dataNasc'), peso: Number(fd.get('peso')), lote: fd.get('lote') || "Sem Lote", obs: fd.get('obs') || "", ativo: true };
     updateAppData(p => ({ ...p, animais: editingAnimal ? (p.animais || []).map(a => a.id === obj.id ? obj : a) : [obj, ...(p.animais || [])] }));
     setIsAnimalFormOpen(false); setEditingAnimal(null); showSaveSuccess();
+  };
+
+  const handleSaveBatchAnimais = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const prefixo = fd.get('prefixo') || '';
+    const inicio = Number(fd.get('inicio'));
+    const quantidade = Number(fd.get('quantidade'));
+    const lote = fd.get('lote') || "Sem Lote";
+    const novosAnimais = [];
+    for (let i = 0; i < quantidade; i++) {
+      novosAnimais.push({
+        id: Date.now() + i, propriedadeId: activePropriedadeId, brinco: `${prefixo}${(inicio + i).toString().padStart(3, '0')}`, nome: "-",
+        sexo: fd.get('sexo'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), raca: fd.get('raca'),
+        dataNasc: fd.get('dataNasc'), peso: Number(fd.get('peso')), lote, obs: "Cadastrado em lote.", ativo: true
+      });
+    }
+    updateAppData(prev => ({ ...prev, animais: [...novosAnimais, ...(prev.animais || [])] }));
+    setIsBatchAnimalFormOpen(false); showSaveSuccess();
   };
 
   const handleSavePesagem = (e) => {
@@ -497,6 +545,10 @@ export default function App() {
       {/* --- MODAIS DE FORMULÁRIO (Simplificados) --- */}
       {isAnimalFormOpen && (
         <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden"><div className="p-6 bg-gray-50 flex justify-between"><h2 className="text-xl font-extrabold flex items-center"><Beef className="mr-2 text-green-600"/> {editingAnimal ? 'Editar Animal' : 'Registar Animal Único'}</h2><button onClick={() => setIsAnimalFormOpen(false)}><X/></button></div><form id="af" onSubmit={handleSaveAnimal} className="p-6 grid grid-cols-2 gap-4"><div><label className="font-bold text-sm">Brinco*</label><input required name="brinco" defaultValue={editingAnimal?.brinco||''} className="w-full p-3 border rounded-xl" /></div><div><label className="font-bold text-sm">Peso(kg)*</label><input required type="number" name="peso" defaultValue={editingAnimal?.peso||''} className="w-full p-3 border rounded-xl" /></div><div><label className="font-bold text-sm">Lote</label><select name="lote" defaultValue={editingAnimal?.lote||''} className="w-full p-3 border rounded-xl">{cLotes.map(l=><option key={l.id} value={l.nome}>{l.nome}</option>)}</select></div><div><label className="font-bold text-sm">Raça</label><input required name="raca" defaultValue={editingAnimal?.raca||'Nelore'} className="w-full p-3 border rounded-xl" /></div><input type="hidden" name="dataNasc" value={new Date().toISOString().split('T')[0]} /><input type="hidden" name="sexo" value="F" /><input type="hidden" name="categoria" value="Bezerro" /></form><div className="p-6 border-t flex justify-end"><button onClick={() => setIsAnimalFormOpen(false)} className="px-6 py-3 bg-gray-100 rounded-xl font-bold mr-3">Cancelar</button><button type="submit" form="af" className="px-6 py-3 bg-green-600 text-white rounded-xl font-bold">Salvar</button></div></div></div>
+      )}
+
+      {isBatchAnimalFormOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden"><div className="p-6 bg-indigo-50 flex justify-between"><h2 className="text-xl font-extrabold flex items-center"><ListPlus className="mr-2 text-indigo-600"/> Lote de Animais</h2><button onClick={() => setIsBatchAnimalFormOpen(false)}><X/></button></div><form id="baf" onSubmit={handleSaveBatchAnimais} className="p-6 grid grid-cols-2 gap-4"><div><label className="font-bold text-sm">Prefixo</label><input name="prefixo" placeholder="Ex: NEL-" className="w-full p-3 border rounded-xl" /></div><div><label className="font-bold text-sm">Início Numeração*</label><input required type="number" name="inicio" defaultValue="1" className="w-full p-3 border rounded-xl" /></div><div><label className="font-bold text-sm">Quantidade*</label><input required type="number" name="quantidade" defaultValue="10" className="w-full p-3 border rounded-xl" /></div><div><label className="font-bold text-sm">Raça</label><input required name="raca" defaultValue="Nelore" className="w-full p-3 border rounded-xl" /></div><input type="hidden" name="peso" value="200" /><input type="hidden" name="lote" value="" /><input type="hidden" name="sexo" value="F" /><input type="hidden" name="categoria" value="Bezerro" /><input type="hidden" name="dataNasc" value={new Date().toISOString().split('T')[0]} /></form><div className="p-6 border-t flex justify-end"><button onClick={() => setIsBatchAnimalFormOpen(false)} className="px-6 py-3 bg-gray-100 rounded-xl font-bold mr-3">Cancelar</button><button type="submit" form="baf" className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold">Gerar</button></div></div></div>
       )}
 
       {isPesagemFormOpen && (
