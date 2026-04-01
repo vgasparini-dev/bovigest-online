@@ -123,7 +123,7 @@ export default function App() {
   // --- NUVEM & PERSISTÊNCIA ---
   const [appData, setAppData] = useState(defaultData);
   const [isCloudReady, setIsCloudReady] = useState(false);
-  const [cloudStatus, setCloudStatus] = useState('connecting'); // online, offline, error
+  const [cloudStatus, setCloudStatus] = useState('connecting');
 
   useEffect(() => {
     const docRef = doc(db, 'bovigest', 'dados_principais');
@@ -137,7 +137,10 @@ export default function App() {
           setAppData(dataToSave);
         }
         onSnapshot(docRef, (docSnap) => {
-          if (docSnap.exists()) setAppData(docSnap.data());
+          if (docSnap.exists()) {
+             // FUNDAMENTAL: Garantir que se a nuvem vier incompleta, faz fallback para defaultData
+             setAppData(prev => ({ ...defaultData, ...docSnap.data() }));
+          }
           setIsCloudReady(true);
           setCloudStatus('online');
         });
@@ -167,27 +170,28 @@ export default function App() {
   const handleLogin = (e) => {
     e.preventDefault();
     const email = e.target.email.value, senha = e.target.senha.value;
-    const validUser = appData.usuarios.find(u => u.email === email && u.senha === senha && (u.status === 'Ativo' || u.status === 'Pendente'));
+    const validUser = (appData.usuarios || []).find(u => u.email === email && u.senha === senha && (u.status === 'Ativo' || u.status === 'Pendente'));
     
     if (validUser) { 
       if (validUser.status === 'Pendente') {
         alert(`Bem-vindo(a), ${validUser.nome}! Conta ativada.`);
-        updateAppData(p => ({ ...p, usuarios: p.usuarios.map(u => u.id === validUser.id ? { ...u, status: 'Ativo' } : u) }));
+        updateAppData(p => ({ ...p, usuarios: (p.usuarios || []).map(u => u.id === validUser.id ? { ...u, status: 'Ativo' } : u) }));
       }
       setCurrentUser({ ...validUser, status: 'Ativo' }); setIsLoggedIn(true); setLoginError(""); 
     } else { setLoginError("Credenciais inválidas."); }
   };
 
-  const pAtiva = useMemo(() => appData.propriedades.find(p => p.id === activePropriedadeId) || appData.propriedades[0], [activePropriedadeId, appData.propriedades]);
-  const cAnimais = useMemo(() => appData.animais.filter(a => a.propriedadeId === activePropriedadeId), [appData.animais, activePropriedadeId]);
-  const cLotes = useMemo(() => appData.lotes.filter(a => a.propriedadeId === activePropriedadeId), [appData.lotes, activePropriedadeId]);
-  const cFinanceiro = useMemo(() => appData.financeiro.filter(a => a.propriedadeId === activePropriedadeId), [appData.financeiro, activePropriedadeId]);
-  const cPesagens = useMemo(() => appData.pesagens.filter(a => a.propriedadeId === activePropriedadeId), [appData.pesagens, activePropriedadeId]);
-  const cReproducao = useMemo(() => appData.reproducao.filter(a => a.propriedadeId === activePropriedadeId), [appData.reproducao, activePropriedadeId]);
-  const cNascimentos = useMemo(() => appData.nascimentos.filter(a => a.propriedadeId === activePropriedadeId), [appData.nascimentos, activePropriedadeId]);
-  const cVacinacoes = useMemo(() => appData.vacinacoes.filter(a => a.propriedadeId === activePropriedadeId), [appData.vacinacoes, activePropriedadeId]);
-  const cInsumos = useMemo(() => appData.insumos.filter(a => a.propriedadeId === activePropriedadeId), [appData.insumos, activePropriedadeId]);
-  const cCalendario = useMemo(() => appData.calendarioSanitario?.filter(a => a.propriedadeId === activePropriedadeId), [appData.calendarioSanitario, activePropriedadeId]);
+  // --- ACESSO SEGURO AOS DADOS COM FALLBACK (Prevenção de Tela Branca) ---
+  const propriedadeAtiva = useMemo(() => (appData.propriedades || []).find(p => p.id === activePropriedadeId) || (appData.propriedades || [])[0] || {}, [activePropriedadeId, appData.propriedades]);
+  const cAnimais = useMemo(() => (appData.animais || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.animais, activePropriedadeId]);
+  const cLotes = useMemo(() => (appData.lotes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.lotes, activePropriedadeId]);
+  const cFinanceiro = useMemo(() => (appData.financeiro || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.financeiro, activePropriedadeId]);
+  const cPesagens = useMemo(() => (appData.pesagens || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.pesagens, activePropriedadeId]);
+  const cReproducao = useMemo(() => (appData.reproducao || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.reproducao, activePropriedadeId]);
+  const cNascimentos = useMemo(() => (appData.nascimentos || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.nascimentos, activePropriedadeId]);
+  const cVacinacoes = useMemo(() => (appData.vacinacoes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.vacinacoes, activePropriedadeId]);
+  const cInsumos = useMemo(() => (appData.insumos || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.insumos, activePropriedadeId]);
+  const cCalendario = useMemo(() => (appData.calendarioSanitario || []).filter(a => a.propriedadeId === activePropriedadeId), [appData.calendarioSanitario, activePropriedadeId]);
 
   const totaisFin = useMemo(() => cFinanceiro.reduce((acc, item) => {
     if (item.status === 'pago') item.tipo === 'receita' ? acc.rec += Number(item.valor) : acc.desp += Number(item.valor);
@@ -200,9 +204,10 @@ export default function App() {
 
   const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   const showSaveSuccess = () => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); };
+  
   const isEmCarencia = (lote) => {
     const hoje = new Date();
-    const v = cVacinacoes.find(v => (v.lote === lote || v.lote === "Todo o Rebanho") && v.dataLiberacao && hoje < new Date(v.dataLiberacao));
+    const v = (appData.vacinacoes || []).find(v => (v.lote === lote || v.lote === "Todo o Rebanho") && v.dataLiberacao && hoje < new Date(v.dataLiberacao));
     return v || false;
   };
 
@@ -210,7 +215,7 @@ export default function App() {
   const handleSaveAnimal = (e) => {
     e.preventDefault(); const fd = new FormData(e.target);
     const obj = { id: editingAnimal ? editingAnimal.id : Date.now(), propriedadeId: activePropriedadeId, brinco: fd.get('brinco'), nome: fd.get('nome') || "-", sexo: fd.get('sexo'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), raca: fd.get('raca'), dataNasc: fd.get('dataNasc'), peso: Number(fd.get('peso')), lote: fd.get('lote') || "Sem Lote", obs: fd.get('obs') || "", ativo: true };
-    updateAppData(p => ({ ...p, animais: editingAnimal ? p.animais.map(a => a.id === obj.id ? obj : a) : [obj, ...p.animais] }));
+    updateAppData(p => ({ ...p, animais: editingAnimal ? (p.animais || []).map(a => a.id === obj.id ? obj : a) : [obj, ...(p.animais || [])] }));
     setIsAnimalFormOpen(false); setEditingAnimal(null); showSaveSuccess();
   };
 
@@ -219,8 +224,8 @@ export default function App() {
     const brinco = fd.get('brinco'); const pesoAtual = Number(fd.get('pesoAtual'));
     const obj = { id: editingPesagem ? editingPesagem.id : Date.now(), propriedadeId: activePropriedadeId, brinco, data: fd.get('data'), pesoAnterior: editingPesagem ? editingPesagem.pesoAnterior : (cAnimais.find(a=>a.brinco===brinco)?.peso || 0), pesoAtual, obs: "" };
     updateAppData(p => ({ 
-      ...p, pesagens: editingPesagem ? p.pesagens.map(x => x.id === obj.id ? obj : x) : [obj, ...p.pesagens],
-      animais: p.animais.map(a => a.brinco === brinco && a.propriedadeId === activePropriedadeId ? { ...a, peso: pesoAtual } : a)
+      ...p, pesagens: editingPesagem ? (p.pesagens || []).map(x => x.id === obj.id ? obj : x) : [obj, ...(p.pesagens || [])],
+      animais: (p.animais || []).map(a => a.brinco === brinco && a.propriedadeId === activePropriedadeId ? { ...a, peso: pesoAtual } : a)
     }));
     setIsPesagemFormOpen(false); setEditingPesagem(null); showSaveSuccess();
   };
@@ -229,8 +234,8 @@ export default function App() {
     e.preventDefault(); const fd = new FormData(e.target);
     const obj = { id: editingNascimento ? editingNascimento.id : Date.now(), propriedadeId: activePropriedadeId, data: fd.get('data'), brincoMatriz: fd.get('brincoMatriz'), brincoBezerro: fd.get('brincoBezerro'), sexo: fd.get('sexo'), pesoNascimento: Number(fd.get('pesoNascimento')), obs: fd.get('obs') || "" };
     updateAppData(p => ({ 
-      ...p, nascimentos: editingNascimento ? p.nascimentos.map(x => x.id === obj.id ? obj : x) : [obj, ...p.nascimentos],
-      animais: editingNascimento ? p.animais : [{ id: Date.now()+1, propriedadeId: activePropriedadeId, brinco: obj.brincoBezerro, nome: "-", sexo: obj.sexo, categoria: "Bezerro(a)", tipo: "Cria", raca: "Nelore", dataNasc: obj.data, peso: obj.pesoNascimento, lote: "Maternidade", obs: "Nascimento", ativo: true }, ...p.animais]
+      ...p, nascimentos: editingNascimento ? (p.nascimentos || []).map(x => x.id === obj.id ? obj : x) : [obj, ...(p.nascimentos || [])],
+      animais: editingNascimento ? p.animais : [{ id: Date.now()+1, propriedadeId: activePropriedadeId, brinco: obj.brincoBezerro, nome: "-", sexo: obj.sexo, categoria: "Bezerro(a)", tipo: "Cria", raca: "Nelore", dataNasc: obj.data, peso: obj.pesoNascimento, lote: "Maternidade", obs: "Nascimento", ativo: true }, ...(p.animais || [])]
     }));
     setIsNascimentoFormOpen(false); setEditingNascimento(null); showSaveSuccess();
   };
@@ -240,27 +245,27 @@ export default function App() {
     const cd = Number(fd.get('carenciaDias'));
     let dl = null; if (cd > 0) { const d = new Date(fd.get('dataAplicacao')); d.setDate(d.getDate() + cd); dl = d.toISOString().split('T')[0]; }
     const obj = { id: editingVaccine ? editingVaccine.id : Date.now(), propriedadeId: activePropriedadeId, vacina: fd.get('vacina'), lote: fd.get('lote'), dataAplicacao: fd.get('dataAplicacao'), qtdAnimais: Number(fd.get('qtdAnimais')), carenciaDias: cd, dataLiberacao: dl, status: "concluida" };
-    updateAppData(p => ({ ...p, vacinacoes: editingVaccine ? p.vacinacoes.map(x => x.id === obj.id ? obj : x) : [obj, ...p.vacinacoes] }));
+    updateAppData(p => ({ ...p, vacinacoes: editingVaccine ? (p.vacinacoes || []).map(x => x.id === obj.id ? obj : x) : [obj, ...(p.vacinacoes || [])] }));
     setIsVaccineFormOpen(false); setEditingVaccine(null); showSaveSuccess();
   };
 
   const handleSaveFinance = (e) => { 
     e.preventDefault(); const fd = new FormData(e.target); 
     const obj = { id: editingFinance ? editingFinance.id : Date.now(), propriedadeId: activePropriedadeId, descricao: fd.get('descricao'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), valor: Number(fd.get('valor')), data: fd.get('data'), status: 'pago' };
-    updateAppData(p => ({ ...p, financeiro: editingFinance ? p.financeiro.map(x => x.id === obj.id ? obj : x) : [obj, ...p.financeiro] }));
+    updateAppData(p => ({ ...p, financeiro: editingFinance ? (p.financeiro || []).map(x => x.id === obj.id ? obj : x) : [obj, ...(p.financeiro || [])] }));
     setIsFinanceFormOpen(false); setEditingFinance(null); showSaveSuccess(); 
   };
   
   const handleSaveInsumo = (e) => { 
     e.preventDefault(); const fd = new FormData(e.target); 
     const obj = { id: editingInsumo ? editingInsumo.id : Date.now(), propriedadeId: activePropriedadeId, nome: fd.get('nome'), categoria: fd.get('categoria'), quantidade: Number(fd.get('quantidade')), unidade: fd.get('unidade'), estoqueMinimo: Number(fd.get('estoqueMinimo')) };
-    updateAppData(p => ({ ...p, insumos: editingInsumo ? p.insumos.map(x => x.id === obj.id ? obj : x) : [obj, ...p.insumos] }));
+    updateAppData(p => ({ ...p, insumos: editingInsumo ? (p.insumos || []).map(x => x.id === obj.id ? obj : x) : [obj, ...(p.insumos || [])] }));
     setIsInsumoFormOpen(false); setEditingInsumo(null); showSaveSuccess(); 
   };
 
   const handleLancarConsumo = (e) => {
     e.preventDefault(); const fd = new FormData(e.target); const qtd = Number(fd.get('quantidadeConsumo'));
-    updateAppData(p => ({ ...p, insumos: p.insumos.map(i => i.id === consumoInsumoSelecionado.id ? { ...i, quantidade: Math.max(0, i.quantidade - qtd) } : i) }));
+    updateAppData(p => ({ ...p, insumos: (p.insumos || []).map(i => i.id === consumoInsumoSelecionado.id ? { ...i, quantidade: Math.max(0, i.quantidade - qtd) } : i) }));
     setIsConsumoFormOpen(false); setConsumoInsumoSelecionado(null); showSaveSuccess();
   };
   
@@ -268,39 +273,49 @@ export default function App() {
     e.preventDefault(); const fd = new FormData(e.target); 
     const dI = fd.get('dataInseminacao'); const pP = new Date(new Date(dI).setDate(new Date(dI).getDate() + 290)).toISOString().split('T')[0]; 
     const obj = { id: editingReproducao ? editingReproducao.id : Date.now(), propriedadeId: activePropriedadeId, brincoVaca: fd.get('brincoVaca'), dataInseminacao: dI, previsaoParto: pP, metodo: fd.get('metodo'), reprodutor: fd.get('reprodutor'), status: fd.get('status') || "Prenhe" };
-    updateAppData(p => ({ ...p, reproducao: editingReproducao ? p.reproducao.map(x => x.id === obj.id ? obj : x) : [obj, ...p.reproducao] }));
+    updateAppData(p => ({ ...p, reproducao: editingReproducao ? (p.reproducao || []).map(x => x.id === obj.id ? obj : x) : [obj, ...(p.reproducao || [])] }));
     setIsReproducaoFormOpen(false); setEditingReproducao(null); showSaveSuccess(); 
   };
 
   const handleSaveLote = (e) => {
     e.preventDefault(); const fd = new FormData(e.target);
     const obj = { id: editingLote ? editingLote.id : Date.now(), propriedadeId: activePropriedadeId, nome: fd.get('nome'), capacidade: Number(fd.get('capacidade')), tipo: fd.get('tipo'), obs: fd.get('obs') || "" };
-    updateAppData(p => ({ ...p, lotes: editingLote ? p.lotes.map(x => x.id === obj.id ? obj : x) : [obj, ...p.lotes] }));
+    updateAppData(p => ({ ...p, lotes: editingLote ? (p.lotes || []).map(x => x.id === obj.id ? obj : x) : [obj, ...(p.lotes || [])] }));
     setIsLoteFormOpen(false); setEditingLote(null); showSaveSuccess();
   };
 
   const handleSavePropriedade = (e) => {
     e.preventDefault(); const fd = new FormData(e.target);
     const obj = { id: editingPropriedade ? editingPropriedade.id : Date.now(), nome: fd.get('nome'), responsavel: fd.get('responsavel'), cidade: fd.get('cidade'), estado: fd.get('estado'), area_ha: Number(fd.get('area_ha')), ie: fd.get('ie') };
-    updateAppData(p => ({ ...p, propriedades: editingPropriedade ? p.propriedades.map(x => x.id === obj.id ? obj : x) : [...p.propriedades, obj] }));
+    updateAppData(p => ({ ...p, propriedades: editingPropriedade ? (p.propriedades || []).map(x => x.id === obj.id ? obj : x) : [...(p.propriedades || []), obj] }));
     setIsPropriedadeFormOpen(false); setEditingPropriedade(null); showSaveSuccess();
   };
 
-  const handleSaveCalendario = (e) => {
-    e.preventDefault(); const fd = new FormData(e.target);
-    const obj = { id: editingCalendario ? editingCalendario.id : Date.now(), propriedadeId: activePropriedadeId, doenca: fd.get('doenca'), mes: fd.get('mes'), publico: fd.get('publico'), obrigatorio: fd.get('obrigatorio') === 'true' };
-    updateAppData(p => ({ ...p, calendarioSanitario: editingCalendario ? p.calendarioSanitario.map(x => x.id === obj.id ? obj : x) : [...(p.calendarioSanitario || []), obj] }));
-    setIsCalendarioFormOpen(false); setEditingCalendario(null); showSaveSuccess();
+  // --- EXPORTAÇÕES ---
+  const downloadCSV = (filename, headers, rows) => {
+    const csvContent = [headers.join(','), ...rows.map(e => e.map(item => `"${item}"`).join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = filename; link.click();
+  };
+
+  const exportRebanho = () => {
+    const headers = ['Nº Brinco', 'Nome/Apelido', 'Espécie/Raça', 'Data Nasc.', 'Idade (meses)', 'Categoria', 'Sexo', 'Pelagem/Cor', 'Peso Atual (kg)', 'Peso Anterior (kg)', 'GMD (kg/dia)', 'Status', 'Origem', 'Pasto/Lote', 'Pai (Touro)', 'Mãe (Matriz)', 'Observações'];
+    const rows = cAnimais.map(a => {
+      const ageMonths = Math.floor((new Date() - new Date(a.dataNasc)) / (1000 * 60 * 60 * 24 * 30));
+      const pAnimal = cPesagens.filter(p => p.brinco === a.brinco).sort((x, y) => new Date(y.data) - new Date(x.data));
+      const pesoAnt = pAnimal.length > 0 ? pAnimal[0].pesoAnterior : '';
+      return [a.brinco, a.nome, a.raca, a.dataNasc, ageMonths, a.categoria, a.sexo, '-', a.peso, pesoAnt, getGPD(a.brinco) || '', a.ativo ? 'Ativo' : 'Inativo', '-', a.lote, '-', '-', a.obs || ''];
+    });
+    downloadCSV(`Rebanho_${propriedadeAtiva?.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, headers, rows);
   };
 
   // --- HANDLERS DE EXCLUSÃO ---
-  const del = (coll, id, confirmMsg, closeFn) => { if(confirm(confirmMsg)){ updateAppData(p => ({ ...p, [coll]: p[coll].filter(x => x.id !== id) })); if(closeFn) closeFn(null); showSaveSuccess(); } };
+  const del = (coll, id, confirmMsg, closeFn) => { if(confirm(confirmMsg)){ updateAppData(p => ({ ...p, [coll]: (p[coll] || []).filter(x => x.id !== id) })); if(closeFn) closeFn(null); showSaveSuccess(); } };
 
   // --- NAVEGAÇÃO & UI ---
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Painel Central' },
     { id: 'ai-assistant', icon: Sparkles, label: 'Consultor IA' },
-    { id: 'nutricao', icon: Wheat, label: 'Nutrição & Dietas' },
     { id: 'propriedades', icon: MapPin, label: 'Propriedades' },
     { id: 'animais', icon: Beef, label: 'Rebanho', badge: cAnimais.length },
     { id: 'pastagens', icon: LayoutGrid, label: 'Lotes', badge: cLotes.length },
@@ -312,6 +327,11 @@ export default function App() {
     { id: 'financeiro', icon: DollarSign, label: 'Financeiro' },
     { id: 'configuracoes', icon: Settings, label: 'Configurações' },
   ];
+
+  const animaisEmCarencia = (appData.animais || []).filter(a => isEmCarencia(a.lote)).length;
+  const insumosCriticos = (appData.insumos || []).filter(i => i.quantidade <= (i.estoqueMinimo || 0)).length;
+  const filteredAnimais = cAnimais.filter(a => a.brinco.includes(searchQuery) || a.nome.toLowerCase().includes(searchQuery.toLowerCase()) || a.categoria.toLowerCase().includes(searchQuery.toLowerCase()) || a.lote.toLowerCase().includes(searchQuery.toLowerCase()));
+  const gadoDeCorte = cAnimais.filter(a => a.tipo === 'Corte');
 
   if (!isLoggedIn) {
     return (
@@ -346,7 +366,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 flex font-sans text-gray-900">
       <aside className="w-72 bg-slate-950 border-r border-slate-900 hidden md:flex flex-col shadow-2xl z-20">
         <div className="h-24 flex items-center px-8 border-b border-slate-800/50"><Tractor className="text-green-500 mr-4" size={32} /><span className="text-2xl font-black text-white">BoviGest</span></div>
-        <div className="px-6 py-4 bg-slate-900/50"><label className="text-xs font-bold text-slate-500 uppercase block mb-2">Propriedade Ativa</label><select value={activePropriedadeId} onChange={(e) => setActivePropriedadeId(Number(e.target.value))} className="w-full bg-slate-800 text-white font-bold px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500">{appData.propriedades.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></div>
+        <div className="px-6 py-4 bg-slate-900/50"><label className="text-xs font-bold text-slate-500 uppercase block mb-2">Propriedade Ativa</label><select value={activePropriedadeId} onChange={(e) => setActivePropriedadeId(Number(e.target.value))} className="w-full bg-slate-800 text-white font-bold px-3 py-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500">{(appData.propriedades || []).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></div>
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">{navItems.map((item) => { const Icon = item.icon; return (<button key={item.id} onClick={() => setCurrentView(item.id)} className={`w-full flex items-center px-4 py-3 rounded-xl transition-all ${currentView === item.id ? 'bg-green-600 text-white' : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}><Icon className="mr-3 h-5 w-5" /><span className="font-bold text-sm">{item.label}</span>{item.badge > 0 && <span className="ml-auto py-0.5 px-2.5 rounded-full text-xs font-bold bg-white/20 text-white">{item.badge}</span>}</button>); })}</nav>
         <div className="p-6"><button onClick={() => { setIsLoggedIn(false); setCurrentUser(null); }} className="w-full py-3 text-slate-400 border border-slate-700/50 hover:text-red-400 rounded-xl font-bold flex justify-center items-center"><LogOut className="mr-2 h-4 w-4" /> Sair</button></div>
       </aside>
@@ -451,7 +471,7 @@ export default function App() {
           {currentView === 'propriedades' && (
              <div className="space-y-6">
              <div className="flex justify-between"><h3 className="text-xl font-black flex items-center"><MapPin className="mr-3 text-blue-500" /> Propriedades</h3><button onClick={() => { setEditingPropriedade(null); setIsPropriedadeFormOpen(true); }} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center"><Plus className="mr-2" /> Propriedade</button></div>
-             <div className="grid grid-cols-2 gap-6">{appData.propriedades.map((p) => (
+             <div className="grid grid-cols-2 gap-6">{(appData.propriedades || []).map((p) => (
                 <div key={p.id} className="bg-white p-6 rounded-3xl border"><div className="flex justify-between mb-4"><h4 className="font-black text-2xl">{p.nome}</h4><div><button onClick={() => { setEditingPropriedade(p); setIsPropriedadeFormOpen(true); }} className="text-blue-500 p-1"><Edit size={18}/></button><button onClick={() => del('propriedades', p.id, 'Excluir Propriedade?', () => { if(activePropriedadeId === p.id) setActivePropriedadeId(appData.propriedades.find(x=>x.id!==p.id)?.id || 1); })} className="text-red-500 p-1"><Trash2 size={18}/></button></div></div><p className="text-sm font-bold text-gray-500">{p.cidade} - {p.estado}</p></div>
              ))}</div>
            </div>
@@ -459,13 +479,6 @@ export default function App() {
 
           {currentView === 'configuracoes' && (
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl shadow-sm border border-gray-700 p-8 text-white relative">
-                <Bot size={140} className="absolute -right-10 -bottom-10 text-white/5" />
-                <h3 className="text-2xl font-black flex items-center mb-2"><Sparkles className="mr-3 text-green-400" /> Inteligência Artificial</h3>
-                <div className="space-y-4 max-w-lg relative z-10">
-                  <input type="password" value={geminiApiKey} onChange={(e) => setGeminiApiKey(e.target.value)} placeholder="API Key do Gemini..." className="w-full px-5 py-4 bg-slate-950 border border-slate-700 rounded-xl outline-none text-white font-mono" />
-                </div>
-              </div>
               <div className="bg-white rounded-3xl border p-8 text-center">
                 <FileSpreadsheet size={48} className="mx-auto text-green-600 mb-4" />
                 <h3 className="text-2xl font-black text-gray-900 mb-2">Exportação de Planilhas</h3>
