@@ -1364,6 +1364,7 @@ export default function App() {
                       <option value="Bezerro">Bezerros / Bezerras</option>
                       <option value="Novilha">Novilhas</option>
                       <option value="Garrote">Garrotes</option>
+                      <option value="Garrote">Vaca</option>
                       <option value="Boi Gordo">Bois (Terminação)</option>
                     </select>
                   </div>
