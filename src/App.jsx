@@ -2,19 +2,17 @@
 /* eslint-disable */
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Beef, Activity, LogOut, Bell, Search, Plus, MapPin, DollarSign, HeartPulse, 
+  Tractor, Beef, Activity, LogOut, Bell, Search, Plus, MapPin, DollarSign, HeartPulse, 
   LayoutGrid, X, Trash2, Edit, Baby, LayoutDashboard, Scale, Settings, Sparkles, Bot, Send, 
   Loader2, CheckCircle2, Download, Archive, Target, PackagePlus, AlertTriangle, ListPlus, 
-  ShieldAlert, Wheat, Calculator, Users, CalendarDays, KeyRound, FileSpreadsheet, Mail, 
-  MessageSquare, Save, NotebookPen, Cloud, CloudOff, MinusCircle, Menu, Droplets, Moon, Sun, CheckSquare
+  ShieldAlert, Wheat, Calculator, Users, CalendarDays, Mail, MessageSquare, Save, NotebookPen, 
+  Cloud, CloudOff, MinusCircle, Menu, Droplets, CheckSquare
 } from 'lucide-react';
 
-// --- IMPORTAÇÕES DA NUVEM (FIREBASE) ---
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'firebase/firestore';
 
-// --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyCn_eHREYCqtCxOtM4ShWmW_O--AX-6O5I",
   authDomain: "fluent-radar-319304.firebaseapp.com",
@@ -29,56 +27,81 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- BASE DE DADOS INICIAL ---
 const defaultData = {
-  propriedades: [{ id: 1, nome: "Minha Fazenda", responsavel: "Gestor", cidade: "-", estado: "BR", area_ha: 0, ie: "" }],
+  propriedades: [{ id: 1, nome: "Minha Fazenda", responsavel: "Gestor", cidade: "Local", estado: "BR", area_ha: 100, ie: "" }],
   usuarios: [{ id: 1, nome: "Administrador", email: "admin@bovigest.com", senha: "admin", role: "Admin", status: "Ativo" }],
   calendarioSanitario: [
-    { id: 1, propriedadeId: 1, doenca: "Febre Aftosa (Se aplicável no estado)", mes: "Maio / Novembro", publico: "Bovinos e Bubalinos", obrigatorio: true },
-    { id: 2, propriedadeId: 1, doenca: "Brucelose (B19 ou RB51)", mes: "Qualquer (Ideal: Desmame)", publico: "Fêmeas 3 a 8 meses", obrigatorio: true },
-    { id: 3, propriedadeId: 1, doenca: "Raiva", mes: "Maio", publico: "Todo o Rebanho (Reforço Anual)", obrigatorio: true },
-    { id: 4, propriedadeId: 1, doenca: "Clostridioses (Polivalente)", mes: "Maio", publico: "Bezerros e Adultos", obrigatorio: false },
-    { id: 5, propriedadeId: 1, doenca: "Vermifugação 1ª Dose", mes: "Maio", publico: "Todo o Rebanho (Entrada da Seca)", obrigatorio: false },
-    { id: 6, propriedadeId: 1, doenca: "Vermifugação 2ª Dose", mes: "Agosto", publico: "Todo o Rebanho (Pico da Seca)", obrigatorio: false },
-    { id: 7, propriedadeId: 1, doenca: "Vermifugação 3ª Dose", mes: "Novembro", publico: "Todo o Rebanho (Início das Águas)", obrigatorio: false }
+    { id: 1, propriedadeId: 1, doenca: "Febre Aftosa", mes: "Maio / Novembro", publico: "Bovinos", obrigatorio: true },
+    { id: 2, propriedadeId: 1, doenca: "Brucelose", mes: "Qualquer", publico: "Fêmeas 3-8m", obrigatorio: true },
+    { id: 3, propriedadeId: 1, doenca: "Raiva", mes: "Maio", publico: "Todo Rebanho", obrigatorio: true },
+    { id: 4, propriedadeId: 1, doenca: "Vermifugação", mes: "Maio/Ago/Nov", publico: "Rebanho", obrigatorio: false }
   ],
   lotes: [], animais: [], pesagens: [], reproducao: [], nascimentos: [], vacinacoes: [], insumos: [], financeiro: [], anotacoes: [], producaoLeite: [],
   bibliotecaAlimentos: [
-    { id: 1, nome: "Silagem de Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
-    { id: 2, nome: "Milho Grão Moído", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 }
+    { id: 1, nome: "Silagem Milho", ms: 35, elm: 1.45, elg: 0.90, pm: 55, ca: 2.5, p: 2.0, precoKg: 0.25 },
+    { id: 2, nome: "Milho Grão", ms: 88, elm: 2.18, elg: 1.50, pm: 65, ca: 0.3, p: 3.0, precoKg: 1.20 }
   ]
 };
 
-// --- CLASSES CSS OTIMIZADAS ---
-const modalOverlay = "fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all";
-const modalBase = "bg-white dark:bg-slate-900 dark:border dark:border-slate-700 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh] transition-colors";
-const modalLarge = "bg-white dark:bg-slate-900 dark:border dark:border-slate-700 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] transition-colors";
-const inputCls = "w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-medium text-sm sm:text-base dark:text-white transition-colors";
-const btnCancel = "flex-1 sm:flex-none px-6 py-3 rounded-xl font-bold bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 shadow-sm text-sm sm:text-base transition-colors";
-const btnSave = "flex-1 sm:flex-none px-8 py-3 rounded-xl font-bold text-white shadow-md text-sm sm:text-base transition-colors flex items-center justify-center";
-const thCls = "px-4 sm:px-6 py-4 text-left text-[10px] sm:text-xs font-black uppercase whitespace-nowrap sticky top-0 z-10 backdrop-blur-md bg-opacity-90";
-const tdCls = "px-4 sm:px-6 py-4 whitespace-nowrap border-t border-gray-100 dark:border-slate-800/50";
-const tableRowCls = "hover:bg-gray-50/80 dark:hover:bg-slate-800/50 even:bg-slate-50/50 dark:even:bg-slate-800/20 transition-colors";
+// --- COMPONENTES UI REUTILIZÁVEIS (Evita Código Repetitivo) ---
+const Input = ({ label, name, type = "text", req = false, def = "", ...props }) => (
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-1.5">{label} {req && <span className="text-red-500">*</span>}</label>
+    <input type={type} name={name} required={req} defaultValue={def} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-medium transition-all" {...props} />
+  </div>
+);
 
-// --- FUNÇÕES UTILITÁRIAS ---
-const calcularExigenciasNASEM = (peso, gpd) => {
-  const pM = Math.pow(peso, 0.75);
-  return { cms: peso * 0.022, elm: 0.077 * pM, elg: 0.063 * pM * Math.pow(gpd, 1.097), pm: (3.8 * pM) + (gpd * 250), ca: 15 + (gpd * 10), p: 10 + (gpd * 8) };
-};
+const Select = ({ label, name, req = false, def = "", options, ...props }) => (
+  <div>
+    <label className="block text-sm font-bold text-gray-700 mb-1.5">{label} {req && <span className="text-red-500">*</span>}</label>
+    <select name={name} required={req} defaultValue={def} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-medium transition-all appearance-none" {...props}>
+      {options.map((o, i) => <option key={i} value={o.val !== undefined ? o.val : o}>{o.lbl !== undefined ? o.lbl : o}</option>)}
+    </select>
+  </div>
+);
 
-const callGemini = async (prompt, sys, userApiKey, url, model) => {
-  if (!userApiKey) return "⚠️ API Key do Gemini não configurada.";
-  const endp = url || "https://generativelanguage.googleapis.com/v1beta/models";
-  const mod = model || "gemini-2.5-flash-preview-09-2025";
+const Modal = ({ title, icon: Icon, onClose, onSubmit, formId, submitText = "Salvar", children, wide }) => (
+  <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div className={`bg-white rounded-3xl w-full ${wide ? 'max-w-2xl' : 'max-w-md'} overflow-hidden flex flex-col max-h-[90vh] shadow-2xl`}>
+      <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
+        <h2 className="font-black text-lg text-gray-900 flex items-center"><Icon className="mr-2 text-green-600"/> {title}</h2>
+        <button type="button" onClick={onClose} className="p-1.5 bg-white text-gray-400 hover:text-gray-800 rounded-full shadow-sm transition-colors"><X size={18}/></button>
+      </div>
+      <div className="overflow-y-auto p-6 custom-scrollbar">
+        <form id={formId} onSubmit={onSubmit} className="space-y-4">{children}</form>
+      </div>
+      <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
+        <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl font-bold bg-white border border-gray-200 text-gray-700 hover:bg-gray-100">Cancelar</button>
+        <button type="submit" form={formId} className="px-8 py-3 rounded-xl font-bold text-white bg-slate-900 hover:bg-black shadow-md">{submitText}</button>
+      </div>
+    </div>
+  </div>
+);
+
+const Table = ({ headers, children }) => (
+  <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden w-full">
+    <div className="overflow-x-auto w-full custom-scrollbar max-h-[60vh]">
+      <table className="min-w-full divide-y divide-gray-100 relative">
+        <thead className="bg-gray-50 sticky top-0 z-10 backdrop-blur-md bg-opacity-90">
+          <tr>{headers.map((h, i) => <th key={i} className={`px-5 py-4 text-xs font-black uppercase tracking-wider text-gray-500 whitespace-nowrap ${i === headers.length-1 ? 'text-right' : 'text-left'}`}>{h}</th>)}</tr>
+        </thead>
+        <tbody className="divide-y divide-gray-50 bg-white">{children}</tbody>
+      </table>
+    </div>
+  </div>
+);
+
+// --- IA E UTILITÁRIOS ---
+const callGemini = async (prompt, sys, userApiKey) => {
+  if (!userApiKey) return "⚠️ Chave API do Gemini não configurada em Configurações.";
   try {
-    const res = await fetch(`${endp.replace(/\/$/, '')}/${mod}:generateContent?key=${userApiKey.trim()}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userApiKey.trim()}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: sys + "\n\nUser: " + prompt }] }] })
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: sys }] } })
     });
-    if (!res.ok) return "❌ Erro na API Gemini.";
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
-  } catch (e) { return "❌ Falha de comunicação."; }
+    if (!res.ok) throw new Error("Erro API");
+    return (await res.json()).candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
+  } catch (e) { return "❌ Erro ao comunicar com IA. Verifique a chave e a internet."; }
 };
 
 export default function App() {
@@ -88,361 +111,197 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const [searchQuery, setSearchQuery] = useState('');
-  const [sanidadeTab, setSanidadeTab] = useState('registos');
   const [activePropriedadeId, setActivePropriedadeId] = useState(1);
+  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('bovigest_ai_key') || '');
+  const [selectedAnimaisIds, setSelectedAnimaisIds] = useState([]); 
 
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
-
-  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('bovigest_gemini_api_key') || '');
-  const [aiEndpoint, setAiEndpoint] = useState(() => localStorage.getItem('bovigest_ai_endpoint') || 'https://generativelanguage.googleapis.com/v1beta/models');
-  const [aiModel, setAiModel] = useState(() => localStorage.getItem('bovigest_ai_model') || 'gemini-2.5-flash-preview-09-2025');
-
+  // Modais de Edição/Criação
   const [selectedAnimal, setSelectedAnimal] = useState(null);
-  const [selectedAnimaisIds, setSelectedAnimaisIds] = useState([]); // SELEÇÃO MÚLTIPLA
-  const [isAnimalFormOpen, setIsAnimalFormOpen] = useState(false);
-  const [isBatchAnimalFormOpen, setIsBatchAnimalFormOpen] = useState(false);
-  const [editingAnimal, setEditingAnimal] = useState(null);
-  const [isFinanceFormOpen, setIsFinanceFormOpen] = useState(false);
-  const [editingFinance, setEditingFinance] = useState(null);
-  const [isVaccineFormOpen, setIsVaccineFormOpen] = useState(false);
-  const [editingVaccine, setEditingVaccine] = useState(null);
-  const [isLoteFormOpen, setIsLoteFormOpen] = useState(false);
-  const [editingLote, setEditingLote] = useState(null);
-  const [isReproducaoFormOpen, setIsReproducaoFormOpen] = useState(false);
-  const [editingReproducao, setEditingReproducao] = useState(null);
-  const [isPesagemFormOpen, setIsPesagemFormOpen] = useState(false);
-  const [editingPesagem, setEditingPesagem] = useState(null);
-  const [isNascimentoFormOpen, setIsNascimentoFormOpen] = useState(false);
-  const [editingNascimento, setEditingNascimento] = useState(null);
-  const [isNascimentoEditFormOpen, setIsNascimentoEditFormOpen] = useState(false);
-  const [isInsumoFormOpen, setIsInsumoFormOpen] = useState(false);
-  const [editingInsumo, setEditingInsumo] = useState(null);
-  const [isConsumoFormOpen, setIsConsumoFormOpen] = useState(false);
-  const [consumoInsumoSelecionado, setConsumoInsumoSelecionado] = useState(null);
-  const [isPropriedadeFormOpen, setIsPropriedadeFormOpen] = useState(false);
-  const [editingPropriedade, setEditingPropriedade] = useState(null);
-  const [isUsuarioFormOpen, setIsUsuarioFormOpen] = useState(false);
-  const [editingUsuario, setEditingUsuario] = useState(null);
-  const [isCalendarioFormOpen, setIsCalendarioFormOpen] = useState(false);
-  const [editingCalendario, setEditingCalendario] = useState(null);
-  const [isAnotacaoFormOpen, setIsAnotacaoFormOpen] = useState(false);
-  const [isLeiteFormOpen, setIsLeiteFormOpen] = useState(false);
-  const [editingLeite, setEditingLeite] = useState(null);
-  const [emailModalData, setEmailModalData] = useState(null);
+  const [modalType, setModalType] = useState(null); // 'animal', 'batch', 'pesagem', 'lote', etc
+  const [editingItem, setEditingItem] = useState(null);
+  const [consumoItem, setConsumoItem] = useState(null);
 
-  const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
-  const [nutriAlvoGPD, setNutriAlvoGPD] = useState(1.2);
-  const [dietaAtual, setDietaAtual] = useState([]);
-  const [insumoSelecionado, setInsumoSelecionado] = useState("");
-
+  // Estados
   const [aiInsights, setAiInsights] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [chatMessages, setChatMessages] = useState([{ role: 'model', text: 'Olá! Sou o seu Consultor Agro IA. Como posso ajudar com a gestão da sua fazenda hoje?' }]);
+  const [chatMessages, setChatMessages] = useState([{ role: 'model', text: 'Olá! Sou o seu Consultor Agro IA.' }]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [dietaAtual, setDietaAtual] = useState([]);
+  const [insumoSelecionado, setInsumoSelecionado] = useState("");
 
-  // --- NUVEM & PERSISTÊNCIA FIREBASE ---
-  const [appData, setAppData] = useState(defaultData);
+  const [appData, setAppData] = useState(() => {
+    const saved = localStorage.getItem('bovigest_data_v1');
+    return saved ? { ...defaultData, ...JSON.parse(saved) } : defaultData;
+  });
+  
   const [isCloudReady, setIsCloudReady] = useState(false);
-  const [cloudStatus, setCloudStatus] = useState('connecting');
   const [firebaseUser, setFirebaseUser] = useState(null);
 
-  useEffect(() => {
-    if (darkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); } 
-    else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
-  }, [darkMode]);
+  const today = new Date().toISOString().split('T')[0];
 
+  // --- EFEITOS E FIREBASE ---
   useEffect(() => {
-    const initAuth = async () => {
-      try { await signInAnonymously(auth); } catch (err) { console.error(err); setCloudStatus('error'); }
-    };
-    initAuth();
+    signInAnonymously(auth).catch(console.error);
     return onAuthStateChanged(auth, setFirebaseUser);
   }, []);
 
-  // 2. Conectar à Nuvem isolada DO UTILIZADOR
   useEffect(() => {
     if (!firebaseUser || !isLoggedIn || !currentUser) return;
     const docRef = doc(db, 'bovigest_users', currentUser.email);
-    
     const unsub = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const cloudData = docSnap.data();
-        // Se a nuvem não tiver o calendário pré-preenchido, usa o novo
-        if (!cloudData.calendarioSanitario || cloudData.calendarioSanitario.length === 0) {
-            cloudData.calendarioSanitario = defaultData.calendarioSanitario;
-        }
-        setAppData(prev => ({ ...defaultData, ...cloudData }));
-      }
+      if (docSnap.exists()) setAppData(prev => ({ ...defaultData, ...docSnap.data() }));
       setIsCloudReady(true);
-      setCloudStatus('online');
-    }, (err) => { console.error(err); setCloudStatus('error'); });
+    });
     return () => unsub();
   }, [firebaseUser, isLoggedIn, currentUser]);
 
-  const updateAppData = (updater) => {
+  const updateApp = (updater) => {
     setAppData(prev => {
-      const newData = typeof updater === 'function' ? updater(prev) : updater;
-      if (isCloudReady && currentUser) setDoc(doc(db, 'bovigest_users', currentUser.email), newData).catch(console.error);
-      localStorage.setItem('bovigest_data_pro_master', JSON.stringify(newData)); // Backup local
-      return newData;
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (isCloudReady && currentUser) setDoc(doc(db, 'bovigest_users', currentUser.email), next).catch(console.error);
+      localStorage.setItem('bovigest_data_v1', JSON.stringify(next)); 
+      return next;
     });
+    setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000);
   };
 
-  useEffect(() => { localStorage.setItem('bovigest_gemini_api_key', geminiApiKey); }, [geminiApiKey]);
-  useEffect(() => { localStorage.setItem('bovigest_ai_endpoint', aiEndpoint); }, [aiEndpoint]);
-  useEffect(() => { localStorage.setItem('bovigest_ai_model', aiModel); }, [aiModel]);
+  useEffect(() => { localStorage.setItem('bovigest_ai_key', geminiApiKey); }, [geminiApiKey]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    const email = e.target.email.value.trim().toLowerCase();
-    const senha = e.target.senha.value;
-    setIsLoginLoading(true); setLoginError("");
-
-    try {
-      const docRef = doc(db, 'bovigest_users', email);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        const user = (data.usuarios || []).find(u => u.email === email);
-        if (user && user.senha === senha) {
-          setAppData({ ...defaultData, ...data }); setCurrentUser(user); setIsLoggedIn(true);
-        } else setLoginError("Senha incorreta para este email.");
-      } else {
-        const savedLocal = localStorage.getItem('bovigest_data_pro_master');
-        let dataToSave = { ...defaultData };
-        if (savedLocal) {
-          const parsed = JSON.parse(savedLocal);
-          dataToSave = { ...defaultData, ...parsed };
-          if (!parsed.calendarioSanitario || parsed.calendarioSanitario.length === 0) {
-              dataToSave.calendarioSanitario = defaultData.calendarioSanitario;
-          }
-        }
-        dataToSave.usuarios = [{ id: Date.now(), nome: email.split('@')[0], email: email, senha: senha, role: "Admin", status: "Ativo" }];
-        await setDoc(docRef, dataToSave); setAppData(dataToSave); setCurrentUser(dataToSave.usuarios[0]); setIsLoggedIn(true);
-      }
-    } catch (err) { setLoginError("Erro ao conectar à nuvem."); }
-    setIsLoginLoading(false);
-  };
-
-  // --- ACESSO SEGURO AOS DADOS ---
-  const pAtiva = useMemo(() => (appData?.propriedades || []).find(p => p.id === activePropriedadeId) || (appData?.propriedades || [])[0] || { nome: 'Fazenda BoviGest', responsavel: 'Gestor' }, [activePropriedadeId, appData?.propriedades]);
-  const cAnimais = useMemo(() => (appData?.animais || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.animais, activePropriedadeId]);
-  const cLotes = useMemo(() => (appData?.lotes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.lotes, activePropriedadeId]);
-  const cFinanceiro = useMemo(() => (appData?.financeiro || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.financeiro, activePropriedadeId]);
-  const cPesagens = useMemo(() => (appData?.pesagens || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.pesagens, activePropriedadeId]);
-  const cReproducao = useMemo(() => (appData?.reproducao || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.reproducao, activePropriedadeId]);
-  const cNascimentos = useMemo(() => (appData?.nascimentos || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.nascimentos, activePropriedadeId]);
-  const cVacinacoes = useMemo(() => (appData?.vacinacoes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.vacinacoes, activePropriedadeId]);
-  const cInsumos = useMemo(() => (appData?.insumos || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.insumos, activePropriedadeId]);
-  const cCalendario = useMemo(() => (appData?.calendarioSanitario || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.calendarioSanitario, activePropriedadeId]);
-  const cAnotacoes = useMemo(() => (appData?.anotacoes || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.anotacoes, activePropriedadeId]);
-  const cLeite = useMemo(() => (appData?.producaoLeite || []).filter(a => a.propriedadeId === activePropriedadeId), [appData?.producaoLeite, activePropriedadeId]);
-
-  const totaisFin = useMemo(() => cFinanceiro.reduce((acc, item) => {
-    if (item?.status === 'pago') { item.tipo === 'receita' ? acc.rec += Number(item.valor || 0) : acc.desp += Number(item.valor || 0); }
-    return acc;
-  }, { rec: 0, desp: 0 }), [cFinanceiro]);
+  // --- ACESSO AOS DADOS (Safe Navigation Arrays) ---
+  const d = appData;
+  const arr = (v) => Array.isArray(v) ? v : [];
   
-  const saldoAtual = totaisFin.rec - totaisFin.desp;
-  const pesoMedio = cAnimais.length === 0 ? 0 : Math.round(cAnimais.reduce((acc, a) => acc + (Number(a.peso) || 0), 0) / cAnimais.length);
-  const custoPorArroba = useMemo(() => {
-    if (cAnimais.length === 0 || totaisFin.desp === 0) return 0;
-    const pt = cAnimais.reduce((acc, a) => acc + (Number(a.peso) || 0), 0);
-    return pt === 0 ? 0 : totaisFin.desp / (pt / 30);
-  }, [cAnimais, totaisFin.desp]);
+  const pAtiva = arr(d.propriedades).find(p => p.id === activePropriedadeId) || arr(d.propriedades)[0] || defaultData.propriedades[0];
+  const cAnimais = arr(d.animais).filter(a => a.propriedadeId === activePropriedadeId);
+  const cLotes = arr(d.lotes).filter(a => a.propriedadeId === activePropriedadeId);
+  const cFin = arr(d.financeiro).filter(a => a.propriedadeId === activePropriedadeId);
+  const cPesagens = arr(d.pesagens).filter(a => a.propriedadeId === activePropriedadeId);
+  const cRep = arr(d.reproducao).filter(a => a.propriedadeId === activePropriedadeId);
+  const cNasc = arr(d.nascimentos).filter(a => a.propriedadeId === activePropriedadeId);
+  const cVac = arr(d.vacinacoes).filter(a => a.propriedadeId === activePropriedadeId);
+  const cInsumos = arr(d.insumos).filter(a => a.propriedadeId === activePropriedadeId);
+  const cCal = arr(d.calendarioSanitario).filter(a => a.propriedadeId === activePropriedadeId);
+  const cAnot = arr(d.anotacoes).filter(a => a.propriedadeId === activePropriedadeId);
+  const cLeite = arr(d.producaoLeite).filter(a => a.propriedadeId === activePropriedadeId);
 
-  const distribuicaoCategorias = useMemo(() => { const counts = {}; cAnimais.forEach(a => { const c = a.categoria || 'Sem Categoria'; counts[c] = (counts[c] || 0) + 1; }); return counts; }, [cAnimais]);
-  const filteredAnimais = useMemo(() => cAnimais.filter(a => { const sq = String(searchQuery||'').toLowerCase(); return String(a.brinco||'').toLowerCase().includes(sq) || String(a.nome||'').toLowerCase().includes(sq) || String(a.categoria||'').toLowerCase().includes(sq) || String(a.lote||'').toLowerCase().includes(sq); }), [searchQuery, cAnimais]);
-  const gadoDeCorte = useMemo(() => cAnimais.filter(a => a.tipo === 'Corte'), [cAnimais]);
-  const gadoDeLeite = useMemo(() => cAnimais.filter(a => a.sexo === 'F'), [cAnimais]); // Todas as Fêmeas
-  const totalLeiteMes = useMemo(() => cLeite.filter(l => l.data && new Date(l.data).getMonth() === new Date().getMonth()).reduce((acc, curr) => acc + (Number(curr.litros) || 0), 0), [cLeite]);
-  const mediaLitrosVaca = useMemo(() => cLeite.length === 0 ? 0 : (cLeite.reduce((acc, curr) => acc + (Number(curr.litros) || 0), 0) / cLeite.length).toFixed(1), [cLeite]);
+  // --- CÁLCULOS ROBUSTOS ---
+  const formatCurrency = (val) => Number.isFinite(Number(val)) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val)) : "R$ 0,00";
+  
+  const finStats = useMemo(() => cFin.reduce((acc, i) => {
+    if (i?.status === 'pago') { i.tipo === 'receita' ? acc.r += Number(i.valor||0) : acc.d += Number(i.valor||0); }
+    return acc;
+  }, { r: 0, d: 0 }), [cFin]);
+  
+  const saldoAtual = finStats.r - finStats.d;
+  const pesoMedio = cAnimais.length === 0 ? 0 : Math.round(cAnimais.reduce((acc, a) => acc + (Number(a.peso)||0), 0) / cAnimais.length);
+  const custoArroba = cAnimais.length === 0 || finStats.d === 0 ? 0 : finStats.d / (cAnimais.reduce((acc, a) => acc + (Number(a.peso)||0), 0) / 30);
 
-  const isEmCarencia = (lote) => { const v = cVacinacoes.find(v => (v.lote === lote || v.lote === "Todo o Rebanho")); return (v && v.dataLiberacao && new Date() < new Date(v.dataLiberacao)) ? v : false; };
+  const filtAnimais = useMemo(() => cAnimais.filter(a => {
+    const q = String(searchQuery||'').toLowerCase();
+    return String(a.brinco||'').toLowerCase().includes(q) || String(a.nome||'').toLowerCase().includes(q) || String(a.lote||'').toLowerCase().includes(q);
+  }), [searchQuery, cAnimais]);
+
+  const femeasArray = cAnimais.filter(a => a.sexo === 'F');
+  const gadoDeCorte = cAnimais.filter(a => a.tipo === 'Corte');
+  
+  const totalLeiteMes = cLeite.filter(l => l.data && new Date(l.data).getMonth() === new Date().getMonth()).reduce((acc, curr) => acc + (Number(curr.litros)||0), 0);
+
   const getGPD = (brinco) => {
-    const p = cPesagens.filter(p => p.brinco === brinco).sort((a,b) => new Date(b.data) - new Date(a.data));
-    if (p.length >= 2) { const dDias = (new Date(p[0]?.data) - new Date(p[1]?.data)) / 86400000; return dDias > 0 ? ((p[0]?.pesoAtual || 0) - (p[1]?.pesoAtual || 0)) / dDias : null; }
+    const p = cPesagens.filter(x => x.brinco === brinco).sort((a,b) => new Date(b.data) - new Date(a.data));
+    if (p.length > 1) { const dias = (new Date(p[0].data) - new Date(p[1].data)) / 86400000; return dias > 0 ? ((p[0].pesoAtual - p[1].pesoAtual) / dias).toFixed(2) : null; }
     return null;
   };
 
-  const formatCurrency = (val) => Number.isFinite(Number(val)) ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val)) : "R$ 0,00";
-  const showSaveSuccess = () => { setSaveSuccess(true); setTimeout(() => setSaveSuccess(false), 3000); };
+  const isEmCarencia = (lote) => { const v = cVac.find(x => x.lote === lote || x.lote === "Todo o Rebanho"); return (v && v.dataLiberacao && new Date() < new Date(v.dataLiberacao)) ? v : false; };
 
-  // --- SELEÇÃO MÚLTIPLA ---
-  const toggleAnimalSelection = (id) => {
-    setSelectedAnimaisIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  // --- HANDLERS E FUNÇÕES ---
+  const openModal = (type, item = null) => { setEditingItem(item); setModalType(type); };
+  const closeModal = () => { setModalType(null); setEditingItem(null); setConsumoItem(null); };
+  
+  const handleDel = (coll, id) => { if(confirm('Confirmar remoção?')) updateApp(p => ({ ...p, [coll]: arr(p[coll]).filter(x => x.id !== id) })); };
+  
+  const handleLogin = async (e) => {
+    e.preventDefault(); setIsLoginLoading(true);
+    const email = e.target.email.value.trim().toLowerCase(); const senha = e.target.senha.value;
+    try {
+      const docSnap = await getDoc(doc(db, 'bovigest_users', email));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const user = arr(data.usuarios).find(u => u.email === email);
+        if (user && user.senha === senha) { setAppData({ ...defaultData, ...data }); setCurrentUser(user); setIsLoggedIn(true); } 
+        else setLoginError("Senha incorreta.");
+      } else {
+        let newData = { ...defaultData };
+        newData.usuarios = [{ id: Date.now(), nome: email.split('@')[0], email, senha, role: "Admin", status: "Ativo" }];
+        await setDoc(doc(db, 'bovigest_users', email), newData);
+        setAppData(newData); setCurrentUser(newData.usuarios[0]); setIsLoggedIn(true);
+      }
+    } catch(err) { setLoginError("Erro na nuvem."); }
+    setIsLoginLoading(false);
   };
-  const toggleAllAnimais = () => {
-    if (selectedAnimaisIds.length === filteredAnimais.length) setSelectedAnimaisIds([]);
-    else setSelectedAnimaisIds(filteredAnimais.map(a => a.id));
-  };
-  const handleDeleteMultipleAnimais = () => {
-    if (confirm(`Atenção: Deseja remover permanentemente os ${selectedAnimaisIds.length} animais selecionados?`)) {
-      updateAppData(p => ({ ...p, animais: (p.animais || []).filter(a => !selectedAnimaisIds.includes(a.id)) }));
-      setSelectedAnimaisIds([]);
-      showSaveSuccess();
+
+  const handleSaveForm = (e) => {
+    e.preventDefault(); const fd = new FormData(e.target); const d = Object.fromEntries(fd.entries());
+    d.id = editingItem?.id || Date.now();
+    d.propriedadeId = activePropriedadeId;
+
+    if (modalType === 'animal') { d.peso = Number(d.peso); d.ativo = true; updateApp(p => ({...p, animais: editingItem ? p.animais.map(x=>x.id===d.id?d:x) : [d, ...p.animais]})); }
+    if (modalType === 'batch') { 
+      const n = []; const pref = d.prefixo||''; const qtd = Number(d.quantidade); const ini = Number(d.inicio);
+      for(let i=0; i<qtd; i++) n.push({ ...d, id: Date.now()+i, brinco: `${pref}${(ini+i).toString().padStart(3,'0')}`, peso: Number(d.peso), ativo: true});
+      updateApp(p => ({...p, animais: [...n, ...p.animais]})); 
     }
-  };
-
-  // --- IA E EXPORTAÇÕES ---
-  const handleAnalyzeFarm = async () => {
-    setIsAnalyzing(true);
-    const context = `Rebanho: ${cAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Custo/@: ${formatCurrency(custoPorArroba)}. Saldo: ${formatCurrency(saldoAtual)}. Receitas: ${formatCurrency(totaisFin.rec)}. Despesas: ${formatCurrency(totaisFin.desp)}. Lotes: ${cLotes.length}. Propriedade: ${pAtiva?.nome || 'Fazenda'}.`;
-    const prompt = "Faça uma análise executiva e aponte os indicadores positivos e uma estratégia de lucro baseada nestes dados: " + context;
-    const result = await callGemini(prompt, "És um consultor especialista em agronegócio.", geminiApiKey, aiEndpoint, aiModel);
-    setAiInsights(result);
-    setIsAnalyzing(false);
-  };
-
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
-    const userText = chatInput;
-    setChatMessages(prev => [...prev, { role: 'user', text: userText }]);
-    setChatInput("");
-    setIsChatLoading(true);
-    const context = `Animais: ${cAnimais.length}. Custo/@: ${formatCurrency(custoPorArroba)}. Lotes: ${cLotes.map(l=>l.nome).join(', ')}. Propriedade: ${pAtiva?.nome || 'Fazenda'}`;
-    const historyText = chatMessages.map(m => `${m.role === 'user' ? 'Utilizador' : 'Assistente'}: ${m.text}`).join("\n");
-    const result = await callGemini(`Contexto Atual da Fazenda: ${context}\n\nHistórico:\n${historyText}\n\nUtilizador: ${userText}`, "És o BoviGest IA, assistente agropecuário.", geminiApiKey, aiEndpoint, aiModel);
-    setChatMessages(prev => [...prev, { role: 'model', text: result }]);
-    setIsChatLoading(false);
-  };
-
-  const exportCSV = (name, hdrs, rows) => { 
-    const blob = new Blob([[hdrs.join(','), ...rows.map(r=>r.map(i=>`"${i}"`).join(','))].join('\n')], { type: 'text/csv;charset=utf-8;' }); 
-    const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = name; l.click(); 
-  };
-  const exportRebanho = () => exportCSV(`Rebanho_${pAtiva.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, ['Brinco', 'Nome', 'Raça', 'Categoria', 'Sexo', 'Peso Atual', 'Lote', 'Status'], cAnimais.map(a => [a.brinco, a.nome, a.raca, a.categoria, a.sexo, a.peso, a.lote, a.ativo ? 'Ativo' : 'Inativo']));
-  const exportFinanceiro = () => exportCSV(`Financeiro_${pAtiva.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, ['Data', 'Descricao', 'Tipo', 'Categoria', 'Valor'], cFinanceiro.map(f => [f.data, f.descricao, f.tipo, f.categoria, f.valor]));
-  const exportReproducao = () => exportCSV(`Reproducao_${pAtiva.nome?.replace(/\s+/g, '_') || 'Fazenda'}.csv`, ['Matriz', 'Metodo', 'Semen/Touro', 'Data Protocolo', 'Data Inseminacao', 'Prev. Parto', 'Status'], cReproducao.map(r => [r.brincoVaca, r.metodo, r.reprodutor, r.dataProtocolo || '-', r.dataInseminacao, r.previsaoParto, r.status]));
-
-  // --- NUTRIÇÃO ---
-  const exigenciasTarget = useMemo(() => calcularExigenciasNASEM(nutriAlvoPeso, nutriAlvoGPD), [nutriAlvoPeso, nutriAlvoGPD]);
-  const nutricaoFornecida = useMemo(() => {
-    let cms = 0, elm = 0, elg = 0, pm = 0, ca = 0, p = 0, custoDiario = 0;
-    dietaAtual.forEach(i => {
-      const ali = (appData?.bibliotecaAlimentos || []).find(a => a.id === i.idInsumo);
-      if(ali) { const kgMS = i.kgMN * (ali.ms / 100); cms += kgMS; elm += kgMS * ali.elm; elg += kgMS * ali.elg; pm += kgMS * ali.pm; ca += kgMS * ali.ca; p += kgMS * ali.p; custoDiario += i.kgMN * ali.precoKg; }
-    });
-    return { cms, elm, elg, pm, ca, p, custoDiario };
-  }, [dietaAtual, appData?.bibliotecaAlimentos]);
-
-  const handleAddInsumoDieta = () => { if (insumoSelecionado && !dietaAtual.find(d => d.idInsumo === Number(insumoSelecionado))) setDietaAtual([...dietaAtual, { idInsumo: Number(insumoSelecionado), kgMN: 1 }]); setInsumoSelecionado(""); };
-  const handleUpdateKgMN = (id, kg) => setDietaAtual(dietaAtual.map(d => d.idInsumo === id ? { ...d, kgMN: Number(kg) } : d));
-  const handleRemoveInsumoDieta = (id) => setDietaAtual(dietaAtual.filter(d => d.idInsumo !== id));
-
-  // --- HANDLERS FORMS ---
-  const saveDoc = (coll, obj, isEdit) => { updateAppData(p => ({ ...p, [coll]: isEdit ? (p[coll] || []).map(x => x.id === obj.id ? obj : x) : [obj, ...(p[coll] || [])] })); showSaveSuccess(); };
-  
-  const handleSaveAnimal = (e) => { e.preventDefault(); const fd = new FormData(e.target); saveDoc('animais', { id: editingAnimal?.id || Date.now(), propriedadeId: activePropriedadeId, brinco: fd.get('brinco'), nome: fd.get('nome') || "-", sexo: fd.get('sexo'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), raca: fd.get('raca'), dataNasc: fd.get('dataNasc'), peso: Number(fd.get('peso')), lote: fd.get('lote') || "Sem Lote", obs: fd.get('obs') || "", ativo: true }, !!editingAnimal); setIsAnimalFormOpen(false); setEditingAnimal(null); setSelectedAnimal(null); };
-  const handleSaveBatchAnimais = (e) => { e.preventDefault(); const fd = new FormData(e.target); const pref = fd.get('prefixo')||''; const ini = Number(fd.get('inicio')); const qtd = Number(fd.get('quantidade')); const l = fd.get('lote')||"Sem Lote"; const n = []; for(let i=0;i<qtd;i++){ n.push({id: Date.now()+i, propriedadeId: activePropriedadeId, brinco: `${pref}${(ini+i).toString().padStart(3,'0')}`, nome: "-", sexo: fd.get('sexo'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), raca: fd.get('raca'), dataNasc: fd.get('dataNasc'), peso: Number(fd.get('peso')), lote: l, obs: "Cadastrado em lote.", ativo: true}); } updateAppData(p => ({ ...p, animais: [...n, ...(p.animais || [])] })); setIsBatchAnimalFormOpen(false); showSaveSuccess(); };
-  const handleSavePesagem = (e) => { e.preventDefault(); const fd = new FormData(e.target); const b = fd.get('brinco'); const pAt = Number(fd.get('pesoAtual')); const an = cAnimais.find(a => a.brinco === b); if (!an && !editingPesagem) return alert("Não encontrado!"); const obj = { id: editingPesagem?.id || Date.now(), propriedadeId: activePropriedadeId, brinco: b, data: fd.get('data'), pesoAnterior: editingPesagem ? editingPesagem.pesoAnterior : an.peso, pesoAtual: pAt, obs: "" }; updateAppData(p => ({ ...p, pesagens: editingPesagem ? (p.pesagens || []).map(x => x.id === obj.id ? obj : x) : [obj, ...(p.pesagens || [])], animais: (p.animais || []).map(a => a.brinco === b && a.propriedadeId === activePropriedadeId ? { ...a, peso: pAt } : a) })); setIsPesagemFormOpen(false); setEditingPesagem(null); showSaveSuccess(); };
-  const handleSaveNascimentoEdit = (e) => { e.preventDefault(); const fd = new FormData(e.target); saveDoc('nascimentos', { ...editingNascimento, data: fd.get('data'), brincoMatriz: fd.get('brincoMatriz'), brincoBezerro: fd.get('brincoBezerro'), sexo: fd.get('sexo'), pesoNascimento: Number(fd.get('pesoNascimento')), obs: fd.get('obs') || '' }, true); setIsNascimentoEditFormOpen(false); setEditingNascimento(null); };
-  const handleAddNascimento = (e) => { e.preventDefault(); const fd = new FormData(e.target); const bM = fd.get('brincoMatriz'); const bB = fd.get('brincoBezerro'); const pN = Number(fd.get('pesoNascimento')); const n = { id: Date.now(), propriedadeId: activePropriedadeId, data: fd.get('data'), brincoMatriz: bM, brincoBezerro: bB, sexo: fd.get('sexo'), pesoNascimento: pN, obs: fd.get('obs') || "" }; const nA = { id: Date.now()+1, propriedadeId: activePropriedadeId, brinco: bB, nome: "-", sexo: fd.get('sexo'), categoria: "Bezerro(a)", tipo: "Cria", raca: fd.get('raca'), dataNasc: fd.get('data'), peso: pN, lote: "Maternidade", obs: `Cria de ${bM}`, ativo: true }; updateAppData(p => ({ ...p, nascimentos: [n, ...(p.nascimentos || [])], animais: [nA, ...(p.animais || [])] })); setIsNascimentoFormOpen(false); showSaveSuccess(); };
-  const handleSaveLeite = (e) => { e.preventDefault(); const fd = new FormData(e.target); saveDoc('producaoLeite', { id: editingLeite?.id || Date.now(), propriedadeId: activePropriedadeId, brincoMatriz: fd.get('brincoMatriz'), data: fd.get('data'), litros: Number(fd.get('litros')), turno: fd.get('turno'), obs: fd.get('obs') || "" }, !!editingLeite); setIsLeiteFormOpen(false); setEditingLeite(null); };
-  const handleSaveVaccine = (e) => { e.preventDefault(); const fd = new FormData(e.target); const cd = Number(fd.get('carenciaDias')); let dl = null; if (cd > 0) { const d = new Date(fd.get('dataAplicacao')); d.setDate(d.getDate() + cd); dl = d.toISOString().split('T')[0]; } saveDoc('vacinacoes', { id: editingVaccine?.id || Date.now(), propriedadeId: activePropriedadeId, vacina: fd.get('vacina'), lote: fd.get('lote'), dataAplicacao: fd.get('dataAplicacao'), proximaDose: null, qtdAnimais: Number(fd.get('qtdAnimais')), obs: "", carenciaDias: cd, dataLiberacao: dl, status: "concluida" }, !!editingVaccine); setIsVaccineFormOpen(false); setEditingVaccine(null); };
-  const handleSaveFinance = (e) => { e.preventDefault(); const fd = new FormData(e.target); saveDoc('financeiro', { id: editingFinance?.id || Date.now(), propriedadeId: activePropriedadeId, descricao: fd.get('descricao'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), valor: Number(fd.get('valor')), data: fd.get('data'), status: fd.get('status') || 'pago' }, !!editingFinance); setIsFinanceFormOpen(false); setEditingFinance(null); };
-  const handleSaveLote = (e) => { e.preventDefault(); const fd = new FormData(e.target); saveDoc('lotes', { id: editingLote?.id || Date.now(), propriedadeId: activePropriedadeId, nome: fd.get('nome'), capacidade: Number(fd.get('capacidade')), tipo: fd.get('tipo'), obs: fd.get('obs') || "" }, !!editingLote); setIsLoteFormOpen(false); setEditingLote(null); };
-  const handleSaveInsumo = (e) => { e.preventDefault(); const fd = new FormData(e.target); saveDoc('insumos', { id: editingInsumo?.id || Date.now(), propriedadeId: activePropriedadeId, nome: fd.get('nome'), categoria: fd.get('categoria'), quantidade: Number(fd.get('quantidade')), unidade: fd.get('unidade'), estoqueMinimo: Number(fd.get('estoqueMinimo')) }, !!editingInsumo); setIsInsumoFormOpen(false); setEditingInsumo(null); };
-  const handleLancarConsumo = (e) => { e.preventDefault(); const qtd = Number(new FormData(e.target).get('quantidadeConsumo')); updateAppData(p => ({ ...p, insumos: (p.insumos || []).map(i => i.id === consumoInsumoSelecionado.id ? { ...i, quantidade: Math.max(0, i.quantidade - qtd) } : i) })); setIsConsumoFormOpen(false); setConsumoInsumoSelecionado(null); showSaveSuccess(); };
-  
-  // Modificado: Protocolo + Status Manual
-  const handleSaveReproducao = (e) => { 
-    e.preventDefault(); const fd = new FormData(e.target); 
-    const dI = fd.get('dataInseminacao'); 
-    const pP = dI ? new Date(new Date(dI).setDate(new Date(dI).getDate() + 290)).toISOString().split('T')[0] : ''; 
-    saveDoc('reproducao', { 
-      id: editingReproducao?.id || Date.now(), 
-      propriedadeId: activePropriedadeId, 
-      brincoVaca: fd.get('brincoVaca'), 
-      dataProtocolo: fd.get('dataProtocolo'),
-      dataInseminacao: dI, 
-      previsaoParto: pP, 
-      metodo: fd.get('metodo'), 
-      reprodutor: fd.get('reprodutor'), 
-      status: fd.get('status') || 'Aguardando DG' 
-    }, !!editingReproducao); 
-    setIsReproducaoFormOpen(false); setEditingReproducao(null); 
-  };
-  
-  const handleSavePropriedade = (e) => { e.preventDefault(); const fd = new FormData(e.target); saveDoc('propriedades', { id: editingPropriedade?.id || Date.now(), nome: fd.get('nome'), responsavel: fd.get('responsavel'), cidade: fd.get('cidade'), estado: fd.get('estado'), area_ha: Number(fd.get('area_ha')), ie: fd.get('ie') }, !!editingPropriedade); setIsPropriedadeFormOpen(false); setEditingPropriedade(null); };
-  const handleSaveCalendario = (e) => { e.preventDefault(); const fd = new FormData(e.target); saveDoc('calendarioSanitario', { id: editingCalendario?.id || Date.now(), propriedadeId: activePropriedadeId, doenca: fd.get('doenca'), mes: fd.get('mes'), publico: fd.get('publico'), obrigatorio: fd.get('obrigatorio') === 'true' }, !!editingCalendario); setIsCalendarioFormOpen(false); setEditingCalendario(null); };
-  const handleSaveUsuario = (e) => { e.preventDefault(); const fd = new FormData(e.target); const obj = { id: editingUsuario?.id || Date.now(), nome: fd.get('nome'), email: fd.get('email').trim().toLowerCase(), senha: fd.get('senha'), role: fd.get('role'), status: editingUsuario ? editingUsuario.status : 'Pendente' }; saveDoc('usuarios', obj, !!editingUsuario); if (!editingUsuario) setEmailModalData({ nome: obj.nome, email: obj.email, senha: obj.senha, role: obj.role }); setIsUsuarioFormOpen(false); setEditingUsuario(null); };
-  
-  // Modificado: Anotações Modal Adicionado e Funcional
-  const handleSaveAnotacao = (e) => { e.preventDefault(); const fd = new FormData(e.target); saveDoc('anotacoes', { id: Date.now(), propriedadeId: activePropriedadeId, titulo: fd.get('titulo'), texto: fd.get('texto'), tag: fd.get('tag') || '', data: new Date().toLocaleDateString('pt-BR'), status: 'aberto' }, false); setIsAnotacaoFormOpen(false); }; 
-  const handleToggleAnotacao = (id) => { updateAppData(p => ({ ...p, anotacoes: (p.anotacoes || []).map(a => a.id === id ? { ...a, status: a.status === 'resolvido' ? 'aberto' : 'resolvido' } : a) })); };
-  
-  const del = (coll, id, msg) => { if(confirm(msg)){ updateAppData(p => ({ ...p, [coll]: (p[coll]||[]).filter(x => x.id !== id) })); showSaveSuccess(); } };
-
-  // --- UI MENU AGRUPADO (NOVO) ---
-  const navGroups = [
-    {
-      title: "Visão Geral",
-      items: [
-        { id: 'dashboard', icon: LayoutDashboard, label: 'Painel Central' },
-        { id: 'ai-assistant', icon: Sparkles, label: 'Consultor IA' },
-      ]
-    },
-    {
-      title: "Rebanho & Produção",
-      items: [
-        { id: 'animais', icon: Beef, label: 'Rebanho Geral', badge: cAnimais.length },
-        { id: 'gado_corte', icon: Target, label: 'Gado de Corte', badge: gadoDeCorte.length },
-        { id: 'leite', icon: Droplets, label: 'Produção Leiteira', badge: cLeite.length },
-        { id: 'nascimentos', icon: Baby, label: 'Nascimentos', badge: cNascimentos.length },
-      ]
-    },
-    {
-      title: "Maneio Diário",
-      items: [
-        { id: 'sanidade', icon: ShieldAlert, label: 'Sanidade Clínica' },
-        { id: 'nutricao', icon: Wheat, label: 'Nutrição (NASEM)' },
-        { id: 'reproducao', icon: HeartPulse, label: 'Reprodução' },
-        { id: 'pesagens', icon: Scale, label: 'Pesagens' },
-      ]
-    },
-    {
-      title: "Administração",
-      items: [
-        { id: 'financeiro', icon: DollarSign, label: 'Financeiro' },
-        { id: 'insumos', icon: Archive, label: 'Estoque Insumos' },
-        { id: 'pastagens', icon: LayoutGrid, label: 'Lotes e Pastagens', badge: cLotes.length },
-      ]
-    },
-    {
-      title: "Sistema",
-      items: [
-        { id: 'propriedades', icon: MapPin, label: 'Propriedades' },
-        { id: 'anotacoes', icon: NotebookPen, label: 'Anotações' },
-        { id: 'configuracoes', icon: Settings, label: 'Configurações' },
-      ]
+    if (modalType === 'lote') { d.capacidade = Number(d.capacidade); updateApp(p => ({...p, lotes: editingItem ? p.lotes.map(x=>x.id===d.id?d:x) : [d, ...p.lotes]})); }
+    if (modalType === 'pesagem') { 
+      d.pesoAtual = Number(d.pesoAtual); const an = cAnimais.find(x=>x.brinco===d.brinco); if(!an && !editingItem) return alert('Brinco não encontrado.');
+      d.pesoAnterior = editingItem ? editingItem.pesoAnterior : an.peso;
+      updateApp(p => ({...p, pesagens: editingItem ? p.pesagens.map(x=>x.id===d.id?d:x) : [d, ...p.pesagens], animais: p.animais.map(x=>x.brinco===d.brinco?{...x,peso:d.pesoAtual}:x)})); 
     }
+    if (modalType === 'financeiro') { d.valor = Number(d.valor); d.status = d.status||'pago'; updateApp(p => ({...p, financeiro: editingItem ? p.financeiro.map(x=>x.id===d.id?d:x) : [d, ...p.financeiro]})); }
+    if (modalType === 'reproducao') { d.previsaoParto = d.dataInseminacao ? new Date(new Date(d.dataInseminacao).setDate(new Date(d.dataInseminacao).getDate()+290)).toISOString().split('T')[0] : ''; updateApp(p => ({...p, reproducao: editingItem ? p.reproducao.map(x=>x.id===d.id?d:x) : [d, ...p.reproducao]})); }
+    if (modalType === 'nascimento') { 
+      d.pesoNascimento = Number(d.pesoNascimento);
+      const cria = { id: d.id+1, propriedadeId: activePropriedadeId, brinco: d.brincoBezerro, nome: "-", sexo: d.sexo, categoria: "Bezerro(a)", tipo: "Cria", raca: d.raca, dataNasc: d.data, peso: d.pesoNascimento, lote: "Maternidade", obs: `Cria de ${d.brincoMatriz}`, ativo: true };
+      updateApp(p => ({...p, nascimentos: editingItem ? p.nascimentos.map(x=>x.id===d.id?d:x) : [d, ...p.nascimentos], animais: editingItem ? p.animais : [cria, ...p.animais]})); 
+    }
+    if (modalType === 'leite') { d.litros = Number(d.litros); updateApp(p => ({...p, producaoLeite: editingItem ? p.producaoLeite.map(x=>x.id===d.id?d:x) : [d, ...p.producaoLeite]})); }
+    if (modalType === 'vacina') { 
+      d.carenciaDias = Number(d.carenciaDias); d.qtdAnimais = Number(d.qtdAnimais);
+      if(d.carenciaDias > 0) { const ld = new Date(d.dataAplicacao); ld.setDate(ld.getDate()+d.carenciaDias); d.dataLiberacao = ld.toISOString().split('T')[0]; }
+      updateApp(p => ({...p, vacinacoes: editingItem ? p.vacinacoes.map(x=>x.id===d.id?d:x) : [d, ...p.vacinacoes]})); 
+    }
+    if (modalType === 'insumo') { d.quantidade = Number(d.quantidade); d.estoqueMinimo = Number(d.estoqueMinimo); updateApp(p => ({...p, insumos: editingItem ? p.insumos.map(x=>x.id===d.id?d:x) : [d, ...p.insumos]})); }
+    if (modalType === 'consumo') { 
+      const q = Number(d.quantidadeConsumo); 
+      updateApp(p => ({...p, insumos: p.insumos.map(x=>x.id===consumoItem.id ? {...x, quantidade: Math.max(0, x.quantidade-q)} : x)})); 
+    }
+    if (modalType === 'calendario') { d.obrigatorio = d.obrigatorio === 'true'; updateApp(p => ({...p, calendarioSanitario: editingItem ? p.calendarioSanitario.map(x=>x.id===d.id?d:x) : [d, ...p.calendarioSanitario]})); }
+    if (modalType === 'anotacao') { d.status = 'aberto'; d.data = new Date().toLocaleDateString('pt-BR'); updateApp(p => ({...p, anotacoes: [d, ...p.anotacoes]})); }
+
+    closeModal();
+  };
+
+  const navs = [
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Painel Central' }, { id: 'animais', icon: Beef, label: 'Rebanho' }, { id: 'gado_corte', icon: Target, label: 'Engorda' }, { id: 'leite', icon: Droplets, label: 'Leite' }, { id: 'pastagens', icon: LayoutGrid, label: 'Lotes' }, { id: 'reproducao', icon: HeartPulse, label: 'Reprodução' }, { id: 'nascimentos', icon: Baby, label: 'Nascimentos' }, { id: 'pesagens', icon: Scale, label: 'Pesagens' }, { id: 'sanidade', icon: ShieldAlert, label: 'Sanidade' }, { id: 'nutricao', icon: Wheat, label: 'Nutrição' }, { id: 'insumos', icon: Archive, label: 'Insumos' }, { id: 'financeiro', icon: DollarSign, label: 'Financeiro' }, { id: 'anotacoes', icon: NotebookPen, label: 'Anotações' }, { id: 'ai-assistant', icon: Sparkles, label: 'Assistente IA' }, { id: 'propriedades', icon: MapPin, label: 'Propriedades' }, { id: 'configuracoes', icon: Settings, label: 'Configurações' }
   ];
-
-  const flatNavItems = navGroups.flatMap(g => g.items);
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-cover bg-center transition-colors" style={{backgroundImage: "url('https://images.unsplash.com/photo-1544866582-90e808381861?q=80&w=2074&auto=format&fit=crop')"}}>
+      <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-cover bg-center">
         <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
-        <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center px-4">
-          <div className="mx-auto w-24 h-24 bg-gradient-to-br from-green-400 to-green-700 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-green-900/50 mb-6 border border-green-500/30">
-            <Beef size={48} className="text-white" />
-          </div>
-          <h2 className="text-5xl font-extrabold text-white tracking-tight drop-shadow-md">BoviGest <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-green-600">PRO</span></h2>
-          <p className="text-slate-300 mt-3 font-medium text-lg">Gestão Pecuária Inteligente</p>
-          <div className="mt-8 bg-slate-900/90 backdrop-blur-xl py-8 px-8 shadow-2xl rounded-3xl border border-slate-700/50 text-left">
-            {loginError && <div className="mb-6 bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl font-bold text-sm text-center">{loginError}</div>}
+        <div className="relative z-10 text-center px-4 max-w-md mx-auto">
+          <div className="mx-auto w-24 h-24 bg-gradient-to-br from-green-400 to-green-700 rounded-3xl flex items-center justify-center shadow-2xl mb-6"><Beef size={48} className="text-white" /></div>
+          <h2 className="text-5xl font-extrabold text-white tracking-tight">BoviGest <span className="text-green-500">PRO</span></h2>
+          <div className="mt-8 bg-slate-900/90 backdrop-blur-xl p-8 rounded-3xl border border-slate-700/50">
+            {loginError && <p className="text-red-400 mb-4 font-bold">{loginError}</p>}
             <form className="space-y-6" onSubmit={handleLogin}>
-              <div><label className="block text-sm font-bold text-slate-300 mb-2">Email de Acesso</label><input type="email" name="email" required className="w-full px-5 py-4 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" placeholder="ex: gestor@fazenda.com" /></div>
-              <div><label className="block text-sm font-bold text-slate-300 mb-2">Senha Secreta</label><input type="password" name="senha" required className="w-full px-5 py-4 bg-slate-800 border border-slate-700 text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" placeholder="••••••••" /></div>
-              <button type="submit" disabled={isLoginLoading} className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 shadow-lg shadow-green-900/50 disabled:opacity-50 flex justify-center items-center transition-all">
-                {isLoginLoading ? <Loader2 className="animate-spin mr-2" size={20} /> : null} Aceder ao Cofre
-              </button>
+              <Input label="Email de Acesso" name="email" type="email" req placeholder="ex: gestor@fazenda.com" className="w-full px-5 py-4 bg-slate-800 text-white rounded-xl outline-none" />
+              <Input label="Senha" name="senha" type="password" req placeholder="••••••••" className="w-full px-5 py-4 bg-slate-800 text-white rounded-xl outline-none" />
+              <button type="submit" disabled={isLoginLoading} className="w-full py-4 rounded-xl font-bold text-white bg-green-600 hover:bg-green-500 shadow-lg">{isLoginLoading ? 'A conectar...' : 'Entrar no Sistema'}</button>
             </form>
           </div>
         </div>
@@ -451,279 +310,360 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen flex font-sans transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-gray-900'}`}>
+    <div className="min-h-screen flex bg-slate-50 text-gray-900 font-sans">
+      {isMobileMenuOpen && <div className="fixed inset-0 bg-slate-950/80 z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />}
       
-      {/* OVERLAY MOBILE */}
-      {isMobileMenuOpen && <div className="fixed inset-0 bg-slate-950/80 z-40 md:hidden backdrop-blur-sm transition-opacity" onClick={() => setIsMobileMenuOpen(false)} />}
-      
-      {/* SIDEBAR RESPONSIVA AGRUPADA */}
-      <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-950 border-r border-slate-900 flex flex-col shadow-2xl z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 w-72 bg-slate-950 flex flex-col z-50 transition-transform md:relative ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="h-24 flex items-center justify-between px-6 border-b border-slate-800/50 shrink-0">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center mr-3 shadow-lg shadow-green-900/50">
-              <Beef size={22} className="text-white" />
-            </div>
-            <span className="text-2xl font-black text-white tracking-tight">BoviGest</span>
-          </div>
-          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-slate-400 hover:text-white bg-slate-800 p-2 rounded-lg"><X size={20} /></button>
+          <div className="flex items-center"><div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center mr-3"><Beef size={22} className="text-white" /></div><span className="text-2xl font-black text-white">BoviGest</span></div>
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-white"><X/></button>
         </div>
-
-        {/* Perfil Mobile / Topo Sidebar */}
-        <div className="px-6 py-5 bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/50 shrink-0">
-          <div className="flex items-center mb-4">
-            <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-green-400 font-bold mr-3 shrink-0">
-              {(currentUser?.nome || 'U')[0].toUpperCase()}
-            </div>
-            <div className="overflow-hidden">
-              <p className="font-bold text-sm text-white truncate">{currentUser?.nome || 'Utilizador'}</p>
-              <p className="text-[10px] font-medium text-slate-400 truncate uppercase tracking-widest">{currentUser?.role || 'Operador'}</p>
-            </div>
-          </div>
-          <select value={activePropriedadeId} onChange={(e) => setActivePropriedadeId(Number(e.target.value))} className="w-full bg-slate-800 text-white text-sm font-bold px-3 py-2.5 rounded-lg border border-slate-700 outline-none focus:ring-2 focus:ring-green-500 shadow-inner appearance-none truncate">
-            {(appData?.propriedades || []).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+        <div className="p-6 bg-slate-900/50 border-b border-slate-800/50">
+          <select value={activePropriedadeId} onChange={(e) => setActivePropriedadeId(Number(e.target.value))} className="w-full bg-slate-800 text-white font-bold p-3 rounded-xl outline-none">
+            {arr(appData.propriedades).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
         </div>
-
-        <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto custom-scrollbar pb-24">
-          {navGroups.map((group, gIdx) => (
-            <div key={gIdx}>
-              <h4 className="px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{group.title}</h4>
-              <div className="space-y-1">
-                {group.items.map((item) => { 
-                  const Icon = item.icon; 
-                  const isActive = currentView === item.id;
-                  return (
-                    <button key={item.id} onClick={() => { setCurrentView(item.id); setIsMobileMenuOpen(false); }} className={`w-full flex items-center px-4 py-2.5 rounded-xl transition-all ${isActive ? 'bg-green-600 text-white shadow-md shadow-green-900/20' : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}>
-                      <Icon className={`mr-3 h-5 w-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                      <span className="font-bold text-sm truncate">{item.label}</span>
-                      {item.badge !== undefined && item.badge > 0 && <span className={`ml-auto py-0.5 px-2 rounded-full text-[10px] font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'}`}>{item.badge}</span>}
-                    </button>
-                  ); 
-                })}
-              </div>
-            </div>
-          ))}
+        <nav className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
+          {navs.map(n => {
+            const act = currentView === n.id;
+            return (
+              <button key={n.id} onClick={() => { setCurrentView(n.id); setIsMobileMenuOpen(false); }} className={`w-full flex items-center px-4 py-3 rounded-xl font-bold text-sm transition-all ${act ? 'bg-green-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                <n.icon className={`mr-3 h-5 w-5 ${act?'text-white':'text-slate-500'}`} /> {n.label}
+              </button>
+            )
+          })}
         </nav>
-        <div className="p-6 shrink-0 border-t border-slate-800/50 bg-slate-950">
-          <button onClick={() => { setIsLoggedIn(false); setCurrentUser(null); }} className="w-full py-3.5 text-slate-400 border border-slate-800 hover:bg-slate-900 hover:text-red-400 rounded-xl font-bold flex justify-center items-center transition-colors text-sm"><LogOut className="mr-2 h-4 w-4" /> Terminar Sessão</button>
-        </div>
       </aside>
 
-      <main className="flex-1 flex flex-col h-screen overflow-hidden w-full relative">
-        <header className="h-20 sm:h-24 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-10 shrink-0 z-10 shadow-sm transition-colors">
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        <header className="h-20 sm:h-24 bg-white border-b flex items-center justify-between px-6 sm:px-10 shrink-0">
           <div className="flex items-center">
-            <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden mr-4 text-gray-700 dark:text-slate-300 hover:text-green-600 bg-gray-100 dark:bg-slate-800 p-2.5 rounded-xl transition-colors"><Menu size={22} /></button>
-            <h2 className="text-xl sm:text-2xl font-extrabold capitalize flex items-center text-gray-900 dark:text-white truncate">
-              {(() => { const C = flatNavItems.find(n => n.id === currentView)?.icon || LayoutDashboard; return <C className="mr-2 sm:mr-3 text-green-600 shrink-0" size={26} /> })()}
-              <span className="truncate">{flatNavItems.find(n => n.id === currentView)?.label}</span>
+            <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden mr-4 bg-gray-100 p-2 rounded-lg"><Menu/></button>
+            <h2 className="text-xl sm:text-2xl font-extrabold flex items-center">
+              {(() => { const C = navs.find(n=>n.id===currentView)?.icon || LayoutDashboard; return <C className="mr-3 text-green-600 shrink-0" size={26} /> })()}
+              {navs.find(n=>n.id===currentView)?.label}
             </h2>
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 sm:p-2.5 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors">
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-            {cloudStatus === 'online' && <span className="text-[10px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center bg-blue-50 dark:bg-blue-900/30 px-2 sm:px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-800/50"><Cloud size={14} className="mr-1.5 hidden sm:block" /> Nuvem</span>}
-            {saveSuccess && <span className="text-[10px] sm:text-xs font-bold text-green-700 dark:text-green-400 flex items-center bg-green-50 dark:bg-green-900/30 px-2 sm:px-3 py-1.5 rounded-full border border-green-100 dark:border-green-800/50"><CheckCircle2 size={14} className="mr-1 sm:mr-1.5" /> <span className="hidden sm:block">Salvo</span></span>}
+          <div className="flex items-center space-x-3">
+            {cloudStatus === 'online' && <span className="bg-blue-50 text-blue-600 text-xs font-bold px-3 py-1.5 rounded-full flex"><Cloud size={14} className="mr-1"/> Nuvem</span>}
+            {saveSuccess && <span className="bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full flex"><CheckCircle2 size={14} className="mr-1"/> Salvo</span>}
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-10 w-full relative custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar relative">
           
           {currentView === 'dashboard' && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 sm:space-y-8">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-800/80 p-5 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/50 flex flex-col"><div className="bg-blue-50 dark:bg-blue-900/30 p-3 sm:p-4 rounded-2xl text-blue-600 dark:text-blue-400 w-12 sm:w-16 mb-4 shadow-inner"><Beef size={24} className="sm:w-7 sm:h-7" /></div><h3 className="text-4xl sm:text-5xl font-black dark:text-white">{cAnimais.length}</h3><p className="text-xs sm:text-sm font-bold text-gray-400 dark:text-slate-400 uppercase mt-2">Total Cabeças</p></div>
-                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-800/80 p-5 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/50 flex flex-col"><div className="bg-green-50 dark:bg-green-900/30 p-3 sm:p-4 rounded-2xl text-green-600 dark:text-green-400 w-12 sm:w-16 mb-4 shadow-inner"><DollarSign size={24} className="sm:w-7 sm:h-7" /></div><h3 className="text-2xl sm:text-3xl font-black mt-2 dark:text-white">{formatCurrency(saldoAtual)}</h3><p className="text-xs sm:text-sm font-bold text-gray-400 dark:text-slate-400 uppercase mt-2">Saldo Global</p></div>
-                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-800/80 p-5 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/50 flex flex-col"><div className="bg-cyan-50 dark:bg-cyan-900/30 p-3 sm:p-4 rounded-2xl text-cyan-600 dark:text-cyan-400 w-12 sm:w-16 mb-4 shadow-inner"><Droplets size={24} className="sm:w-7 sm:h-7" /></div><h3 className="text-4xl sm:text-5xl font-black dark:text-white">{totalLeiteMes} <span className="text-lg sm:text-xl text-gray-300 dark:text-slate-500 font-bold">L</span></h3><p className="text-xs sm:text-sm font-bold text-gray-400 dark:text-slate-400 uppercase mt-2">Leite no Mês</p></div>
-                <div className="bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-800/80 p-5 sm:p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/50 flex flex-col"><div className="bg-pink-50 dark:bg-pink-900/30 p-3 sm:p-4 rounded-2xl text-pink-600 dark:text-pink-400 w-12 sm:w-16 mb-4 shadow-inner"><HeartPulse size={24} className="sm:w-7 sm:h-7" /></div><h3 className="text-4xl sm:text-5xl font-black dark:text-white">{cReproducao.filter(r=>r.status==='Prenhe').length}</h3><p className="text-xs sm:text-sm font-bold text-gray-400 dark:text-slate-400 uppercase mt-2">Prenhes</p></div>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700"><h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white mb-6">Distribuição</h3>
-                  <div className="space-y-4">{Object.keys(distribuicaoCategorias).length === 0 ? (<p className="text-gray-400 dark:text-slate-500 text-sm">Sem animais.</p>) : (Object.entries(distribuicaoCategorias).map(([cat, qtd]) => { const pct = Math.round((qtd / cAnimais.length) * 100) || 0; return (<div key={cat}><div className="flex justify-between mb-1"><span className="font-bold text-gray-700 dark:text-slate-300 text-sm">{cat}</span><span className="font-black text-gray-900 dark:text-white text-sm">{pct}% ({qtd})</span></div><div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-3"><div className="bg-green-500 h-full rounded-full" style={{ width: `${pct}%` }}></div></div></div>); }))}</div>
-                </div>
-                <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700 overflow-hidden relative flex flex-col justify-center"><div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-green-400 to-green-600"></div><div className="p-6 sm:p-8"><h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center mb-2">IA Relatório <Sparkles className="ml-2 text-green-500" size={24} /></h3><p className="text-gray-500 dark:text-slate-400 text-sm sm:text-base mb-6">Analise dados e gere estratégias.</p><button onClick={handleAnalyzeFarm} disabled={isAnalyzing} className="w-full bg-gray-900 dark:bg-slate-950 text-white px-6 py-4 rounded-2xl font-bold shadow-xl flex items-center justify-center disabled:opacity-70 transition-colors hover:bg-black">{isAnalyzing ? <Loader2 className="animate-spin mr-2" /> : <Bot className="mr-2" />} {isAnalyzing ? 'A Processar...' : 'Gerar Análise'}</button>{aiInsights && <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/50 rounded-2xl"><div className="prose text-green-900 dark:text-green-100 text-xs sm:text-sm">{aiInsights}</div></div>}</div></div>
+                <div className="bg-white p-6 rounded-3xl border shadow-sm"><div className="bg-blue-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-blue-600"><Beef size={28}/></div><h3 className="text-4xl font-black">{cAnimais.length}</h3><p className="text-xs font-bold text-gray-400 mt-1 uppercase">Cabeças</p></div>
+                <div className="bg-white p-6 rounded-3xl border shadow-sm"><div className="bg-green-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-green-600"><DollarSign size={28}/></div><h3 className="text-2xl font-black mt-2 truncate">{formatCurrency(saldoAtual)}</h3><p className="text-xs font-bold text-gray-400 mt-1 uppercase">Saldo Global</p></div>
+                <div className="bg-white p-6 rounded-3xl border shadow-sm"><div className="bg-cyan-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-cyan-600"><Droplets size={28}/></div><h3 className="text-4xl font-black">{totalLeiteMes} <span className="text-lg text-gray-400">L</span></h3><p className="text-xs font-bold text-gray-400 mt-1 uppercase">Leite Mês</p></div>
+                <div className="bg-white p-6 rounded-3xl border shadow-sm"><div className="bg-pink-50 w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-pink-600"><HeartPulse size={28}/></div><h3 className="text-4xl font-black">{cRep.filter(r=>r.status==='Prenhe').length}</h3><p className="text-xs font-bold text-gray-400 mt-1 uppercase">Prenhes</p></div>
               </div>
             </div>
           )}
 
           {currentView === 'animais' && (
-            <div className="animate-in fade-in space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between gap-4">
-                <div className="relative w-full sm:max-w-md">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3 sm:py-4 border border-gray-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-green-500 shadow-sm text-sm sm:text-base transition-colors" placeholder="Buscar brinco, lote, raça..." />
-                </div>
-                <div className="flex space-x-2 w-full sm:w-auto">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                <div className="relative flex-1 max-w-md"><Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5"/><input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="Pesquisar brinco, lote..." className="w-full pl-12 pr-4 py-3 bg-white border rounded-2xl outline-none focus:ring-2 focus:ring-green-500" /></div>
+                <div className="flex gap-2">
                   {selectedAnimaisIds.length > 0 ? (
-                    <button onClick={handleDeleteMultipleAnimais} className="bg-red-600 hover:bg-red-700 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-2xl font-bold flex-1 shadow-sm transition-colors text-sm sm:text-base flex items-center justify-center">
-                      <Trash2 className="inline mr-1 sm:mr-2" /> Remover {selectedAnimaisIds.length}
-                    </button>
+                    <button onClick={handleDeleteMultipleAnimais} className="bg-red-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Trash2 size={18} className="mr-2"/> Remover {selectedAnimaisIds.length}</button>
                   ) : (
-                    <>
-                      <button onClick={() => setIsBatchAnimalFormOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-2xl font-bold flex-1 shadow-sm transition-colors text-sm sm:text-base"><ListPlus className="inline mr-1 sm:mr-2" /> Lote</button>
-                      <button onClick={() => { setEditingAnimal(null); setIsAnimalFormOpen(true); }} className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-2xl font-bold flex-1 shadow-sm transition-colors text-sm sm:text-base"><Plus className="inline mr-1 sm:mr-2" /> Único</button>
-                    </>
+                    <><button onClick={()=>openModal('batch')} className="bg-indigo-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><ListPlus size={18} className="mr-2"/> Lote</button><button onClick={()=>openModal('animal')} className="bg-green-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Único</button></>
                   )}
                 </div>
               </div>
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative"><div className="overflow-x-auto w-full max-h-[65vh] custom-scrollbar"><table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700 relative"><thead className="bg-gray-50 dark:bg-slate-900/80 backdrop-blur-md"><tr>
-                <th className={`${thCls} w-10 text-center`}>
-                   <button onClick={toggleAllAnimais} className="p-1 rounded text-gray-400 hover:text-green-600"><CheckSquare size={18} /></button>
-                </th>
-                <th className={`${thCls} text-gray-400 dark:text-slate-400`}>Identificação</th><th className={`${thCls} text-gray-400 dark:text-slate-400`}>Lote</th><th className={`${thCls} text-right text-gray-400 dark:text-slate-400`}>Peso</th><th className={`${thCls} text-right text-gray-400 dark:text-slate-400`}>Ações</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
-                {filteredAnimais.map((animal) => {
-                  const isSel = selectedAnimaisIds.includes(animal.id);
-                  return (
-                  <tr key={animal.id} className={`${tableRowCls} ${isSel ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
-                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center">
-                       <input type="checkbox" checked={isSel} onChange={() => toggleAnimalSelection(animal.id)} className="w-4 h-4 text-green-600 rounded focus:ring-green-500" />
+              <Table headers={[<button onClick={toggleAllAnimais} className="text-gray-400"><CheckSquare/></button>, 'Animal', 'Lote', 'Peso', 'Ações']}>
+                {filtAnimais.map(a => (
+                  <tr key={a.id} className={selectedAnimaisIds.includes(a.id) ? 'bg-green-50' : 'hover:bg-gray-50'}>
+                    <td className="px-5 py-4 text-center"><input type="checkbox" checked={selectedAnimaisIds.includes(a.id)} onChange={()=>toggleAnimalSelection(a.id)} className="w-4 h-4 text-green-600"/></td>
+                    <td className="px-5 py-4 flex items-center gap-4"><div className="w-12 h-12 bg-green-100 text-green-700 font-black rounded-xl flex items-center justify-center text-sm">{a.brinco}</div><div><div className="font-black text-sm">{a.nome!=='-'?a.nome:`Brinco ${a.brinco}`}</div><div className="text-xs text-gray-500 font-medium">{a.raca} • {a.categoria}</div></div></td>
+                    <td className="px-5 py-4"><span className="bg-gray-100 text-gray-700 font-bold px-3 py-1.5 rounded-lg text-xs">{a.lote}</span></td>
+                    <td className="px-5 py-4 text-right font-black text-lg">{a.peso} <span className="text-xs text-gray-400">kg</span></td>
+                    <td className="px-5 py-4 text-right">
+                      <button onClick={()=>setSelectedAnimal(a)} className="bg-white border text-gray-700 font-bold px-4 py-2 rounded-xl text-xs hover:bg-gray-50 mr-2 shadow-sm">Ficha</button>
+                      <button onClick={()=>openModal('animal', a)} className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg"><Edit size={18}/></button>
                     </td>
-                    <td className={tdCls}><div className="flex items-center"><div className={`h-10 w-10 sm:h-12 sm:w-12 shrink-0 rounded-xl sm:rounded-2xl flex items-center justify-center font-black mr-3 sm:mr-4 shadow-inner ${animal.sexo === 'M' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300'}`}>{animal.brinco}</div><div><div className="font-black text-sm sm:text-base">{animal.nome !== '-' ? animal.nome : `BRINCO ${animal.brinco}`}</div><div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-slate-400">{animal.raca} • {animal.categoria}</div></div></div></td><td className={tdCls}><span className="text-xs sm:text-sm font-bold bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-600 shadow-sm">{animal.lote}</span></td><td className={`${tdCls} text-right font-black text-base sm:text-lg`}>{animal.peso} <span className="text-gray-400 text-xs sm:text-sm font-bold">kg</span></td><td className={`${tdCls} text-right`}>
-                      <button onClick={() => setSelectedAnimal(animal)} className="text-gray-700 dark:text-slate-300 font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-xs sm:text-sm shadow-sm mr-1 sm:mr-2">Ficha</button>
-                      <button onClick={() => { setEditingAnimal(animal); setIsAnimalFormOpen(true); }} className="text-blue-500 p-1.5 sm:p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"><Edit size={16} className="sm:w-[18px] sm:h-[18px]"/></button>
-                    </td></tr>
-                  );
-                })}
-                {filteredAnimais.length === 0 && <tr><td colSpan={5} className="text-center py-12 text-gray-400 dark:text-slate-500 font-bold text-sm sm:text-base">Nenhum animal encontrado.</td></tr>}
-              </tbody></table></div></div>
+                  </tr>
+                ))}
+              </Table>
             </div>
           )}
 
           {currentView === 'gado_corte' && (
-            <div className="animate-in fade-in space-y-6">
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm"><div className="p-5 sm:p-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex justify-between items-center"><h3 className="font-black text-lg sm:text-xl flex items-center"><Target className="mr-2 sm:mr-3 text-red-500" /> Gado de Corte</h3><span className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-bold px-3 py-1.5 rounded-lg text-sm">{gadoDeCorte.length} cabeças</span></div><div className="overflow-x-auto max-h-[65vh] custom-scrollbar"><table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700 relative"><thead className="bg-gray-50 dark:bg-slate-900/80 backdrop-blur-md"><tr><th className={`${thCls} text-gray-400`}>Brinco</th><th className={`${thCls} text-gray-400`}>Lote</th><th className={`${thCls} text-right text-gray-400`}>Peso</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">{gadoDeCorte.map((a) => (<tr key={a.id} className={tableRowCls}><td className={tdCls}><span className="font-black text-sm sm:text-base">{a.brinco}</span> <span className="text-xs text-gray-500 dark:text-slate-400">{a.raca}</span></td><td className={tdCls}><span className="font-bold text-sm sm:text-base">{a.lote}</span></td><td className={`${tdCls} text-right font-black text-sm sm:text-base`}>{a.peso} kg</td></tr>))}</tbody></table></div></div>
-            </div>
+            <div className="space-y-6"><Table headers={['Animal', 'Lote', 'Peso']}>{gadoDeCorte.map(a => (<tr key={a.id} className="hover:bg-gray-50"><td className="px-5 py-4 font-black">{a.brinco} <span className="text-xs text-gray-500 font-medium">{a.raca}</span></td><td className="px-5 py-4 font-bold text-sm">{a.lote}</td><td className="px-5 py-4 text-right font-black">{a.peso} kg</td></tr>))}</Table></div>
           )}
 
           {currentView === 'leite' && (
-            <div className="animate-in fade-in space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between gap-4"><h3 className="text-xl sm:text-2xl font-black"><Droplets className="mr-3 text-cyan-500 inline" /> Controlo Leiteiro</h3><button onClick={() => { setEditingLeite(null); setIsLeiteFormOpen(true); }} className="bg-cyan-600 hover:bg-cyan-700 transition-colors text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold shadow-sm"><Plus className="mr-2 inline" /> Nova Ordenha</button></div>
-              <div className="grid grid-cols-2 gap-4 sm:gap-6"><div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-gray-100 dark:border-slate-700 text-center shadow-sm"><h3 className="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white">{totalLeiteMes} <span className="text-base sm:text-xl text-gray-400">L</span></h3><p className="text-xs sm:text-sm font-bold text-gray-400 uppercase mt-2">Mês Atual</p></div><div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-gray-100 dark:border-slate-700 text-center shadow-sm"><h3 className="text-3xl sm:text-5xl font-black text-gray-900 dark:text-white">{mediaLitrosVaca} <span className="text-base sm:text-xl text-gray-400">L/dia</span></h3><p className="text-xs sm:text-sm font-bold text-gray-400 uppercase mt-2">Média/Matriz</p></div></div>
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative"><div className="overflow-x-auto w-full max-h-[55vh] custom-scrollbar"><table className="min-w-full divide-y divide-cyan-100 dark:divide-slate-700 relative"><thead className="bg-cyan-50 dark:bg-slate-900/80 backdrop-blur-md"><tr><th className={`${thCls} text-cyan-800 dark:text-cyan-400`}>Data/Turno</th><th className={`${thCls} text-cyan-800 dark:text-cyan-400`}>Matriz</th><th className={`${thCls} text-right text-cyan-800 dark:text-cyan-400`}>Volume</th><th className={`${thCls} text-right text-cyan-800 dark:text-cyan-400`}>Ações</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
-                {cLeite.map((l) => (<tr key={l.id} className="hover:bg-cyan-50/50 dark:hover:bg-slate-800 transition-colors"><td className={tdCls}><span className="block font-black text-sm sm:text-base">{l.data}</span><span className="text-xs font-bold text-gray-500">{l.turno}</span></td><td className={tdCls}><span className="font-bold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 px-3 py-1.5 rounded-lg text-sm sm:text-base shadow-sm border border-gray-200 dark:border-slate-600">{l.brincoMatriz === 'TODAS' ? 'Total Diário (Rebanho)' : `Vaca ${l.brincoMatriz}`}</span></td><td className={`${tdCls} text-right font-black text-cyan-600 dark:text-cyan-400 text-lg sm:text-xl`}>{l.litros} L</td><td className={`${tdCls} text-right`}><button onClick={() => { setEditingLeite(l); setIsLeiteFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18}/></button><button onClick={() => del('producaoLeite', l.id, 'Apagar?')} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18}/></button></td></tr>))}
-              </tbody></table></div></div>
+            <div className="space-y-6">
+              <div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><Droplets className="mr-3 text-cyan-500"/> Leite</h3><button onClick={()=>openModal('leite')} className="bg-cyan-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Ordenha</button></div>
+              <div className="grid grid-cols-2 gap-4"><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{totalLeiteMes} <span className="text-gray-400 text-xl">L</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Neste Mês</p></div><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{mediaLitrosVaca} <span className="text-gray-400 text-xl">L/dia</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Média Diária</p></div></div>
+              <Table headers={['Data/Turno', 'Matriz', 'Volume', 'Ações']}>{cLeite.map(l => (<tr key={l.id} className="hover:bg-cyan-50/50"><td className="px-5 py-4"><span className="font-black block">{l.data}</span><span className="text-xs font-bold text-gray-500">{l.turno}</span></td><td className="px-5 py-4 font-bold"><span className="bg-gray-100 px-3 py-1.5 rounded-lg">{l.brincoMatriz==='TODAS'?'Rebanho (Total)':`Vaca ${l.brincoMatriz}`}</span></td><td className="px-5 py-4 text-right font-black text-cyan-600 text-lg">{l.litros} L</td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('leite', l)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('producaoLeite', l.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table>
             </div>
           )}
 
           {currentView === 'pastagens' && (
-            <div className="animate-in fade-in space-y-6"><div className="flex flex-col sm:flex-row justify-between gap-4"><h3 className="text-xl sm:text-2xl font-black"><LayoutGrid className="mr-3 text-green-600 inline" /> Lotes e Pastagens</h3><button onClick={() => { setEditingLote(null); setIsLoteFormOpen(true); }} className="bg-green-600 hover:bg-green-700 transition-colors text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold shadow-sm"><Plus className="mr-2 inline" /> Novo Lote</button></div><div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">{cLotes.map(l => { const an = cAnimais.filter(a => a.lote === l.nome).length; const oc = Math.round((an / l.capacidade) * 100) || 0; return (<div key={l.id} className="bg-white dark:bg-slate-800 p-5 sm:p-6 rounded-3xl border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow"><div className="flex justify-between mb-4"><h4 className="font-black text-lg sm:text-xl truncate pr-2">{l.nome}</h4><div className="shrink-0"><button onClick={() => { setEditingLote(l); setIsLoteFormOpen(true); }} className="text-blue-500 p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={16}/></button><button onClick={() => del('lotes', l.id, 'Excluir?')} className="text-red-500 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={16}/></button></div></div><p className="text-sm text-gray-500 dark:text-slate-400 mb-6 min-h-[40px] line-clamp-2">{l.obs || "Sem observações."}</p><div className="flex justify-between items-end mb-2"><span className="text-3xl font-black">{an}</span><span className="text-sm font-bold text-gray-400 dark:text-slate-500">/ {l.capacidade} cap.</span></div><div className="w-full bg-gray-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden"><div className={`h-full transition-all ${oc>90?'bg-red-500':'bg-green-500'}`} style={{width:`${Math.min(oc,100)}%`}}></div></div></div>); })}</div></div>
+            <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><LayoutGrid className="mr-3 text-green-600"/> Lotes</h3><button onClick={()=>openModal('lote')} className="bg-green-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Novo Lote</button></div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">{cLotes.map(l => { const an = cAnimais.filter(a => a.lote === l.nome).length; const oc = Math.round((an/l.capacidade)*100)||0; return (<div key={l.id} className="bg-white p-6 rounded-3xl border shadow-sm"><div className="flex justify-between mb-4"><h4 className="font-black text-lg truncate pr-2">{l.nome}</h4><div className="flex shrink-0 gap-1"><button onClick={()=>openModal('lote', l)} className="text-blue-500"><Edit size={16}/></button><button onClick={()=>handleDel('lotes', l.id)} className="text-red-500"><Trash2 size={16}/></button></div></div><div className="flex justify-between items-end mb-2"><span className="text-3xl font-black">{an}</span><span className="text-xs font-bold text-gray-400">/ {l.capacidade}</span></div><div className="w-full bg-gray-100 h-2 rounded-full"><div className={`h-full ${oc>90?'bg-red-500':'bg-green-500'}`} style={{width:`${Math.min(oc,100)}%`}}></div></div></div>) })}</div>
+            </div>
           )}
 
           {currentView === 'reproducao' && (
-            <div className="animate-in fade-in space-y-6"><div className="flex flex-col sm:flex-row justify-between gap-4"><h3 className="text-xl sm:text-2xl font-black"><HeartPulse className="mr-3 text-pink-600 inline" /> Controlo Reprodutivo</h3><button onClick={() => { setEditingReproducao(null); setIsReproducaoFormOpen(true); }} className="bg-pink-600 hover:bg-pink-700 transition-colors text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold shadow-sm"><Plus className="mr-2 inline" /> Inseminação</button></div><div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative"><div className="overflow-x-auto w-full max-h-[65vh] custom-scrollbar"><table className="min-w-full divide-y divide-pink-100 dark:divide-slate-700 relative"><thead className="bg-pink-50 dark:bg-slate-900/80 backdrop-blur-md"><tr><th className={`${thCls} text-pink-800 dark:text-pink-400`}>Matriz</th><th className={`${thCls} text-pink-800 dark:text-pink-400`}>Método / Datas</th><th className={`${thCls} text-pink-800 dark:text-pink-400`}>Previsão Parto</th><th className={`${thCls} text-right text-pink-800 dark:text-pink-400`}>Status</th><th className={`${thCls} text-right text-pink-800 dark:text-pink-400`}>Ações</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">{cReproducao.map((r) => (<tr key={r.id} className={tableRowCls}><td className={tdCls}><span className="font-black text-sm sm:text-base">{r.brincoVaca}</span></td><td className={tdCls}><span className="font-bold block text-sm sm:text-base">IA: {r.dataInseminacao}</span>{r.dataProtocolo && <span className="text-xs text-gray-500 dark:text-slate-400 block mt-0.5">Prot: {r.dataProtocolo}</span>}<span className="text-xs text-gray-500 dark:text-slate-400 block mt-0.5">{r.metodo} - {r.reprodutor}</span></td><td className={tdCls}><span className="font-bold text-sm sm:text-base">{r.previsaoParto || '-'}</span></td><td className={`${tdCls} text-right`}><span className={`px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm border ${r.status === 'Prenhe' ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:border-green-800/50 dark:text-green-400' : r.status === 'Aguardando DG' ? 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:border-yellow-800/50 dark:text-yellow-400' : 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-300'}`}>{r.status}</span></td><td className={`${tdCls} text-right`}><button onClick={() => { setEditingReproducao(r); setIsReproducaoFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18}/></button><button onClick={() => del('reproducao', r.id, 'Excluir?')} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18}/></button></td></tr>))}</tbody></table></div></div></div>
-          )}
-
-          {currentView === 'pesagens' && (
-            <div className="animate-in fade-in space-y-6"><div className="flex flex-col sm:flex-row justify-between gap-4"><h3 className="text-xl sm:text-2xl font-black"><Scale className="mr-3 text-orange-500 inline" /> Histórico de Pesagens</h3><button onClick={() => { setEditingPesagem(null); setIsPesagemFormOpen(true); }} className="bg-orange-600 hover:bg-orange-700 transition-colors text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold shadow-sm"><Plus className="mr-2 inline" /> Nova Pesagem</button></div><div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative"><div className="overflow-x-auto w-full max-h-[65vh] custom-scrollbar"><table className="min-w-full divide-y divide-orange-100 dark:divide-slate-700 relative"><thead className="bg-orange-50 dark:bg-slate-900/80 backdrop-blur-md"><tr><th className={`${thCls} text-orange-800 dark:text-orange-400`}>Brinco / Data</th><th className={`${thCls} text-right text-orange-800 dark:text-orange-400`}>Anterior</th><th className={`${thCls} text-right text-orange-800 dark:text-orange-400`}>Atual</th><th className={`${thCls} text-right text-orange-800 dark:text-orange-400`}>Evolução</th><th className={`${thCls} text-right text-orange-800 dark:text-orange-400`}>Ações</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">{cPesagens.map((p) => { const diff = (p.pesoAtual||0)-(p.pesoAnterior||0); return (<tr key={p.id} className={tableRowCls}><td className={tdCls}><span className="font-black text-sm sm:text-base block">BRINCO {p.brinco}</span> <span className="text-xs text-gray-500 dark:text-slate-400">{p.data}</span></td><td className={`${tdCls} text-right font-bold text-gray-500 dark:text-slate-400 text-sm sm:text-base`}>{p.pesoAnterior} kg</td><td className={`${tdCls} text-right font-black text-base sm:text-lg`}>{p.pesoAtual} kg</td><td className={`${tdCls} text-right font-black text-sm sm:text-base ${diff>=0?'text-green-600 dark:text-green-400':'text-red-600 dark:text-red-400'}`}>{diff>0?'+':''}{diff} kg</td><td className={`${tdCls} text-right`}><button onClick={() => { setEditingPesagem(p); setIsPesagemFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18}/></button><button onClick={() => del('pesagens', p.id, 'Excluir?')} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18}/></button></td></tr>);})}</tbody></table></div></div></div>
+            <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><HeartPulse className="mr-3 text-pink-600"/> Reprodução</h3><button onClick={()=>openModal('reproducao')} className="bg-pink-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Inseminar</button></div>
+              <Table headers={['Matriz', 'Método/Data', 'Prev. Parto', 'Status', 'Ações']}>{cRep.map(r => (<tr key={r.id} className="hover:bg-gray-50"><td className="px-5 py-4 font-black">{r.brincoVaca}</td><td className="px-5 py-4"><span className="block font-bold">{r.dataInseminacao}</span><span className="text-xs text-gray-500">{r.metodo} - {r.reprodutor}</span></td><td className="px-5 py-4 font-bold">{r.previsaoParto||'-'}</td><td className="px-5 py-4 text-right"><span className={`px-3 py-1.5 rounded-lg text-xs font-bold ${r.status==='Prenhe'?'bg-green-100 text-green-700':r.status==='Aguardando DG'?'bg-yellow-100 text-yellow-700':'bg-gray-100 text-gray-700'}`}>{r.status}</span></td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('reproducao', r)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('reproducao', r.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table>
+            </div>
           )}
 
           {currentView === 'nascimentos' && (
-            <div className="animate-in fade-in space-y-6"><div className="flex flex-col sm:flex-row justify-between gap-4"><h3 className="text-xl sm:text-2xl font-black"><Baby className="mr-3 text-blue-500 inline" /> Nascimentos</h3><button onClick={() => { setEditingNascimento(null); setIsNascimentoFormOpen(true); }} className="bg-blue-600 hover:bg-blue-700 transition-colors text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold shadow-sm"><Plus className="mr-2 inline" /> Registo Parto</button></div><div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative"><div className="overflow-x-auto w-full max-h-[65vh] custom-scrollbar"><table className="min-w-full divide-y divide-blue-100 dark:divide-slate-700 relative"><thead className="bg-blue-50 dark:bg-slate-900/80 backdrop-blur-md"><tr><th className={`${thCls} text-blue-800 dark:text-blue-400`}>Data</th><th className={`${thCls} text-blue-800 dark:text-blue-400`}>Matriz &rarr; Cria</th><th className={`${thCls} text-left text-blue-800 dark:text-blue-400`}>Sexo</th><th className={`${thCls} text-right text-blue-800 dark:text-blue-400`}>Peso (kg)</th><th className={`${thCls} text-right text-blue-800 dark:text-blue-400`}>Ações</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">{cNascimentos.map((n) => (<tr key={n.id} className={tableRowCls}><td className={tdCls}><span className="font-bold text-gray-700 dark:text-slate-300 text-sm sm:text-base">{n.data}</span></td><td className={tdCls}><span className="font-black block text-sm sm:text-base">M: {n.brincoMatriz}</span><span className="text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400">B: {n.brincoBezerro}</span></td><td className={tdCls}><span className="font-bold text-gray-700 dark:text-slate-300 text-sm sm:text-base">{n.sexo}</span></td><td className={`${tdCls} text-right font-black text-sm sm:text-base`}>{n.pesoNascimento}</td><td className={`${tdCls} text-right`}><button onClick={() => { setEditingNascimento(n); setIsNascimentoEditFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18}/></button><button onClick={() => del('nascimentos', n.id, 'Excluir?')} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18}/></button></td></tr>))}</tbody></table></div></div></div>
+            <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><Baby className="mr-3 text-blue-500"/> Nascimentos</h3><button onClick={()=>openModal('nascimento')} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Parto</button></div>
+              <Table headers={['Data', 'Matriz > Cria', 'Sexo', 'Peso', 'Ações']}>{cNasc.map(n => (<tr key={n.id} className="hover:bg-gray-50"><td className="px-5 py-4 font-bold text-sm">{n.data}</td><td className="px-5 py-4"><span className="block font-black">M: {n.brincoMatriz}</span><span className="text-xs font-bold text-blue-600">B: {n.brincoBezerro}</span></td><td className="px-5 py-4 font-bold text-sm">{n.sexo}</td><td className="px-5 py-4 text-right font-black">{n.pesoNascimento} kg</td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('nascimento', n)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('nascimentos', n.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table>
+            </div>
           )}
 
-          {currentView === 'financeiro' && (
-            <div className="animate-in fade-in space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between gap-4"><h3 className="text-xl sm:text-2xl font-black"><DollarSign className="mr-3 text-green-600 inline" /> Gestão Financeira</h3><button onClick={() => { setEditingFinance(null); setIsFinanceFormOpen(true); }} className="bg-green-600 hover:bg-green-700 transition-colors text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold shadow-sm"><Plus className="mr-2 inline" /> Lançamento</button></div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6"><div className="bg-white dark:bg-slate-800 p-5 sm:p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm"><p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">Receitas</p><p className="text-xl sm:text-3xl font-black text-green-600 dark:text-green-400 mt-1">{formatCurrency(totaisFin.rec)}</p></div><div className="bg-white dark:bg-slate-800 p-5 sm:p-6 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm"><p className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-widest">Despesas</p><p className="text-xl sm:text-3xl font-black text-red-600 dark:text-red-400 mt-1">{formatCurrency(totaisFin.desp)}</p></div></div>
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative"><div className="overflow-x-auto w-full max-h-[60vh] custom-scrollbar"><table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700 relative"><thead className="bg-gray-50 dark:bg-slate-900/80 backdrop-blur-md"><tr><th className={`${thCls} text-gray-500 dark:text-slate-400`}>Descrição / Data</th><th className={`${thCls} text-gray-500 dark:text-slate-400`}>Categoria</th><th className={`${thCls} text-right text-gray-500 dark:text-slate-400`}>Valor</th><th className={`${thCls} text-right text-gray-500 dark:text-slate-400`}>Ações</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">{cFinanceiro.map((f) => (<tr key={f.id} className={tableRowCls}><td className={tdCls}><span className="font-black block text-sm sm:text-base">{f.descricao}</span><span className="text-xs font-bold text-gray-500 dark:text-slate-400">{f.data}</span></td><td className={tdCls}><span className="font-bold text-sm sm:text-base">{f.categoria}</span></td><td className={`${tdCls} text-right font-black text-base sm:text-lg ${f.tipo==='receita'?'text-green-600 dark:text-green-400':'text-red-600 dark:text-red-400'}`}>{f.tipo==='receita'?'+':'-'}{formatCurrency(f.valor)}</td><td className={`${tdCls} text-right`}><button onClick={() => { setEditingFinance(f); setIsFinanceFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18}/></button><button onClick={() => del('financeiro', f.id, 'Excluir?')} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18}/></button></td></tr>))}</tbody></table></div></div>
+          {currentView === 'pesagens' && (
+            <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><Scale className="mr-3 text-orange-500"/> Pesagens</h3><button onClick={()=>openModal('pesagem')} className="bg-orange-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Pesagem</button></div>
+              <Table headers={['Brinco', 'Anterior', 'Atual', 'Evolução', 'Ações']}>{cPesagens.map(p => { const df = (p.pesoAtual||0)-(p.pesoAnterior||0); return (<tr key={p.id} className="hover:bg-gray-50"><td className="px-5 py-4"><span className="block font-black">{p.brinco}</span><span className="text-xs text-gray-500 font-bold">{p.data}</span></td><td className="px-5 py-4 text-right font-bold text-gray-500">{p.pesoAnterior} kg</td><td className="px-5 py-4 text-right font-black text-lg">{p.pesoAtual} kg</td><td className={`px-5 py-4 text-right font-black ${df>=0?'text-green-600':'text-red-600'}`}>{df>0?'+':''}{df} kg</td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('pesagem', p)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('pesagens', p.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>); })}</Table>
             </div>
           )}
 
           {currentView === 'sanidade' && (
-            <div className="animate-in fade-in space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between gap-4"><div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-1 flex shadow-sm"><button onClick={()=>setSanidadeTab('registos')} className={`flex-1 sm:flex-none px-5 py-2.5 sm:py-2 text-sm font-bold rounded-lg transition-colors ${sanidadeTab==='registos'?'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 shadow-sm':'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700'}`}>Histórico</button><button onClick={()=>setSanidadeTab('calendario')} className={`flex-1 sm:flex-none px-5 py-2.5 sm:py-2 text-sm font-bold rounded-lg transition-colors ${sanidadeTab==='calendario'?'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 shadow-sm':'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700'}`}>Plano Anual</button></div><button onClick={() => { sanidadeTab==='registos' ? (setEditingVaccine(null), setIsVaccineFormOpen(true)) : (setEditingCalendario(null), setIsCalendarioFormOpen(true)) }} className="w-full sm:w-auto bg-red-600 hover:bg-red-700 transition-colors text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold shadow-sm"><Plus className="mr-2 inline" /> Adicionar</button></div>
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative"><div className="overflow-x-auto w-full max-h-[65vh] custom-scrollbar"><table className="min-w-full divide-y divide-red-100 dark:divide-slate-700 relative"><thead className="bg-red-50 dark:bg-slate-900/80 backdrop-blur-md"><tr><th className={`${thCls} text-red-800 dark:text-red-400`}>{sanidadeTab==='registos'?'Vacina/Lote':'Campanha / Mês'}</th><th className={`${thCls} text-right text-red-800 dark:text-red-400`}>Ações</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">{sanidadeTab==='registos' ? cVacinacoes.map((v) => (<tr key={v.id} className={tableRowCls}><td className={tdCls}><span className="font-black block text-sm sm:text-base">{v.vacina}</span><span className="text-xs font-bold text-gray-500 dark:text-slate-400 mt-1 block">Lote: {v.lote} • Carência: {v.dataLiberacao||'-'}</span></td><td className={`${tdCls} text-right`}><button onClick={() => { setEditingVaccine(v); setIsVaccineFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18}/></button><button onClick={() => del('vacinacoes', v.id, 'Excluir?')} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18}/></button></td></tr>)) : cCalendario.map((c) => (<tr key={c.id} className={tableRowCls}><td className={tdCls}><span className="font-black block text-sm sm:text-base text-red-700 dark:text-red-400">{c.doenca}</span><span className="text-xs font-bold text-gray-500 dark:text-slate-400 mt-1 block">{c.mes} • {c.publico}</span></td><td className={`${tdCls} text-right`}><button onClick={() => { setEditingCalendario(c); setIsCalendarioFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18}/></button><button onClick={() => del('calendarioSanitario', c.id, 'Excluir?')} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18}/></button></td></tr>))}</tbody></table></div></div>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center"><div className="bg-white border rounded-xl p-1 flex"><button onClick={()=>setSanidadeTab('registos')} className={`px-5 py-2 text-sm font-bold rounded-lg ${sanidadeTab==='registos'?'bg-red-50 text-red-700 shadow-sm':'text-gray-500'}`}>Histórico</button><button onClick={()=>setSanidadeTab('calendario')} className={`px-5 py-2 text-sm font-bold rounded-lg ${sanidadeTab==='calendario'?'bg-red-50 text-red-700 shadow-sm':'text-gray-500'}`}>Plano Anual</button></div><button onClick={()=>openModal(sanidadeTab==='registos'?'vacina':'calendario')} className="bg-red-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Adicionar</button></div>
+              {sanidadeTab==='registos' ? 
+                <Table headers={['Vacina/Lote', 'Carência/Liberação', 'Ações']}>{cVac.map(v => (<tr key={v.id} className="hover:bg-gray-50"><td className="px-5 py-4"><span className="font-black block text-sm">{v.vacina}</span><span className="text-xs font-bold text-gray-500">Lote: {v.lote}</span></td><td className="px-5 py-4 text-right font-bold text-sm"><span className="bg-orange-100 text-orange-800 px-3 py-1.5 rounded-lg text-xs">{v.dataLiberacao||'Sem carência'}</span></td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('vacina', v)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('vacinacoes', v.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table>
+                : 
+                <Table headers={['Mês - Campanha', 'Público / Status', 'Ações']}>{cCal.sort((a,b)=>["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"].indexOf(a.mes)-["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"].indexOf(b.mes)).map(c => (<tr key={c.id} className="hover:bg-gray-50"><td className="px-5 py-4"><span className="font-black block text-red-600">{c.mes}</span><span className="font-bold text-sm">{c.doenca}</span></td><td className="px-5 py-4"><span className="block text-sm font-medium text-gray-700">{c.publico}</span><span className={`text-[10px] font-bold px-2 py-0.5 rounded mt-1 inline-block ${c.obrigatorio?'bg-red-100 text-red-700':'bg-blue-100 text-blue-700'}`}>{c.obrigatorio?'Obrigatório':'Recomendado'}</span></td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('calendario', c)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('calendarioSanitario', c.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table>
+              }
+            </div>
+          )}
+
+          {currentView === 'financeiro' && (
+            <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><DollarSign className="mr-3 text-green-600"/> Financeiro</h3><button onClick={()=>openModal('financeiro')} className="bg-green-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Lançar</button></div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4"><div className="bg-white border p-6 rounded-2xl shadow-sm"><p className="text-xs font-bold text-gray-400 uppercase">Receitas</p><p className="text-2xl font-black text-green-600">{formatCurrency(finStats.r)}</p></div><div className="bg-white border p-6 rounded-2xl shadow-sm"><p className="text-xs font-bold text-gray-400 uppercase">Despesas</p><p className="text-2xl font-black text-red-600">{formatCurrency(finStats.d)}</p></div><div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg"><p className="text-xs font-bold text-slate-400 uppercase">Saldo</p><p className={`text-2xl font-black ${saldoAtual>=0?'text-white':'text-red-400'}`}>{formatCurrency(saldoAtual)}</p></div></div>
+              <Table headers={['Data/Descrição', 'Cat', 'Valor', 'Ações']}>{cFin.map(f => (<tr key={f.id} className="hover:bg-gray-50"><td className="px-5 py-4"><span className="block font-black text-sm">{f.descricao}</span><span className="text-xs font-bold text-gray-500">{f.data}</span></td><td className="px-5 py-4 font-bold text-sm">{f.categoria}</td><td className={`px-5 py-4 text-right font-black ${f.tipo==='receita'?'text-green-600':'text-red-600'}`}>{f.tipo==='receita'?'+':'-'}{formatCurrency(f.valor)}</td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('financeiro', f)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('financeiro', f.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table>
             </div>
           )}
 
           {currentView === 'insumos' && (
-            <div className="animate-in fade-in space-y-6"><div className="flex flex-col sm:flex-row justify-between gap-4"><h3 className="text-xl sm:text-2xl font-black"><Archive className="mr-3 text-purple-600 inline" /> Insumos</h3><button onClick={() => { setEditingInsumo(null); setIsInsumoFormOpen(true); }} className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 transition-colors text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold shadow-sm"><Plus className="mr-2 inline" /> Novo Insumo</button></div><div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 overflow-hidden shadow-sm relative"><div className="overflow-x-auto w-full max-h-[65vh] custom-scrollbar"><table className="min-w-full divide-y divide-purple-100 dark:divide-slate-700 relative"><thead className="bg-purple-50 dark:bg-slate-900/80 backdrop-blur-md"><tr><th className={`${thCls} text-purple-800 dark:text-purple-400`}>Produto / Categoria</th><th className={`${thCls} text-right text-purple-800 dark:text-purple-400`}>Qtd Atual</th><th className={`${thCls} text-right text-purple-800 dark:text-purple-400`}>Ações</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">{cInsumos.map((i) => { const isCritico = i.quantidade <= (i.estoqueMinimo || 0); return (<tr key={i.id} className={tableRowCls}><td className={tdCls}><span className="font-black block text-sm sm:text-base">{i.nome}</span><span className="text-xs font-bold text-gray-500">{i.categoria}</span></td><td className={`${tdCls} text-right`}><span className="block font-black text-sm sm:text-base">{i.quantidade} {i.unidade}</span>{isCritico && <span className="bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded mt-1 inline-block text-[10px] sm:text-xs">Crítico</span>}</td><td className={`${tdCls} text-right`}><button onClick={() => { setConsumoInsumoSelecionado(i); setIsConsumoFormOpen(true); }} className="text-orange-500 hover:text-orange-700 font-bold text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 rounded-lg border border-orange-200 hover:bg-orange-50 mr-1 sm:mr-2 inline-flex items-center"><MinusCircle size={12} className="sm:w-3.5 sm:h-3.5 mr-1"/> Consumo</button><button onClick={() => { setEditingInsumo(i); setIsInsumoFormOpen(true); }} className="text-blue-500 hover:text-blue-700 p-2"><Edit size={16} className="sm:w-[18px] sm:h-[18px]"/></button><button onClick={() => del('insumos', i.id, 'Excluir Insumo?')} className="text-red-500 hover:text-red-700 p-2"><Trash2 size={16} className="sm:w-[18px] sm:h-[18px]"/></button></td></tr>); })}</tbody></table></div></div></div>
+            <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><Archive className="mr-3 text-purple-600"/> Insumos</h3><button onClick={()=>openModal('insumo')} className="bg-purple-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Produto</button></div>
+              <Table headers={['Produto', 'Qtd', 'Ações']}>{cInsumos.map(i => (<tr key={i.id} className="hover:bg-purple-50/50"><td className="px-5 py-4"><span className="block font-black text-sm">{i.nome}</span><span className="text-xs font-bold text-gray-500">{i.categoria}</span></td><td className="px-5 py-4 text-right"><span className="block font-black">{i.quantidade} {i.unidade}</span>{i.quantidade<=i.estoqueMinimo && <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded">Crítico</span>}</td><td className="px-5 py-4 text-right"><button onClick={()=>{setConsumoItem(i);setModalType('consumo');}} className="text-orange-500 font-bold text-xs bg-orange-50 px-3 py-1.5 rounded-lg mr-2"><MinusCircle size={14} className="inline mr-1"/> Consumo</button><button onClick={()=>openModal('insumo', i)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('insumos', i.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table>
+            </div>
           )}
 
           {currentView === 'anotacoes' && (
-            <div className="animate-in fade-in space-y-6"><div className="flex flex-col sm:flex-row justify-between gap-4"><div><h3 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center"><NotebookPen className="mr-3 text-amber-600" /> Anotações Gerais</h3><p className="text-gray-500 text-xs sm:text-sm mt-1">Registros livres da <b>{pAtiva?.nome || 'Fazenda'}</b></p></div><button onClick={() => setIsAnotacaoFormOpen(true)} className="w-full sm:w-auto bg-amber-600 text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold flex items-center justify-center shadow-sm hover:bg-amber-700 transition-colors"><Plus className="mr-2" /> Nova Anotação</button></div><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" /><input type="text" value={filtroAnotacao} onChange={(e) => setFiltroAnotacao(e.target.value)} placeholder="Buscar nas notas..." className="w-full pl-11 pr-5 py-3 sm:py-4 border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-amber-400 shadow-sm text-sm sm:text-base transition-colors" /></div><div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">{cAnotacoes.filter(a => { if(!a) return false; const q = String(filtroAnotacao||'').toLowerCase(); return String(a.titulo||'').toLowerCase().includes(q) || String(a.texto||'').toLowerCase().includes(q) || String(a.tag||'').toLowerCase().includes(q); }).map(n => (<div key={n.id} className={`bg-white dark:bg-slate-800 p-5 sm:p-6 rounded-2xl border shadow-sm flex flex-col transition-all ${n.status==='resolvido'?'opacity-60 border-gray-100 dark:border-slate-700':'border-amber-100 dark:border-amber-900/30'}`}><div className="flex justify-between items-start mb-2"><div className="flex-1 pr-2"><h4 className={`text-sm sm:text-base font-black ${n.status==='resolvido'?'line-through text-gray-400 dark:text-slate-500':''}`}>{n.titulo}</h4><div className="flex items-center gap-2 mt-1"><span className="text-[10px] sm:text-xs text-gray-400 font-medium">{n.data}</span>{n.tag && <span className="bg-amber-100 text-amber-700 font-bold text-[10px] sm:text-xs px-2 py-0.5 rounded-full">{n.tag}</span>}</div></div><button onClick={()=>del('anotacoes',n.id,'Remover?')} className="text-red-300 hover:text-red-500 shrink-0"><Trash2 size={16}/></button></div><p className="text-xs sm:text-sm text-gray-600 dark:text-slate-400 flex-1 whitespace-pre-wrap mt-2 mb-4">{n.texto}</p><button onClick={()=>handleToggleAnotacao(n.id)} className={`w-full py-2.5 font-bold rounded-xl text-xs sm:text-sm transition-colors flex justify-center items-center ${n.status==='resolvido'?'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300':'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50'}`}><CheckCircle2 size={16} className="mr-2" /> {n.status==='resolvido'?'Reabrir':'Marcar Resolvido'}</button></div>))}</div></div>
+            <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><NotebookPen className="mr-3 text-amber-600"/> Anotações</h3><button onClick={()=>openModal('anotacao')} className="bg-amber-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Nota</button></div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">{cAnot.map(n => (<div key={n.id} className={`bg-white p-6 rounded-2xl border shadow-sm flex flex-col transition-all ${n.status==='resolvido'?'opacity-60':''}`}><div className="flex justify-between items-start mb-2"><h4 className={`font-black flex-1 pr-2 ${n.status==='resolvido'?'line-through':''}`}>{n.titulo}</h4><button onClick={()=>handleDel('anotacoes', n.id)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button></div><p className="text-sm text-gray-600 flex-1 whitespace-pre-wrap mt-2 mb-4">{n.texto}</p><button onClick={()=>{updateApp(p=>({...p,anotacoes:p.anotacoes.map(a=>a.id===n.id?{...a,status:a.status==='resolvido'?'aberto':'resolvido'}:a)}))}} className="w-full py-2.5 font-bold rounded-xl text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{n.status==='resolvido'?'Reabrir':'Marcar Resolvido'}</button></div>))}</div>
+            </div>
+          )}
+
+          {currentView === 'nutricao' && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-emerald-800 to-green-700 rounded-3xl p-8 text-white shadow-lg"><h2 className="text-3xl font-black mb-2 flex items-center"><Wheat className="mr-3"/> Formulação (NASEM 2021)</h2><p className="text-emerald-100 font-medium">Balanço Nutricional</p></div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <div className="bg-white rounded-3xl border shadow-sm p-6"><h3 className="font-black text-lg mb-4 text-blue-900"><Target className="inline mr-2"/> Perfil Alvo</h3><div className="grid grid-cols-2 gap-4"><Input label="Peso(kg)" type="number" value={nutriAlvoPeso} onChange={e=>setNutriAlvoPeso(Number(e.target.value))} /><Input label="GPD(kg/d)" type="number" step="0.1" value={nutriAlvoGPD} onChange={e=>setNutriAlvoGPD(Number(e.target.value))} /></div></div>
+                  <div className="bg-white rounded-3xl border shadow-sm p-6"><h3 className="font-black text-lg mb-4 text-orange-900"><Archive className="inline mr-2"/> Dieta</h3><div className="flex gap-2 mb-4"><select value={insumoSelecionado} onChange={(e)=>setInsumoSelecionado(e.target.value)} className="flex-1 px-4 py-3 bg-gray-50 border rounded-xl outline-none font-bold"><option value="">Ingrediente...</option>{appData.bibliotecaAlimentos.filter(a => !dietaAtual.find(d => d.idInsumo === a.id)).map(a => (<option key={a.id} value={a.id}>{a.nome}</option>))}</select><button onClick={handleAddInsumoDieta} className="bg-orange-600 text-white px-5 rounded-xl font-bold"><Plus size={18}/></button></div><div className="space-y-2">{dietaAtual.map(i => { const a = appData.bibliotecaAlimentos.find(x=>x.id===i.idInsumo); return (<div key={i.idInsumo} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border"><span className="font-bold text-sm truncate w-1/2">{a?.nome}</span><div className="flex items-center"><input type="number" step="0.1" value={i.kgMN} onChange={(e)=>handleUpdateKgMN(i.idInsumo, e.target.value)} className="w-16 p-2 text-right border rounded bg-white font-bold mr-2" /><button onClick={()=>handleRemoveInsumoDieta(i.idInsumo)} className="text-red-500"><Trash2 size={16}/></button></div></div>) })}</div>{dietaAtual.length>0 && <div className="mt-4 p-4 bg-green-50 font-black text-green-800 rounded-xl">Custo Dia: {formatCurrency(nutricaoFornecida.custoDiario)}</div>}</div>
+                </div>
+                <div className="bg-white rounded-3xl border shadow-sm p-8"><h3 className="text-2xl font-black mb-8"><Activity className="inline text-green-500 mr-2"/> Balanço</h3><div className="space-y-8">{[{l:"Matéria Seca (kg)",v:nutricaoFornecida.cms,t:exigenciasTarget.cms,c:"orange"},{l:"Energia (Mcal)",v:nutricaoFornecida.elg,t:exigenciasTarget.elg,c:"red"},{l:"Proteína (g)",v:nutricaoFornecida.pm,t:exigenciasTarget.pm,c:"blue"}].map((b,i)=>{ const pct = Math.min((b.v/b.t)*100, 150)||0; return (<div key={i}><div className="flex justify-between font-bold mb-2"><span>{b.l}</span><span className={`text-xl font-black text-${b.c}-600`}>{b.v.toFixed(1)} <span className="text-sm text-gray-400">/ {b.t.toFixed(1)}</span></span></div><div className="w-full bg-gray-100 h-4 rounded-full overflow-hidden relative"><div className={`h-full bg-${b.c}-500`} style={{width:`${pct}%`}}></div><div className="absolute top-0 bottom-0 border-l-2 border-black opacity-50" style={{left:'100%'}}></div></div></div>) })}</div></div>
+              </div>
+            </div>
           )}
 
           {currentView === 'propriedades' && (
-             <div className="animate-in fade-in space-y-6"><div className="flex flex-col sm:flex-row justify-between gap-4"><h3 className="text-xl sm:text-2xl font-black"><MapPin className="mr-3 text-blue-500 inline" /> Fazendas</h3><button onClick={() => { setEditingPropriedade(null); setIsPropriedadeFormOpen(true); }} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 transition-colors text-white px-5 py-3 sm:py-2.5 rounded-xl font-bold shadow-sm"><Plus className="mr-2 inline" /> Nova Fazenda</button></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">{(appData.propriedades || []).map((p) => (<div key={p.id} className={`bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border shadow-sm ${activePropriedadeId === p.id ? 'border-green-500 ring-2 ring-green-500/20' : 'border-gray-200 dark:border-slate-700'}`}><div className="flex justify-between items-start mb-4"><h4 className="font-black text-xl sm:text-2xl flex-1 pr-4">{p.nome} {activePropriedadeId === p.id && <span className="block mt-1 text-[10px] uppercase tracking-widest text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-md w-max">Ativa</span>}</h4><div className="shrink-0"><button onClick={() => { setEditingPropriedade(p); setIsPropriedadeFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18}/></button><button onClick={() => del('propriedades', p.id, 'Excluir Fazenda?', () => { if(activePropriedadeId === p.id) setActivePropriedadeId((appData.propriedades || []).find(x=>x.id!==p.id)?.id || 1); })} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18}/></button></div></div><div className="space-y-1.5 text-sm font-medium text-gray-500 dark:text-slate-400 mt-2"><p><strong className="text-gray-900 dark:text-slate-200">Responsável:</strong> {p.responsavel}</p><p><strong className="text-gray-900 dark:text-slate-200">Localização:</strong> {p.cidade} - {p.estado}</p><p><strong className="text-gray-900 dark:text-slate-200">Área:</strong> {p.area_ha} ha</p></div><button onClick={() => setActivePropriedadeId(p.id)} disabled={activePropriedadeId === p.id} className={`w-full py-3 sm:py-3.5 mt-6 rounded-xl font-bold transition-all text-sm sm:text-base ${activePropriedadeId === p.id ? 'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 cursor-not-allowed' : 'bg-gray-900 dark:bg-slate-950 text-white hover:bg-black shadow-md'}`}>{activePropriedadeId === p.id ? 'Em Uso' : 'Mudar para esta Fazenda'}</button></div>))}</div></div>
+             <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><MapPin className="mr-3 text-blue-500"/> Fazendas</h3><button onClick={()=>openModal('propriedade')} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Fazenda</button></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-6">{appData.propriedades.map((p) => (<div key={p.id} className={`bg-white p-6 rounded-3xl border shadow-sm ${activePropriedadeId === p.id ? 'ring-2 ring-green-500' : ''}`}><div className="flex justify-between"><h4 className="font-black text-2xl">{p.nome}</h4><button onClick={()=>openModal('propriedade', p)} className="text-blue-500 p-2"><Edit size={18}/></button></div><p className="text-sm font-bold text-gray-500 mt-2">{p.cidade} - {p.estado}</p><button onClick={() => setActivePropriedadeId(p.id)} disabled={activePropriedadeId === p.id} className={`w-full py-3 mt-6 rounded-xl font-bold transition-all ${activePropriedadeId === p.id ? 'bg-gray-100 text-gray-400' : 'bg-gray-900 text-white'}`}>{activePropriedadeId === p.id ? 'Em Uso' : 'Entrar'}</button></div>))}</div></div>
           )}
 
           {currentView === 'configuracoes' && (
-            <div className="animate-in fade-in space-y-6">
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 p-6 sm:p-8 shadow-sm"><h3 className="font-black mb-6 text-lg sm:text-xl"><Users className="inline mr-2 text-indigo-600"/> Utilizadores</h3><button onClick={() => { setEditingUsuario(null); setIsUsuarioFormOpen(true); }} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 transition-colors text-white px-5 py-3 rounded-xl font-bold mb-6 flex justify-center items-center"><Plus className="mr-2"/> Adicionar Utilizador</button><div className="overflow-x-auto w-full"><table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700"><thead className="bg-gray-50 dark:bg-slate-900/50"><tr><th className={thCls}>Nome</th><th className={thCls}>Email</th><th className={`${thCls} text-right`}>Ações</th></tr></thead><tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">{(appData.usuarios || []).map((u) => (<tr key={u.id} className={tableRowCls}><td className={tdCls}><span className="font-black text-sm sm:text-base block">{u.nome}</span><span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-md mt-1 inline-block bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300">{u.role}</span></td><td className={tdCls}><span className="text-sm font-medium text-gray-600 dark:text-slate-400">{u.email}</span></td><td className={`${tdCls} text-right`}><button onClick={() => { setEditingUsuario(u); setIsUsuarioFormOpen(true); }} className="text-blue-500 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg mr-1"><Edit size={18}/></button><button onClick={() => del('usuarios', u.id, 'Remover?')} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"><Trash2 size={18}/></button></td></tr>))}</tbody></table></div></div>
-              <div className="bg-gradient-to-r from-slate-900 to-slate-800 dark:from-slate-950 dark:to-slate-900 rounded-3xl p-6 sm:p-8 shadow-md border border-slate-700 relative overflow-hidden"><Bot size={120} className="absolute -right-5 -bottom-5 text-white/5" /><h3 className="font-black mb-4 text-white text-lg sm:text-xl relative z-10"><Sparkles className="inline text-green-400 mr-2"/> Integração API Gemini (IA)</h3><p className="text-slate-400 text-xs sm:text-sm mb-6 relative z-10 max-w-lg">Cole a chave do Google AI Studio para ativar o assistente e os relatórios automatizados.</p><input type="password" value={geminiApiKey} onChange={(e) => setGeminiApiKey(e.target.value)} placeholder="Sua API Key..." className="w-full p-4 bg-slate-950/50 border border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-green-500 text-white font-mono text-sm sm:text-base relative z-10 shadow-inner" /></div>
-              <div className="bg-white dark:bg-slate-800 rounded-3xl border border-gray-200 dark:border-slate-700 p-6 sm:p-8 text-center shadow-sm"><FileSpreadsheet size={48} className="mx-auto text-green-600 mb-4" /><h3 className="font-black mb-2 text-xl sm:text-2xl">Exportar Planilhas</h3><p className="text-gray-500 dark:text-slate-400 text-xs sm:text-sm mb-6">Descarregue os dados em formato CSV compatível com Excel.</p><div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4"><button onClick={exportRebanho} className="bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 text-green-800 dark:text-green-400 font-bold px-6 py-3.5 rounded-xl transition-colors flex items-center justify-center text-sm sm:text-base"><Download size={18} className="mr-2"/> Exportar Rebanho</button><button onClick={exportFinanceiro} className="bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-800 dark:text-blue-400 font-bold px-6 py-3.5 rounded-xl transition-colors flex items-center justify-center text-sm sm:text-base"><Download size={18} className="mr-2"/> Exportar Finanças</button><button onClick={exportReproducao} className="bg-pink-50 dark:bg-pink-900/30 hover:bg-pink-100 dark:hover:bg-pink-900/50 text-pink-800 dark:text-pink-400 font-bold px-6 py-3.5 rounded-xl transition-colors flex items-center justify-center text-sm sm:text-base"><Download size={18} className="mr-2"/> Exportar Reprodução</button></div></div>
+            <div className="space-y-6">
+              <div className="bg-white rounded-3xl border p-8 shadow-sm"><div className="flex justify-between mb-6"><h3 className="font-black text-xl"><Users className="inline mr-2 text-indigo-600"/> Utilizadores</h3><button onClick={()=>openModal('usuario')} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold">Novo Acesso</button></div><Table headers={['Nome', 'Email', 'Role', 'Ações']}>{appData.usuarios.map((u) => (<tr key={u.id} className="hover:bg-gray-50"><td className="px-5 py-4 font-black">{u.nome}</td><td className="px-5 py-4 font-medium text-gray-600">{u.email}</td><td className="px-5 py-4"><span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">{u.role}</span></td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('usuario', u)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('usuarios', u.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table></div>
+              <div className="bg-slate-900 rounded-3xl p-8 shadow-lg text-white"><h3 className="font-black text-xl mb-4"><Sparkles className="inline text-green-400 mr-2"/> API Gemini (IA)</h3><input type="password" value={geminiApiKey} onChange={(e) => setGeminiApiKey(e.target.value)} placeholder="Cole a sua API Key do Google AI Studio..." className="w-full max-w-lg p-4 bg-slate-950/50 border border-slate-700 rounded-xl outline-none font-mono focus:ring-2 focus:ring-green-500 text-sm" /></div>
+              <div className="bg-white rounded-3xl border p-8 text-center shadow-sm"><FileSpreadsheet size={48} className="mx-auto text-green-600 mb-4" /><h3 className="font-black text-2xl mb-6">Exportar Dados (.csv)</h3><div className="flex justify-center gap-4"><button onClick={exportToCSV} className="bg-green-50 text-green-800 font-bold px-6 py-3.5 rounded-xl shadow-sm flex items-center"><Download size={18} className="mr-2"/> Rebanho Completo</button></div></div>
+            </div>
+          )}
+
+          {currentView === 'ai-assistant' && (
+            <div className="flex flex-col h-[calc(100vh-140px)] min-h-[500px] bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-6 border-b bg-slate-900 text-white flex items-center"><Bot size={28} className="mr-3 text-green-400" /><div><h2 className="font-extrabold text-xl">Consultor IA</h2><p className="text-slate-400 text-xs mt-1 font-medium">BoviGest PRO</p></div></div>
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">{chatMessages.map((msg, idx) => (<div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-5 py-4 shadow-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-white border rounded-bl-none'} whitespace-pre-wrap font-medium leading-relaxed`}>{msg.text}</div></div>))}{isChatLoading && <div className="flex justify-start"><div className="bg-white border rounded-2xl rounded-bl-none px-5 py-4 shadow-sm flex items-center space-x-2"><div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce"></div><div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce delay-75"></div><div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce delay-150"></div></div></div>}</div>
+              <div className="p-4 bg-white border-t"><form onSubmit={handleSendMessage} className="relative flex items-center"><input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Pergunte-me algo sobre a fazenda..." className="w-full pl-6 pr-14 py-4 bg-gray-50 border rounded-full outline-none focus:ring-2 focus:ring-green-500 font-medium shadow-inner" disabled={isChatLoading} /><button type="submit" disabled={!chatInput.trim() || isChatLoading} className="absolute right-2 p-3 bg-green-600 text-white rounded-full hover:bg-green-700 disabled:opacity-50 shadow-md"><Send size={18}/></button></form></div>
             </div>
           )}
 
         </div>
       </main>
 
-      {/* --- MODAIS DE FORMULÁRIO --- */}
-      {isAnimalFormOpen && (
-        <div className={modalOverlay}><div className={modalLarge}><div className="p-5 sm:p-6 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl"><Beef className="inline mr-2 text-green-600"/>{editingAnimal ? 'Editar' : 'Novo'} Animal</h2><button onClick={()=>{setIsAnimalFormOpen(false);setEditingAnimal(null);}} className="text-gray-400 hover:text-gray-600 dark:hover:text-white bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><div className="overflow-y-auto"><form id="af" onSubmit={handleSaveAnimal} className="p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Brinco*</label><input required name="brinco" defaultValue={editingAnimal?.brinco||''} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Nome (Opcional)</label><input name="nome" defaultValue={editingAnimal?.nome!=='-'?editingAnimal?.nome:''} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block text-green-700 dark:text-green-400">Peso (kg)*</label><input required type="number" name="peso" defaultValue={editingAnimal?.peso||''} className={`${inputCls} font-black`} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Lote</label><select name="lote" defaultValue={editingAnimal?.lote||''} className={inputCls}><option value="">Nenhum</option>{cLotes.map(l=><option key={l.id} value={l.nome}>{l.nome}</option>)}</select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Tipo / Aptidão</label><select name="tipo" defaultValue={editingAnimal?.tipo||'Corte'} className={inputCls}><option value="Corte">Corte</option><option value="Leite">Leite</option></select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Sexo</label><select name="sexo" defaultValue={editingAnimal?.sexo||'F'} className={inputCls}><option value="F">Fêmea</option><option value="M">Macho</option></select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Categoria</label><select name="categoria" defaultValue={editingAnimal?.categoria||'Bezerro'} className={inputCls}><option value="Bezerro">Bezerro(a)</option><option value="Novilha">Novilha</option><option value="Garrote">Garrote</option><option value="Vaca">Vaca</option><option value="Boi Gordo">Boi Gordo</option><option value="Touro">Touro</option></select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Raça</label><input required name="raca" defaultValue={editingAnimal?.raca||'Nelore'} className={inputCls} /></div><div className="sm:col-span-2"><label className="font-bold text-xs sm:text-sm mb-1.5 block">Data Nasc.</label><input type="date" required name="dataNasc" defaultValue={editingAnimal?.dataNasc || new Date().toISOString().split('T')[0]} className={inputCls} /></div></form></div><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsAnimalFormOpen(false);setEditingAnimal(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="af" className={`${btnSave} bg-green-600 hover:bg-green-700`}><Save size={18} className="mr-2"/> Salvar</button></div></div></div>
+      {/* --- MODAIS DE DETALHES --- */}
+      {selectedAnimal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh]">
+            <div className={`bg-gradient-to-r ${isEmCarencia(selectedAnimal.lote) ? 'from-red-700 to-red-600' : 'from-slate-800 to-slate-700'} p-8 flex justify-between items-start text-white shrink-0`}>
+              <div><h2 className="text-4xl font-black mb-1">{selectedAnimal.nome !== '-' ? selectedAnimal.nome : `Bovino #${selectedAnimal.brinco}`}</h2><p className="text-white/80 font-bold text-lg">Brinco: {selectedAnimal.brinco} • {selectedAnimal.raca} • {selectedAnimal.categoria}</p>{isEmCarencia(selectedAnimal.lote) && (<div className="mt-4 bg-white/20 inline-flex items-center px-4 py-2 rounded-xl backdrop-blur-md"><ShieldAlert size={20} className="mr-2 text-white" /><span className="font-bold text-white">Animal em Carência até {isEmCarencia(selectedAnimal.lote).dataLiberacao.split('-').reverse().join('/')}</span></div>)}</div>
+              <button onClick={() => setSelectedAnimal(null)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"><X size={24} /></button>
+            </div>
+            <div className="p-8 overflow-y-auto bg-slate-50 space-y-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4"><div className="bg-white p-5 rounded-2xl border shadow-sm"><p className="text-xs font-bold text-gray-400 uppercase">Peso Atual</p><p className="text-3xl font-black mt-1">{selectedAnimal.peso} <span className="text-base text-gray-400">kg</span></p></div><div className="bg-white p-5 rounded-2xl border shadow-sm"><p className="text-xs font-bold text-gray-400 uppercase">Lote</p><p className="text-xl font-black mt-2 truncate">{selectedAnimal.lote}</p></div><div className="bg-white p-5 rounded-2xl border shadow-sm"><p className="text-xs font-bold text-gray-400 uppercase">Idade Aprox.</p><p className="text-xl font-black mt-2 truncate">{Math.floor((new Date() - new Date(selectedAnimal.dataNasc)) / (1000*60*60*24*30))} m</p></div><div className="bg-white p-5 rounded-2xl border shadow-sm"><p className="text-xs font-bold text-gray-400 uppercase">GMD</p><p className="text-xl font-black mt-2 truncate">{getGPD(selectedAnimal.brinco) || '-'} <span className="text-sm text-gray-400">kg/d</span></p></div></div>
+              <div className="bg-white rounded-2xl border shadow-sm overflow-hidden"><div className="px-5 py-3 bg-gray-50 border-b flex items-center gap-2"><MessageSquare size={15} className="text-green-600" /><span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Observações</span></div><div className="p-4"><ObsEditor animal={selectedAnimal} onSave={(id, obs) => {updateApp(p=>({...p,animais:p.animais.map(a=>a.id===id?{...a,obs}:a)}));setSelectedAnimal(prev=>({...prev,obs}));showSaveSuccess();}} /></div></div>
+            </div>
+            <div className="p-6 border-t bg-white flex justify-between shrink-0"><button onClick={() => handleDeleteAnimal(selectedAnimal.id)} className="bg-red-50 text-red-600 px-6 py-4 rounded-xl font-bold flex items-center"><Trash2 size={18} className="mr-2"/> Eliminar</button><button onClick={() => { openModal('animal', selectedAnimal); setSelectedAnimal(null); }} className="bg-slate-900 text-white px-8 py-4 rounded-xl font-bold flex items-center shadow-lg"><Edit size={18} className="mr-3"/> Editar Ficha</button></div>
+          </div>
+        </div>
       )}
 
-      {isBatchAnimalFormOpen && (
-        <div className={modalOverlay}><div className={modalLarge}><div className="p-5 sm:p-6 border-b border-indigo-100 dark:border-slate-700 bg-indigo-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-indigo-900 dark:text-indigo-400"><ListPlus className="inline mr-2"/>Lote de Animais</h2><button onClick={()=>setIsBatchAnimalFormOpen(false)} className="text-indigo-400 hover:text-indigo-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><div className="overflow-y-auto"><form id="baf" onSubmit={handleSaveBatchAnimais} className="p-6 sm:p-8"><div className="grid grid-cols-3 gap-3 sm:gap-6 mb-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Prefixo</label><input name="prefixo" placeholder="Ex: NEL-" className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Início*</label><input required type="number" name="inicio" defaultValue="1" className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block text-indigo-700 dark:text-indigo-400">Quantidade*</label><input required type="number" name="quantidade" defaultValue="10" className={`${inputCls} font-black border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100`} /></div></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Raça</label><input required name="raca" defaultValue="Nelore" className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Peso Médio*</label><input required type="number" name="peso" defaultValue="200" className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Destino</label><select name="lote" className={inputCls}><option value="">Sem Lote</option>{cLotes.map(l=><option key={l.id} value={l.nome}>{l.nome}</option>)}</select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Categoria</label><select name="categoria" className={inputCls}><option value="Bezerro">Bezerros(as)</option><option value="Novilha">Novilhas</option><option value="Garrote">Garrotes</option><option value="Vaca">Vacas</option><option value="Touro">Touros</option><option value="Boi Gordo">Bois Gordos</option></select></div><input type="hidden" name="sexo" value="F"/><input type="hidden" name="tipo" value="Corte"/><input type="hidden" name="dataNasc" value={new Date().toISOString().split('T')[0]}/></div></form></div><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>setIsBatchAnimalFormOpen(false)} className={btnCancel}>Cancelar</button><button type="submit" form="baf" className={`${btnSave} bg-indigo-600 hover:bg-indigo-700`}>Gerar Lote</button></div></div></div>
+      {/* --- MODAIS DE FORMULÁRIO (COMPONENTIZADOS) --- */}
+      {modalType === 'animal' && (
+        <Modal title={editingItem ? 'Editar Animal' : 'Novo Animal'} icon={Beef} formId="f_ani" onClose={closeModal} onSubmit={handleSaveForm} wide>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <Input label="Brinco" name="brinco" req def={editingItem?.brinco}/>
+            <Input label="Nome (Opcional)" name="nome" def={editingItem?.nome!=='-'?editingItem?.nome:''}/>
+            <Input label="Peso Atual (kg)" name="peso" type="number" req def={editingItem?.peso}/>
+            <Select label="Lote Destino" name="lote" def={editingItem?.lote} options={[{val:'', lbl:'Sem Lote'}, ...appData.lotes.map(l=>({val:l.nome, lbl:l.nome}))]}/>
+            <Select label="Aptidão/Tipo" name="tipo" def={editingItem?.tipo||'Corte'} options={['Corte', 'Leite']} />
+            <Select label="Sexo" name="sexo" def={editingItem?.sexo||'F'} options={[{val:'F',lbl:'Fêmea'}, {val:'M',lbl:'Macho'}]} />
+            <Select label="Categoria" name="categoria" def={editingItem?.categoria||'Bezerro(a)'} options={['Bezerro(a)', 'Novilha', 'Garrote', 'Vaca', 'Boi Gordo', 'Touro']} />
+            <Input label="Raça" name="raca" req def={editingItem?.raca||'Nelore'}/>
+            <div className="sm:col-span-2"><Input label="Data Nasc." name="dataNasc" type="date" req def={editingItem?.dataNasc||today} /></div>
+          </div>
+        </Modal>
       )}
 
-      {isPesagemFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-orange-100 dark:border-slate-700 bg-orange-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-orange-900 dark:text-orange-400"><Scale className="inline mr-2"/>{editingPesagem ? 'Editar Pesagem' : 'Nova Pesagem'}</h2><button onClick={()=>{setIsPesagemFormOpen(false);setEditingPesagem(null);}} className="text-orange-400 hover:text-orange-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="pf" onSubmit={handleSavePesagem} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Brinco*</label><input required name="brinco" defaultValue={editingPesagem?.brinco||''} className={inputCls} placeholder="Ex: 105"/></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block text-orange-700 dark:text-orange-400">Peso Atual (kg)*</label><input required type="number" name="pesoAtual" defaultValue={editingPesagem?.pesoAtual||''} className={`${inputCls} font-black text-xl sm:text-2xl text-center border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20 text-orange-900 dark:text-orange-100`} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Data*</label><input required type="date" name="data" defaultValue={editingPesagem?.data || new Date().toISOString().split('T')[0]} className={inputCls} /></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsPesagemFormOpen(false);setEditingPesagem(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="pf" className={`${btnSave} bg-orange-600 hover:bg-orange-700`}>Salvar</button></div></div></div>
+      {modalType === 'batch' && (
+        <Modal title="Cadastrar Animais em Lote" icon={ListPlus} formId="f_batch" onClose={closeModal} onSubmit={handleSaveForm} wide submitText="Gerar Lote">
+          <div className="grid grid-cols-3 gap-4 mb-2">
+            <Input label="Prefixo" name="prefixo" placeholder="NEL-" />
+            <Input label="Início" name="inicio" type="number" req def="1" />
+            <Input label="Qtd" name="quantidade" type="number" req def="10" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Raça Base" name="raca" req def="Nelore"/>
+            <Input label="Peso Base (kg)" name="peso" type="number" req def="200"/>
+            <Select label="Lote Destino" name="lote" options={[{val:'', lbl:'Sem Lote'}, ...appData.lotes.map(l=>({val:l.nome, lbl:l.nome}))]}/>
+            <Select label="Categoria Geral" name="categoria" options={['Bezerros(as)', 'Novilhas', 'Garrotes', 'Vacas', 'Touros', 'Bois Gordos']} def="Bezerros(as)"/>
+            <input type="hidden" name="sexo" value="F"/><input type="hidden" name="tipo" value="Corte"/><input type="hidden" name="dataNasc" value={today}/>
+          </div>
+        </Modal>
       )}
 
-      {isLeiteFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-cyan-100 dark:border-slate-700 bg-cyan-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-cyan-900 dark:text-cyan-400"><Droplets className="inline mr-2"/>Ordenha</h2><button onClick={()=>{setIsLeiteFormOpen(false);setEditingLeite(null);}} className="text-cyan-400 hover:text-cyan-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="lf_m" onSubmit={handleSaveLeite} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Matriz*</label><select required name="brincoMatriz" defaultValue={editingLeite?.brincoMatriz||''} className={inputCls}><option value="">Selecione a fêmea...</option><option value="TODAS">Total Diário (Rebanho Geral)</option>{gadoDeLeite.map(v=><option key={v.id} value={v.brinco}>Vaca {v.brinco} {v.nome !== '-' ? `(${v.nome})` : ''}</option>)}</select></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block text-cyan-700 dark:text-cyan-400">Litros*</label><input required type="number" step="0.1" name="litros" defaultValue={editingLeite?.litros||''} className={`${inputCls} font-black text-xl text-center border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-900 dark:text-cyan-100`} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Turno</label><select name="turno" defaultValue={editingLeite?.turno||'Manhã'} className={inputCls}><option value="Manhã">Manhã</option><option value="Tarde">Tarde</option></select></div></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Data*</label><input required type="date" name="data" defaultValue={editingLeite?.data || new Date().toISOString().split('T')[0]} className={inputCls} /></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsLeiteFormOpen(false);setEditingLeite(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="lf_m" disabled={gadoDeLeite.length===0} className={`${btnSave} bg-cyan-600 hover:bg-cyan-700`}>Salvar</button></div></div></div>
+      {modalType === 'lote' && (
+        <Modal title={editingItem ? 'Editar Lote' : 'Novo Lote/Pasto'} icon={LayoutGrid} formId="f_lote" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Input label="Nome do Lote" name="nome" req def={editingItem?.nome} />
+          <div className="grid grid-cols-2 gap-4"><Input label="Capacidade Máx" name="capacidade" type="number" req def={editingItem?.capacidade} /><Select label="Tipo" name="tipo" def={editingItem?.tipo||'Pasto'} options={['Pasto', 'Baia']}/></div>
+          <div><label className="block text-sm font-bold text-gray-700 mb-1.5">Observações</label><textarea name="obs" rows={2} defaultValue={editingItem?.obs||''} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 resize-none font-medium text-sm"></textarea></div>
+        </Modal>
       )}
 
-      {isLoteFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-green-100 dark:border-slate-700 bg-green-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-green-900 dark:text-green-400"><LayoutGrid className="inline mr-2"/>Lote / Pasto</h2><button onClick={()=>{setIsLoteFormOpen(false);setEditingLote(null);}} className="text-green-400 hover:text-green-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="loteF" onSubmit={handleSaveLote} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Nome Referência*</label><input required name="nome" defaultValue={editingLote?.nome||''} className={inputCls} placeholder="Ex: Pasto Maternidade" /></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Capacidade*</label><input required type="number" name="capacidade" defaultValue={editingLote?.capacidade||''} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Tipo</label><select name="tipo" defaultValue={editingLote?.tipo||'Pasto'} className={inputCls}><option value="Pasto">Pasto Aberto</option><option value="Baia">Confinamento</option></select></div></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Observações</label><textarea name="obs" rows={2} defaultValue={editingLote?.obs||''} className={`${inputCls} resize-none`}></textarea></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsLoteFormOpen(false);setEditingLote(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="loteF" className={`${btnSave} bg-green-600 hover:bg-green-700`}>Salvar</button></div></div></div>
+      {modalType === 'pesagem' && (
+        <Modal title={editingItem ? 'Editar Pesagem' : 'Nova Pesagem'} icon={Scale} formId="f_pes" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Input label="Brinco do Animal" name="brinco" req def={editingItem?.brinco}/>
+          <Input label="Peso Atual na Balança (kg)" name="pesoAtual" type="number" step="0.1" req def={editingItem?.pesoAtual}/>
+          <Input label="Data da Pesagem" name="data" type="date" req def={editingItem?.data||today}/>
+        </Modal>
       )}
 
-      {isFinanceFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-green-100 dark:border-slate-700 bg-green-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-green-900 dark:text-green-400"><DollarSign className="inline mr-2"/>Lançamento</h2><button onClick={()=>{setIsFinanceFormOpen(false);setEditingFinance(null);}} className="text-green-400 hover:text-green-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="finF" onSubmit={handleSaveFinance} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Descrição*</label><input required name="descricao" defaultValue={editingFinance?.descricao||''} className={inputCls} placeholder="Ex: Venda Bezerras" /></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Fluxo</label><select name="tipo" defaultValue={editingFinance?.tipo||'receita'} className={`${inputCls} font-black`}><option value="receita" className="text-green-600">Receita (+)</option><option value="despesa" className="text-red-600">Despesa (-)</option></select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Valor (R$)*</label><input required type="number" step="0.01" name="valor" defaultValue={editingFinance?.valor||''} className={`${inputCls} font-black text-right`} /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Data*</label><input required type="date" name="data" defaultValue={editingFinance?.data || new Date().toISOString().split('T')[0]} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Categoria</label><input required name="categoria" defaultValue={editingFinance?.categoria||'Geral'} className={inputCls} /></div></div><input type="hidden" name="status" value={editingFinance?.status || 'pago'}/></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsFinanceFormOpen(false);setEditingFinance(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="finF" className={`${btnSave} bg-green-600 hover:bg-green-700`}>Efetivar</button></div></div></div>
+      {modalType === 'reproducao' && (
+        <Modal title={editingItem ? 'Editar Inseminação' : 'Registo Reprodutivo'} icon={HeartPulse} formId="f_rep" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Select label="Matriz" name="brincoVaca" req options={[{val:'', lbl:'Selecione...'}, ...femeasArray.map(a=>({val:a.brinco, lbl:`Vaca ${a.brinco}`}))]} def={editingItem?.brincoVaca}/>
+          <Input label="Identificação do Sêmen/Touro" name="reprodutor" req def={editingItem?.reprodutor}/>
+          <div className="grid grid-cols-2 gap-4"><Input label="Data Protocolo" name="dataProtocolo" type="date" def={editingItem?.dataProtocolo}/><Input label="Data IA/Monta" name="dataInseminacao" type="date" req def={editingItem?.dataInseminacao||today}/></div>
+          <div className="grid grid-cols-2 gap-4"><Select label="Método" name="metodo" def={editingItem?.metodo||'IA'} options={['IA', 'IATF', 'TE', 'Monta Natural']}/><Select label="Status (DG)" name="status" def={editingItem?.status||'Aguardando DG'} options={['Aguardando DG', 'Prenhe', 'Vazia', 'Aborto']}/></div>
+        </Modal>
       )}
 
-      {isReproducaoFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-pink-100 dark:border-slate-700 bg-pink-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-pink-900 dark:text-pink-400"><HeartPulse className="inline mr-2"/>Inseminação/Monta</h2><button onClick={()=>{setIsReproducaoFormOpen(false);setEditingReproducao(null);}} className="text-pink-400 hover:text-pink-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="repF" onSubmit={handleSaveReproducao} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Matriz *</label><select required name="brincoVaca" defaultValue={editingReproducao?.brincoVaca||''} className={inputCls}><option value="">Selecione...</option>{cAnimais.filter(a => a.sexo === 'F').map(v => <option key={v.id} value={v.brinco}>{v.brinco} {v.nome !== '-' ? `(${v.nome})` : ''}</option>)}</select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Sêmen/Touro*</label><input required name="reprodutor" defaultValue={editingReproducao?.reprodutor||''} className={inputCls} placeholder="Ex: Nelore PO 5543" /></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Data do Protocolo</label><input type="date" name="dataProtocolo" defaultValue={editingReproducao?.dataProtocolo||''} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Data IA/Monta *</label><input required type="date" name="dataInseminacao" defaultValue={editingReproducao?.dataInseminacao || new Date().toISOString().split('T')[0]} className={inputCls} /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Método</label><select name="metodo" defaultValue={editingReproducao?.metodo||'IA'} className={inputCls}><option value="IA">IA</option><option value="IATF">IATF</option><option value="TE">TE</option><option value="Monta Natural">Monta Natural</option></select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Status *</label><select name="status" defaultValue={editingReproducao?.status||'Aguardando DG'} className={`${inputCls} font-bold`}><option value="Aguardando DG">Aguardando DG</option><option value="Prenhe">Prenhe</option><option value="Vazia">Vazia</option><option value="Aborto">Aborto</option></select></div></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsReproducaoFormOpen(false);setEditingReproducao(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="repF" className={`${btnSave} bg-pink-600 hover:bg-pink-700`}>Salvar</button></div></div></div>
+      {modalType === 'nascimento' && (
+        <Modal title="Registo de Parto" icon={Baby} formId="f_nasc" onClose={closeModal} onSubmit={handleSaveForm} submitText="Registar Parto">
+          <div className="grid grid-cols-2 gap-4"><Select label="Matriz" name="brincoMatriz" req options={[{val:'', lbl:'Selecionar...'}, ...femeasArray.map(a=>({val:a.brinco, lbl:a.brinco}))]} /><Input label="Novo Brinco (Cria)" name="brincoBezerro" req /></div>
+          <div className="grid grid-cols-3 gap-4"><Select label="Sexo" name="sexo" options={[{val:'M',lbl:'Macho'},{val:'F',lbl:'Fêmea'}]} /><Input label="Peso" name="pesoNascimento" type="number" req def="35"/><Input label="Data" name="data" type="date" req def={today}/></div>
+          <Input label="Raça Predominante" name="raca" req def="Nelore" />
+          <div><label className="block text-sm font-bold text-gray-700 mb-1.5">Observações (Opcional)</label><input name="obs" className="w-full px-4 py-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-medium text-sm" /></div>
+        </Modal>
       )}
 
-      {isNascimentoFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-blue-100 dark:border-slate-700 bg-blue-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-blue-900 dark:text-blue-400"><Baby className="inline mr-2"/>Registo Nascimento</h2><button onClick={()=>{setIsNascimentoFormOpen(false);setEditingNascimento(null);}} className="text-blue-400 hover:text-blue-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="nasF" onSubmit={handleAddNascimento} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Matriz *</label><select required name="brincoMatriz" className={inputCls}><option value="">Selecionar...</option>{cAnimais.filter(a => a.sexo === 'F').map(v => <option key={v.id} value={v.brinco}>{v.brinco}</option>)}</select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block text-blue-700 dark:text-blue-400">Novo Brinco (Cria) *</label><input required name="brincoBezerro" className={`${inputCls} font-black border-blue-200 dark:border-blue-800`} /></div></div><div className="grid grid-cols-3 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Sexo</label><select name="sexo" className={inputCls}><option value="M">M</option><option value="F">F</option></select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Peso*</label><input required type="number" name="pesoNascimento" defaultValue="35" className={`${inputCls} text-center`} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Data*</label><input required type="date" name="data" defaultValue={new Date().toISOString().split('T')[0]} className={inputCls} /></div></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Raça Predominante</label><input required name="raca" defaultValue="Nelore" className={inputCls} /></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsNascimentoFormOpen(false);setEditingNascimento(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="nasF" className={`${btnSave} bg-blue-600 hover:bg-blue-700`}>Registar</button></div></div></div>
+      {modalType === 'leite' && (
+        <Modal title={editingItem ? 'Editar Ordenha' : 'Nova Ordenha'} icon={Droplets} formId="f_leite" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Select label="Vaca Lactante" name="brincoMatriz" req options={[{val:'', lbl:'Selecione...'}, {val:'TODAS', lbl:'Total Diário (Lançamento Único)'}, ...femeasArray.map(a=>({val:a.brinco, lbl:`Vaca ${a.brinco}`}))]} def={editingItem?.brincoMatriz}/>
+          <div className="grid grid-cols-2 gap-4"><Input label="Litros" name="litros" type="number" step="0.1" req def={editingItem?.litros}/><Select label="Turno" name="turno" def={editingItem?.turno||'Manhã'} options={['Manhã', 'Tarde', 'Noite']}/></div>
+          <Input label="Data" name="data" type="date" req def={editingItem?.data||today}/>
+        </Modal>
       )}
 
-      {isVaccineFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-red-100 dark:border-slate-700 bg-red-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-red-900 dark:text-red-400"><ShieldAlert className="inline mr-2"/>Tratamento Lote</h2><button onClick={()=>{setIsVaccineFormOpen(false);setEditingVaccine(null);}} className="text-red-400 hover:text-red-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="vacF" onSubmit={handleSaveVaccine} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Med./Vacina*</label><input required name="vacina" defaultValue={editingVaccine?.vacina||''} className={inputCls} /></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Lote Alvo</label><select name="lote" defaultValue={editingVaccine?.lote||'Todo o Rebanho'} className={inputCls}><option value="Todo o Rebanho">Todo Rebanho</option>{cLotes.map(l=><option key={l.id} value={l.nome}>{l.nome}</option>)}</select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Cabeças</label><input required type="number" name="qtdAnimais" defaultValue={editingVaccine?.qtdAnimais||1} className={inputCls} /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Data Aplic.*</label><input required type="date" name="dataAplicacao" defaultValue={editingVaccine?.dataAplicacao || new Date().toISOString().split('T')[0]} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block text-red-700 dark:text-red-400">Carência(dias)</label><input required type="number" name="carenciaDias" defaultValue={editingVaccine?.carenciaDias||0} className={`${inputCls} font-black bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-900 dark:text-red-100`} /></div></div><input type="hidden" name="status" value="concluida"/></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsVaccineFormOpen(false);setEditingVaccine(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="vacF" className={`${btnSave} bg-red-600 hover:bg-red-700`}>Efetivar</button></div></div></div>
+      {modalType === 'vacina' && (
+        <Modal title={editingItem ? 'Editar Tratamento' : 'Sanidade Lote'} icon={ShieldAlert} formId="f_vac" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Input label="Medicamento / Vacina" name="vacina" req def={editingItem?.vacina}/>
+          <div className="grid grid-cols-2 gap-4"><Select label="Lote Alvo" name="lote" def={editingItem?.lote||'Todo o Rebanho'} options={[{val:'Todo o Rebanho', lbl:'Rebanho Todo'}, ...appData.lotes.map(l=>({val:l.nome, lbl:l.nome}))]}/><Input label="Cabeças" name="qtdAnimais" type="number" req def={editingItem?.qtdAnimais||1}/></div>
+          <div className="grid grid-cols-2 gap-4"><Input label="Data Aplicação" name="dataAplicacao" type="date" req def={editingItem?.dataAplicacao||today}/><Input label="Carência Leite/Corte (Dias)" name="carenciaDias" type="number" req def={editingItem?.carenciaDias||0}/></div>
+        </Modal>
       )}
 
-      {isInsumoFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-purple-100 dark:border-slate-700 bg-purple-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-purple-900 dark:text-purple-400"><Archive className="inline mr-2"/>Entrada Insumo</h2><button onClick={()=>{setIsInsumoFormOpen(false);setEditingInsumo(null);}} className="text-purple-400 hover:text-purple-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="insF" onSubmit={handleSaveInsumo} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Produto*</label><input required name="nome" defaultValue={editingInsumo?.nome||''} className={inputCls} /></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Categoria</label><input required name="categoria" defaultValue={editingInsumo?.categoria||'Nutrição'} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Unidade</label><input required name="unidade" defaultValue={editingInsumo?.unidade||''} placeholder="kg, L..." className={inputCls} /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Qtd Entrada*</label><input required type="number" step="0.01" name="quantidade" defaultValue={editingInsumo?.quantidade||''} className={`${inputCls} font-black`} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block text-purple-700 dark:text-purple-400">Estoque Mín.</label><input required type="number" step="0.01" name="estoqueMinimo" defaultValue={editingInsumo?.estoqueMinimo||10} className={`${inputCls} bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-100 font-bold`} /></div></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsInsumoFormOpen(false);setEditingInsumo(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="insF" className={`${btnSave} bg-purple-600 hover:bg-purple-700`}>Salvar</button></div></div></div>
+      {modalType === 'calendario' && (
+        <Modal title={editingItem ? 'Editar Evento' : 'Agendar Evento Anual'} icon={CalendarDays} formId="f_cal" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Input label="Campanha ou Doença" name="doenca" req def={editingItem?.doenca}/>
+          <Select label="Mês Anual" name="mes" def={editingItem?.mes||'Janeiro'} options={['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro','Qualquer']} />
+          <Input label="Público Alvo (Ex: Bezerros)" name="publico" req def={editingItem?.publico}/>
+          <Select label="Obrigatório (IDARON)?" name="obrigatorio" def={editingItem ? String(editingItem.obrigatorio) : 'true'} options={[{val:'true', lbl:'Sim (Oficial)'}, {val:'false', lbl:'Não (Maneio)'}]} />
+        </Modal>
       )}
 
-      {isConsumoFormOpen && consumoInsumoSelecionado && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-orange-100 dark:border-slate-700 bg-orange-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-orange-900 dark:text-orange-400"><MinusCircle className="inline mr-2"/>Lançar Consumo</h2><button onClick={()=>{setIsConsumoFormOpen(false);setConsumoInsumoSelecionado(null);}} className="text-orange-400 hover:text-orange-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="consF" onSubmit={handleLancarConsumo} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div className="bg-orange-100/50 dark:bg-orange-900/20 p-4 rounded-xl border border-orange-100 dark:border-orange-800/50"><p className="text-[10px] sm:text-xs font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wide mb-1">Stock Disponível</p><p className="text-2xl font-black text-orange-900 dark:text-orange-100">{consumoInsumoSelecionado.quantidade} <span className="text-sm font-bold text-orange-700 dark:text-orange-300">{consumoInsumoSelecionado.unidade}</span></p><p className="text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 mt-2 truncate">{consumoInsumoSelecionado.nome}</p></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block text-orange-700 dark:text-orange-400">Subtrair ao Estoque*</label><input required type="number" step="0.01" name="quantidadeConsumo" max={consumoInsumoSelecionado.quantidade} className={`${inputCls} font-black text-2xl text-center bg-white dark:bg-slate-950 border-2 border-orange-300 dark:border-orange-600 text-orange-900 dark:text-orange-100 shadow-inner py-4`} autoFocus /></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsConsumoFormOpen(false);setConsumoInsumoSelecionado(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="consF" className={`${btnSave} bg-orange-600 hover:bg-orange-700`}>Consumir</button></div></div></div>
+      {modalType === 'insumo' && (
+        <Modal title={editingItem ? 'Editar Insumo' : 'Novo Insumo'} icon={Archive} formId="f_ins" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Input label="Produto" name="nome" req def={editingItem?.nome}/>
+          <div className="grid grid-cols-2 gap-4"><Input label="Categoria" name="categoria" req def={editingItem?.categoria||'Nutrição'}/><Input label="Unidade (kg, L)" name="unidade" req def={editingItem?.unidade}/></div>
+          <div className="grid grid-cols-2 gap-4"><Input label="Qtd Entrada" name="quantidade" type="number" step="0.1" req def={editingItem?.quantidade}/><Input label="Alerta de Mínimo" name="estoqueMinimo" type="number" step="0.1" req def={editingItem?.estoqueMinimo||10}/></div>
+        </Modal>
       )}
 
-      {isPropriedadeFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-blue-100 dark:border-slate-700 bg-blue-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-blue-900 dark:text-blue-400"><MapPin className="inline mr-2"/>{editingPropriedade ? 'Editar' : 'Nova'} Fazenda</h2><button onClick={()=>{setIsPropriedadeFormOpen(false);setEditingPropriedade(null);}} className="text-blue-400 hover:text-blue-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="propF" onSubmit={handleSavePropriedade} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Nome*</label><input required name="nome" defaultValue={editingPropriedade?.nome||''} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Responsável*</label><input required name="responsavel" defaultValue={editingPropriedade?.responsavel||''} className={inputCls} /></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Município</label><input required name="cidade" defaultValue={editingPropriedade?.cidade||'Rondonópolis'} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">UF</label><input required name="estado" maxLength={2} defaultValue={editingPropriedade?.estado||'MT'} className={`${inputCls} uppercase text-center font-bold`} /></div></div><div className="grid grid-cols-2 gap-4"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Área (ha)</label><input required type="number" name="area_ha" defaultValue={editingPropriedade?.area_ha||''} className={`${inputCls} font-black`} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">IE</label><input name="ie" defaultValue={editingPropriedade?.ie||''} className={inputCls} placeholder="Opcional" /></div></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsPropriedadeFormOpen(false);setEditingPropriedade(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="propF" className={`${btnSave} bg-blue-600 hover:bg-blue-700`}>Salvar</button></div></div></div>
+      {modalType === 'consumo' && consumoItem && (
+        <Modal title="Lançar Consumo" icon={MinusCircle} formId="f_cons" onClose={closeModal} onSubmit={handleSaveForm} submitText="Consumir">
+          <div className="bg-orange-50 border border-orange-100 p-4 rounded-xl mb-4"><p className="text-xs font-bold text-orange-600 uppercase tracking-widest">Stock Atual</p><p className="text-2xl font-black text-orange-900">{consumoItem.quantidade} <span className="text-sm font-bold text-orange-700">{consumoItem.unidade}</span></p><p className="text-sm font-bold text-gray-700 mt-1">{consumoItem.nome}</p></div>
+          <Input label={`Retirar do Estoque (${consumoItem.unidade})`} name="quantidadeConsumo" type="number" step="0.1" req max={consumoItem.quantidade} autoFocus />
+        </Modal>
       )}
 
-      {isUsuarioFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-indigo-100 dark:border-slate-700 bg-indigo-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-indigo-900 dark:text-indigo-400"><Users className="inline mr-2"/>{editingUsuario ? 'Editar' : 'Novo'} Acesso</h2><button onClick={()=>{setIsUsuarioFormOpen(false);setEditingUsuario(null);}} className="text-indigo-400 hover:text-indigo-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="usrF" onSubmit={handleSaveUsuario} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Nome*</label><input required name="nome" defaultValue={editingUsuario?.nome||''} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Email*</label><input required type="email" name="email" defaultValue={editingUsuario?.email||''} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Senha*</label><input required name="senha" defaultValue={editingUsuario?.senha||''} className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Nível de Acesso</label><select name="role" defaultValue={editingUsuario?.role||'Operador'} className={`${inputCls} font-bold`}><option value="Operador">Operador (Edita Dados)</option><option value="Admin">Admin (Total)</option></select></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsUsuarioFormOpen(false);setEditingUsuario(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="usrF" className={`${btnSave} bg-indigo-600 hover:bg-indigo-700`}>Salvar</button></div></div></div>
+      {modalType === 'financeiro' && (
+        <Modal title={editingItem ? 'Editar Lançamento' : 'Lançamento Financeiro'} icon={DollarSign} formId="f_fin" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Input label="Descrição" name="descricao" req def={editingItem?.descricao}/>
+          <div className="grid grid-cols-2 gap-4"><Select label="Fluxo" name="tipo" def={editingItem?.tipo||'receita'} options={[{val:'receita', lbl:'Receita (+)'}, {val:'despesa', lbl:'Despesa (-)'}]}/><Input label="Valor (R$)" name="valor" type="number" step="0.01" req def={editingItem?.valor}/></div>
+          <div className="grid grid-cols-2 gap-4"><Input label="Data" name="data" type="date" req def={editingItem?.data||today}/><Input label="Categoria" name="categoria" req def={editingItem?.categoria||'Geral'}/></div>
+        </Modal>
       )}
 
-      {isCalendarioFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-yellow-100 dark:border-slate-700 bg-yellow-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-yellow-900 dark:text-yellow-400"><CalendarDays className="inline mr-2"/>Agendar Evento</h2><button onClick={()=>{setIsCalendarioFormOpen(false);setEditingCalendario(null);}} className="text-yellow-500 hover:text-yellow-700 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="calF" onSubmit={handleSaveCalendario} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Campanha/Doença*</label><input required name="doenca" defaultValue={editingCalendario?.doenca||''} className={inputCls} placeholder="Ex: Aftosa" /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Mês da Ação Anual*</label><select required name="mes" defaultValue={editingCalendario?.mes||'Janeiro'} className={`${inputCls} font-bold`}><option value="Janeiro">Janeiro</option><option value="Fevereiro">Fevereiro</option><option value="Março">Março</option><option value="Abril">Abril</option><option value="Maio">Maio</option><option value="Junho">Junho</option><option value="Julho">Julho</option><option value="Agosto">Agosto</option><option value="Setembro">Setembro</option><option value="Outubro">Outubro</option><option value="Novembro">Novembro</option><option value="Dezembro">Dezembro</option><option value="Qualquer (Ideal: Desmame)">Qualquer</option></select></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Público Alvo*</label><input required name="publico" defaultValue={editingCalendario?.publico||''} className={inputCls} placeholder="Ex: Todo rebanho" /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Legal/Obrigatório</label><select name="obrigatorio" defaultValue={editingCalendario ? (editingCalendario.obrigatorio ? 'true' : 'false') : 'true'} className={`${inputCls} font-bold`}><option value="true">Sim (Oficial)</option><option value="false">Não (Maneio)</option></select></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsCalendarioFormOpen(false);setEditingCalendario(null);}} className={btnCancel}>Cancelar</button><button type="submit" form="calF" className={`${btnSave} bg-yellow-600 hover:bg-yellow-700`}>Agendar</button></div></div></div>
+      {modalType === 'anotacao' && (
+        <Modal title="Nova Anotação" icon={NotebookPen} formId="f_ano" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Input label="Título" name="titulo" req />
+          <Input label="Tag (Opcional)" name="tag" placeholder="Ex: Urgente, Nutrição..." />
+          <div><label className="block text-sm font-bold text-gray-700 mb-1.5">Descrição *</label><textarea required name="texto" rows={4} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-medium text-sm resize-none"></textarea></div>
+        </Modal>
       )}
 
-      {isAnotacaoFormOpen && (
-        <div className={modalOverlay}><div className={modalBase}><div className="p-5 sm:p-6 border-b border-amber-100 dark:border-slate-700 bg-amber-50 dark:bg-slate-800 flex justify-between items-center"><h2 className="font-black text-lg sm:text-xl text-amber-900 dark:text-amber-400"><NotebookPen className="inline mr-2"/>Nova Anotação</h2><button onClick={()=>{setIsAnotacaoFormOpen(false);}} className="text-amber-400 hover:text-amber-600 bg-white dark:bg-slate-700 p-1.5 rounded-full shadow-sm"><X size={18}/></button></div><form id="anotF" onSubmit={handleSaveAnotacao} className="p-6 sm:p-8 space-y-4 sm:space-y-6"><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Título*</label><input required name="titulo" className={inputCls} placeholder="Ex: Cerca Quebrada" /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Categoria/Tag (Opcional)</label><input name="tag" placeholder="Ex: Urgente, Nutrição..." className={inputCls} /></div><div><label className="font-bold text-xs sm:text-sm mb-1.5 block">Descrição*</label><textarea required name="texto" rows={4} className={`${inputCls} resize-none`} placeholder="Detalhes da anotação..."></textarea></div></form><div className="p-4 sm:p-6 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 flex justify-end gap-3"><button onClick={()=>{setIsAnotacaoFormOpen(false);}} className={btnCancel}>Cancelar</button><button type="submit" form="anotF" className={`${btnSave} bg-amber-600 hover:bg-amber-700`}>Salvar</button></div></div></div>
+      {modalType === 'propriedade' && (
+        <Modal title={editingItem ? 'Editar Fazenda' : 'Nova Fazenda'} icon={MapPin} formId="f_prop" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Input label="Nome Comercial" name="nome" req def={editingItem?.nome}/>
+          <Input label="Responsável Legal" name="responsavel" req def={editingItem?.responsavel}/>
+          <div className="grid grid-cols-2 gap-4"><Input label="Município" name="cidade" req def={editingItem?.cidade||'Rondonópolis'}/><Input label="UF" name="estado" maxLength={2} req def={editingItem?.estado||'MT'} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-bold uppercase text-center" /></div>
+          <div className="grid grid-cols-2 gap-4"><Input label="Área Total (Hectares)" name="area_ha" type="number" req def={editingItem?.area_ha}/><Input label="Inscrição Estadual" name="ie" def={editingItem?.ie}/></div>
+        </Modal>
+      )}
+
+      {modalType === 'usuario' && (
+        <Modal title={editingItem ? 'Editar Operador' : 'Novo Convite'} icon={Users} formId="f_usr" onClose={closeModal} onSubmit={handleSaveForm}>
+          <Input label="Nome Completo" name="nome" req def={editingItem?.nome}/>
+          <Input label="Email de Login" name="email" type="email" req def={editingItem?.email}/>
+          <Input label="Senha de Acesso" name="senha" req def={editingItem?.senha} placeholder="Defina uma senha..." />
+          <Select label="Nível de Permissão" name="role" def={editingItem?.role||'Operador'} options={['Operador', 'Admin']} />
+        </Modal>
       )}
 
       {emailModalData && (
-        <div className={modalOverlay}><div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6 sm:p-8 text-center animate-in zoom-in duration-300 border dark:border-slate-700"><div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4 sm:mb-6"><CheckCircle2 size={24} className="sm:w-8 sm:h-8" /></div><h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-2">Conta Criada!</h2><p className="text-gray-500 dark:text-slate-400 font-medium mb-4 sm:mb-6 text-xs sm:text-sm">Envie o acesso para o operador.</p><div className="bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl p-4 sm:p-6 text-left mb-4 sm:mb-6 space-y-2 sm:space-y-3"><p className="text-xs sm:text-sm"><span className="font-bold text-gray-400 uppercase">Login:</span> <span className="font-bold text-indigo-600 dark:text-indigo-400 block">{emailModalData.email}</span></p><p className="text-xs sm:text-sm"><span className="font-bold text-gray-400 uppercase">Senha:</span> <code className="bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-600 px-2 py-1 rounded-lg font-mono text-gray-900 dark:text-white block mt-1">{emailModalData.senha}</code></p></div><div className="flex gap-2 sm:gap-3"><button onClick={() => setEmailModalData(null)} className={btnCancel}>Fechar</button><button onClick={handleSendEmail} className={`${btnSave} bg-indigo-600 hover:bg-indigo-700`}><Mail size={16} className="mr-1 sm:mr-2" /> Enviar</button></div></div></div>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-8 text-center animate-in zoom-in duration-300">
+            <div className="mx-auto w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6"><CheckCircle2 size={32} /></div>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Conta Criada!</h2><p className="text-gray-500 font-medium mb-6 text-sm">Envie o acesso para o operador.</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-left mb-6 space-y-3"><p className="text-sm"><span className="font-bold text-gray-400 uppercase">Login:</span> <span className="font-bold text-indigo-600 block">{emailModalData.email}</span></p><p className="text-sm"><span className="font-bold text-gray-400 uppercase">Senha:</span> <code className="bg-white border border-gray-200 px-2 py-1 rounded-lg font-mono text-gray-900 block mt-1">{emailModalData.senha}</code></p></div>
+            <div className="flex gap-3"><button onClick={() => setEmailModalData(null)} className="flex-1 px-6 py-3.5 rounded-xl font-bold bg-white border border-gray-200 text-gray-700">Fechar</button><button onClick={() => {window.location.href = `mailto:${emailModalData.email}?subject=${encodeURIComponent("Acesso - BoviGest PRO")}&body=${encodeURIComponent(`Login: ${emailModalData.email}\nSenha: ${emailModalData.senha}\nLink: https://bovigest-online.vercel.app/`)}`; setEmailModalData(null);}} className="flex-1 px-6 py-3.5 rounded-xl font-bold bg-indigo-600 text-white flex items-center justify-center"><Mail size={18} className="mr-2" /> Enviar Email</button></div>
+          </div>
+        </div>
       )}
-      
+
     </div>
   );
 }
