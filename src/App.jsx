@@ -56,8 +56,8 @@ const Select = ({ label, name, req = false, def = "", options, ...props }) => (
     <label className="block text-sm font-bold text-gray-700 mb-1.5">{label} {req && <span className="text-red-500">*</span>}</label>
     <select name={name} required={req} defaultValue={def} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-medium transition-all appearance-none" {...props}>
       {options.map((o, i) => {
-        const val = typeof o === 'object' ? o.val : o;
-        const lbl = typeof o === 'object' ? o.lbl : o;
+        const val = typeof o === 'object' && o !== null ? o.val : o;
+        const lbl = typeof o === 'object' && o !== null ? o.lbl : o;
         return <option key={i} value={val}>{lbl}</option>;
       })}
     </select>
@@ -82,7 +82,6 @@ const Modal = ({ title, icon: Icon, onClose, onSubmit, formId, submitText = "Sal
   </div>
 );
 
-// Cabeçalhos agora são apenas strings limpas para evitar o crash do React Elements
 const Table = ({ headers, children }) => (
   <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden w-full">
     <div className="overflow-x-auto w-full custom-scrollbar max-h-[60vh]">
@@ -105,7 +104,8 @@ const callGemini = async (prompt, sys, userApiKey) => {
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], systemInstruction: { parts: [{ text: sys }] } })
     });
     if (!res.ok) throw new Error("Erro API");
-    return (await res.json()).candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
+    const result = await res.json();
+    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Sem resposta.";
   } catch (e) { return "❌ Erro ao comunicar com IA. Verifique a chave e a internet."; }
 };
 
@@ -145,7 +145,10 @@ export default function App() {
   // --- NUVEM & PERSISTÊNCIA FIREBASE ---
   const [appData, setAppData] = useState(() => {
     const saved = localStorage.getItem('bovigest_data_v1');
-    return saved ? { ...defaultData, ...JSON.parse(saved) } : defaultData;
+    if (saved) {
+      try { return { ...defaultData, ...JSON.parse(saved) }; } catch (e) { return defaultData; }
+    }
+    return defaultData;
   });
   
   const [isCloudReady, setIsCloudReady] = useState(false);
@@ -180,8 +183,8 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem('bovigest_ai_key', geminiApiKey); }, [geminiApiKey]);
 
-  // --- ACESSO AOS DADOS SEGURO ---
-  const d = appData;
+  // --- ACESSO AOS DADOS SEGURO (Prevenção de Tela Branca) ---
+  const d = appData || defaultData;
   const arr = (v) => Array.isArray(v) ? v : [];
   
   const pAtiva = arr(d.propriedades).find(p => p.id === activePropriedadeId) || arr(d.propriedades)[0] || defaultData.propriedades[0];
@@ -220,11 +223,17 @@ export default function App() {
 
   const getGPD = (brinco) => {
     const p = cPesagens.filter(x => x.brinco === brinco).sort((a,b) => new Date(b.data) - new Date(a.data));
-    if (p.length > 1) { const dias = (new Date(p[0].data) - new Date(p[1].data)) / 86400000; return dias > 0 ? ((p[0].pesoAtual - p[1].pesoAtual) / dias).toFixed(2) : null; }
+    if (p.length > 1 && p[0].data && p[1].data) { 
+      const dias = (new Date(p[0].data) - new Date(p[1].data)) / 86400000; 
+      return dias > 0 ? ((p[0].pesoAtual - p[1].pesoAtual) / dias).toFixed(2) : null; 
+    }
     return null;
   };
 
-  const isEmCarencia = (lote) => { const v = cVac.find(x => x.lote === lote || x.lote === "Todo o Rebanho"); return (v && v.dataLiberacao && new Date() < new Date(v.dataLiberacao)) ? v : false; };
+  const isEmCarencia = (lote) => { 
+    const v = cVac.find(x => x.lote === lote || x.lote === "Todo o Rebanho"); 
+    return (v && v.dataLiberacao && new Date() < new Date(v.dataLiberacao)) ? v : false; 
+  };
 
   // --- HANDLERS E FUNÇÕES ---
   const openModal = (type, item = null) => { setEditingItem(item); setModalType(type); };
@@ -232,7 +241,7 @@ export default function App() {
   const handleDel = (coll, id) => { if(confirm('Confirmar remoção permanente?')) updateApp(p => ({ ...p, [coll]: arr(p[coll]).filter(x => x.id !== id) })); };
   
   const handleLogin = async (e) => {
-    e.preventDefault(); setIsLoginLoading(true);
+    e.preventDefault(); setIsLoginLoading(true); setLoginError("");
     const email = e.target.email.value.trim().toLowerCase(); const senha = e.target.senha.value;
     try {
       const docSnap = await getDoc(doc(db, 'bovigest_users', email));
@@ -256,40 +265,70 @@ export default function App() {
     d.id = editingItem?.id || Date.now();
     d.propriedadeId = activePropriedadeId;
 
-    if (modalType === 'animal') { d.peso = Number(d.peso); d.ativo = true; updateApp(p => ({...p, animais: editingItem ? p.animais.map(x=>x.id===d.id?d:x) : [d, ...p.animais]})); }
+    if (modalType === 'animal') { 
+      d.peso = Number(d.peso); d.ativo = true; 
+      updateApp(p => ({...p, animais: editingItem ? arr(p.animais).map(x=>x.id===d.id?d:x) : [d, ...arr(p.animais)]})); 
+    }
     if (modalType === 'batch') { 
       const n = []; const pref = d.prefixo||''; const qtd = Number(d.quantidade); const ini = Number(d.inicio);
       for(let i=0; i<qtd; i++) n.push({ ...d, id: Date.now()+i, brinco: `${pref}${(ini+i).toString().padStart(3,'0')}`, nome: "-", sexo: fd.get('sexo'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), raca: fd.get('raca'), dataNasc: fd.get('dataNasc'), peso: Number(d.peso), ativo: true});
-      updateApp(p => ({...p, animais: [...n, ...p.animais]})); 
+      updateApp(p => ({...p, animais: [...n, ...arr(p.animais)]})); 
     }
-    if (modalType === 'lote') { d.capacidade = Number(d.capacidade); updateApp(p => ({...p, lotes: editingItem ? p.lotes.map(x=>x.id===d.id?d:x) : [d, ...p.lotes]})); }
+    if (modalType === 'lote') { 
+      d.capacidade = Number(d.capacidade); 
+      updateApp(p => ({...p, lotes: editingItem ? arr(p.lotes).map(x=>x.id===d.id?d:x) : [d, ...arr(p.lotes)]})); 
+    }
     if (modalType === 'pesagem') { 
       d.pesoAtual = Number(d.pesoAtual); const an = cAnimais.find(x=>x.brinco===d.brinco); if(!an && !editingItem) return alert('Brinco não encontrado.');
       d.pesoAnterior = editingItem ? editingItem.pesoAnterior : an.peso;
-      updateApp(p => ({...p, pesagens: editingItem ? p.pesagens.map(x=>x.id===d.id?d:x) : [d, ...p.pesagens], animais: p.animais.map(x=>x.brinco===d.brinco?{...x,peso:d.pesoAtual}:x)})); 
+      updateApp(p => ({...p, pesagens: editingItem ? arr(p.pesagens).map(x=>x.id===d.id?d:x) : [d, ...arr(p.pesagens)], animais: arr(p.animais).map(x=>x.brinco===d.brinco?{...x,peso:d.pesoAtual}:x)})); 
     }
-    if (modalType === 'financeiro') { d.valor = Number(d.valor); d.status = d.status||'pago'; updateApp(p => ({...p, financeiro: editingItem ? p.financeiro.map(x=>x.id===d.id?d:x) : [d, ...p.financeiro]})); }
-    if (modalType === 'reproducao') { d.previsaoParto = d.dataInseminacao ? new Date(new Date(d.dataInseminacao).setDate(new Date(d.dataInseminacao).getDate()+290)).toISOString().split('T')[0] : ''; updateApp(p => ({...p, reproducao: editingItem ? p.reproducao.map(x=>x.id===d.id?d:x) : [d, ...p.reproducao]})); }
+    if (modalType === 'financeiro') { 
+      d.valor = Number(d.valor); d.status = d.status||'pago'; 
+      updateApp(p => ({...p, financeiro: editingItem ? arr(p.financeiro).map(x=>x.id===d.id?d:x) : [d, ...arr(p.financeiro)]})); 
+    }
+    if (modalType === 'reproducao') { 
+      d.previsaoParto = d.dataInseminacao ? new Date(new Date(d.dataInseminacao).setDate(new Date(d.dataInseminacao).getDate()+290)).toISOString().split('T')[0] : ''; 
+      updateApp(p => ({...p, reproducao: editingItem ? arr(p.reproducao).map(x=>x.id===d.id?d:x) : [d, ...arr(p.reproducao)]})); 
+    }
     if (modalType === 'nascimento') { 
       d.pesoNascimento = Number(d.pesoNascimento);
       const cria = { id: d.id+1, propriedadeId: activePropriedadeId, brinco: d.brincoBezerro, nome: "-", sexo: d.sexo, categoria: "Bezerro(a)", tipo: "Cria", raca: d.raca, dataNasc: d.data, peso: d.pesoNascimento, lote: "Maternidade", obs: `Cria de ${d.brincoMatriz}`, ativo: true };
-      updateApp(p => ({...p, nascimentos: editingItem ? p.nascimentos.map(x=>x.id===d.id?d:x) : [d, ...p.nascimentos], animais: editingItem ? p.animais : [cria, ...p.animais]})); 
+      updateApp(p => ({...p, nascimentos: editingItem ? arr(p.nascimentos).map(x=>x.id===d.id?d:x) : [d, ...arr(p.nascimentos)], animais: editingItem ? arr(p.animais) : [cria, ...arr(p.animais)]})); 
     }
-    if (modalType === 'leite') { d.litros = Number(d.litros); updateApp(p => ({...p, producaoLeite: editingItem ? p.producaoLeite.map(x=>x.id===d.id?d:x) : [d, ...p.producaoLeite]})); }
+    if (modalType === 'leite') { 
+      d.litros = Number(d.litros); 
+      updateApp(p => ({...p, producaoLeite: editingItem ? arr(p.producaoLeite).map(x=>x.id===d.id?d:x) : [d, ...arr(p.producaoLeite)]})); 
+    }
     if (modalType === 'vacina') { 
       d.carenciaDias = Number(d.carenciaDias); d.qtdAnimais = Number(d.qtdAnimais);
       if(d.carenciaDias > 0) { const ld = new Date(d.dataAplicacao); ld.setDate(ld.getDate()+d.carenciaDias); d.dataLiberacao = ld.toISOString().split('T')[0]; }
-      updateApp(p => ({...p, vacinacoes: editingItem ? p.vacinacoes.map(x=>x.id===d.id?d:x) : [d, ...p.vacinacoes]})); 
+      updateApp(p => ({...p, vacinacoes: editingItem ? arr(p.vacinacoes).map(x=>x.id===d.id?d:x) : [d, ...arr(p.vacinacoes)]})); 
     }
-    if (modalType === 'insumo') { d.quantidade = Number(d.quantidade); d.estoqueMinimo = Number(d.estoqueMinimo); updateApp(p => ({...p, insumos: editingItem ? p.insumos.map(x=>x.id===d.id?d:x) : [d, ...p.insumos]})); }
+    if (modalType === 'insumo') { 
+      d.quantidade = Number(d.quantidade); d.estoqueMinimo = Number(d.estoqueMinimo); 
+      updateApp(p => ({...p, insumos: editingItem ? arr(p.insumos).map(x=>x.id===d.id?d:x) : [d, ...arr(p.insumos)]})); 
+    }
     if (modalType === 'consumo') { 
       const q = Number(d.quantidadeConsumo); 
-      updateApp(p => ({...p, insumos: p.insumos.map(x=>x.id===consumoItem.id ? {...x, quantidade: Math.max(0, x.quantidade-q)} : x)})); 
+      updateApp(p => ({...p, insumos: arr(p.insumos).map(x=>x.id===consumoItem.id ? {...x, quantidade: Math.max(0, x.quantidade-q)} : x)})); 
     }
-    if (modalType === 'calendario') { d.obrigatorio = d.obrigatorio === 'true'; updateApp(p => ({...p, calendarioSanitario: editingItem ? p.calendarioSanitario.map(x=>x.id===d.id?d:x) : [d, ...p.calendarioSanitario]})); }
-    if (modalType === 'anotacao') { d.status = 'aberto'; d.data = new Date().toLocaleDateString('pt-BR'); updateApp(p => ({...p, anotacoes: [d, ...p.anotacoes]})); }
-    if (modalType === 'propriedade') { d.area_ha = Number(d.area_ha); updateApp(p => ({...p, propriedades: editingItem ? p.propriedades.map(x=>x.id===d.id?d:x) : [d, ...p.propriedades]})); }
-    if (modalType === 'usuario') { updateApp(p => ({...p, usuarios: editingItem ? p.usuarios.map(x=>x.id===d.id?d:x) : [d, ...p.usuarios]})); if (!editingItem) setEmailModalData(d); }
+    if (modalType === 'calendario') { 
+      d.obrigatorio = d.obrigatorio === 'true'; 
+      updateApp(p => ({...p, calendarioSanitario: editingItem ? arr(p.calendarioSanitario).map(x=>x.id===d.id?d:x) : [d, ...arr(p.calendarioSanitario)]})); 
+    }
+    if (modalType === 'anotacao') { 
+      d.status = 'aberto'; d.data = new Date().toLocaleDateString('pt-BR'); 
+      updateApp(p => ({...p, anotacoes: [d, ...arr(p.anotacoes)]})); 
+    }
+    if (modalType === 'propriedade') { 
+      d.area_ha = Number(d.area_ha); 
+      updateApp(p => ({...p, propriedades: editingItem ? arr(p.propriedades).map(x=>x.id===d.id?d:x) : [d, ...arr(p.propriedades)]})); 
+    }
+    if (modalType === 'usuario') { 
+      updateApp(p => ({...p, usuarios: editingItem ? arr(p.usuarios).map(x=>x.id===d.id?d:x) : [d, ...arr(p.usuarios)]})); 
+      if (!editingItem) setEmailModalData(d); 
+    }
 
     closeModal();
   };
@@ -307,8 +346,9 @@ export default function App() {
   // --- IA E EXPORTAÇÕES ---
   const handleAnalyzeFarm = async () => {
     setIsAnalyzing(true);
-    const ctx = `Rebanho: ${cAnimais.length}. Peso Médio: ${pesoMedio}kg. Saldo: ${formatCurrency(saldoAtual)}.`;
-    setAiInsights(await callGemini("Resumo executivo de indicadores positivos e sugestão de lucro: " + ctx, "Consultor agronegócio PT-PT.", geminiApiKey));
+    const ctx = `Rebanho: ${cAnimais.length} cab. Peso Médio: ${pesoMedio}kg. Saldo: ${formatCurrency(saldoAtual)}.`;
+    const response = await callGemini("Resumo executivo de indicadores positivos e sugestão de lucro. Contexto: " + ctx, "Consultor agronegócio PT-PT.", geminiApiKey);
+    setAiInsights(response);
     setIsAnalyzing(false);
   };
 
@@ -339,11 +379,11 @@ export default function App() {
         <div className="relative z-10 text-center px-4 max-w-md mx-auto">
           <div className="mx-auto w-24 h-24 bg-gradient-to-br from-green-400 to-green-700 rounded-3xl flex items-center justify-center shadow-2xl mb-6"><Beef size={48} className="text-white" /></div>
           <h2 className="text-5xl font-extrabold text-white tracking-tight">BoviGest <span className="text-green-500">PRO</span></h2>
-          <div className="mt-8 bg-slate-900/90 backdrop-blur-xl p-8 rounded-3xl border border-slate-700/50">
-            {loginError && <p className="text-red-400 mb-4 font-bold">{loginError}</p>}
+          <div className="mt-8 bg-slate-900/90 backdrop-blur-xl p-8 rounded-3xl border border-slate-700/50 text-left">
+            {loginError && <p className="text-red-400 mb-4 font-bold text-center">{loginError}</p>}
             <form className="space-y-6" onSubmit={handleLogin}>
-              <Input label="Email de Acesso" name="email" type="email" req placeholder="ex: gestor@fazenda.com" className="w-full px-5 py-4 bg-slate-800 text-white rounded-xl outline-none" />
-              <Input label="Senha" name="senha" type="password" req placeholder="••••••••" className="w-full px-5 py-4 bg-slate-800 text-white rounded-xl outline-none" />
+              <Input label="Email de Acesso (Ou digite novo para criar)" name="email" type="email" req placeholder="ex: gestor@fazenda.com" className="w-full px-5 py-4 bg-slate-800 text-white border-none rounded-xl outline-none" />
+              <Input label="Senha" name="senha" type="password" req placeholder="••••••••" className="w-full px-5 py-4 bg-slate-800 text-white border-none rounded-xl outline-none" />
               <button type="submit" disabled={isLoginLoading} className="w-full py-4 rounded-xl font-bold text-white bg-green-600 hover:bg-green-500 shadow-lg">{isLoginLoading ? 'A conectar...' : 'Entrar no Sistema'}</button>
             </form>
           </div>
@@ -361,8 +401,12 @@ export default function App() {
           <div className="flex items-center"><div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center mr-3"><Beef size={22} className="text-white" /></div><span className="text-2xl font-black text-white">BoviGest</span></div>
           <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-white"><X/></button>
         </div>
-        <div className="p-6 bg-slate-900/50 border-b border-slate-800/50">
-          <select value={activePropriedadeId} onChange={(e) => setActivePropriedadeId(Number(e.target.value))} className="w-full bg-slate-800 text-white font-bold p-3 rounded-xl outline-none">
+        <div className="p-6 bg-slate-900/50 border-b border-slate-800/50 shrink-0">
+          <div className="flex items-center mb-4">
+            <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-green-400 font-bold mr-3 shrink-0">{(currentUser?.nome || 'U')[0].toUpperCase()}</div>
+            <div className="overflow-hidden"><p className="font-bold text-sm text-white truncate">{pAtiva.nome}</p><p className="text-[10px] font-medium text-slate-400 truncate uppercase tracking-widest">{pAtiva.responsavel}</p></div>
+          </div>
+          <select value={activePropriedadeId} onChange={(e) => setActivePropriedadeId(Number(e.target.value))} className="w-full bg-slate-800 text-white text-sm font-bold px-3 py-2 rounded-lg outline-none">
             {arr(appData.propriedades).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
         </div>
@@ -447,7 +491,7 @@ export default function App() {
           {currentView === 'leite' && (
             <div className="space-y-6">
               <div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><Droplets className="mr-3 text-cyan-500"/> Leite</h3><button onClick={()=>openModal('leite')} className="bg-cyan-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Ordenha</button></div>
-              <div className="grid grid-cols-2 gap-4"><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{totalLeiteMes} <span className="text-gray-400 text-xl">L</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Neste Mês</p></div><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{cLeite.length===0?0:(totalLeiteMes/cLeite.length).toFixed(1)} <span className="text-gray-400 text-xl">L/dia</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Média Diária</p></div></div>
+              <div className="grid grid-cols-2 gap-4"><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{totalLeiteMes} <span className="text-gray-400 text-xl">L</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Neste Mês</p></div><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{mediaLitrosVaca} <span className="text-gray-400 text-xl">L/dia</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Média Diária</p></div></div>
               <Table headers={['Data/Turno', 'Matriz', 'Volume', 'Ações']}>{cLeite.map(l => (<tr key={l.id} className="hover:bg-cyan-50/50"><td className="px-5 py-4"><span className="font-black block">{l.data}</span><span className="text-xs font-bold text-gray-500">{l.turno}</span></td><td className="px-5 py-4 font-bold"><span className="bg-gray-100 px-3 py-1.5 rounded-lg">{l.brincoMatriz==='TODAS'?'Rebanho (Total)':`Vaca ${l.brincoMatriz}`}</span></td><td className="px-5 py-4 text-right font-black text-cyan-600 text-lg">{l.litros} L</td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('leite', l)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('producaoLeite', l.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table>
             </div>
           )}
@@ -559,14 +603,14 @@ export default function App() {
         </div>
       )}
 
-      {/* --- MODAIS DE FORMULÁRIO --- */}
+      {/* --- MODAIS DE FORMULÁRIO (COMPONENTIZADOS) --- */}
       {modalType === 'animal' && (
         <Modal title={editingItem ? 'Editar Animal' : 'Novo Animal'} icon={Beef} formId="f_ani" onClose={closeModal} onSubmit={handleSaveForm} wide>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Input label="Brinco" name="brinco" req def={editingItem?.brinco}/>
             <Input label="Nome (Opcional)" name="nome" def={editingItem?.nome!=='-'?editingItem?.nome:''}/>
             <Input label="Peso Atual (kg)" name="peso" type="number" req def={editingItem?.peso}/>
-            <Select label="Lote Destino" name="lote" def={editingItem?.lote} options={[{val:'', lbl:'Sem Lote'}, ...appData.lotes.map(l=>({val:l.nome, lbl:l.nome}))]}/>
+            <Select label="Lote Destino" name="lote" def={editingItem?.lote} options={[{val:'', lbl:'Sem Lote'}, ...cLotes.map(l=>({val:l.nome, lbl:l.nome}))]}/>
             <Select label="Aptidão/Tipo" name="tipo" def={editingItem?.tipo||'Corte'} options={['Corte', 'Leite']} />
             <Select label="Sexo" name="sexo" def={editingItem?.sexo||'F'} options={[{val:'F',lbl:'Fêmea'}, {val:'M',lbl:'Macho'}]} />
             <Select label="Categoria" name="categoria" def={editingItem?.categoria||'Bezerro(a)'} options={['Bezerro(a)', 'Novilha', 'Garrote', 'Vaca', 'Boi Gordo', 'Touro']} />
@@ -586,7 +630,7 @@ export default function App() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Raça Base" name="raca" req def="Nelore"/>
             <Input label="Peso Base (kg)" name="peso" type="number" req def="200"/>
-            <Select label="Lote Destino" name="lote" options={[{val:'', lbl:'Sem Lote'}, ...appData.lotes.map(l=>({val:l.nome, lbl:l.nome}))]}/>
+            <Select label="Lote Destino" name="lote" options={[{val:'', lbl:'Sem Lote'}, ...cLotes.map(l=>({val:l.nome, lbl:l.nome}))]}/>
             <Select label="Categoria Geral" name="categoria" options={['Bezerros(as)', 'Novilhas', 'Garrotes', 'Vacas', 'Touros', 'Bois Gordos']} def="Bezerros(as)"/>
             <input type="hidden" name="sexo" value="F"/><input type="hidden" name="tipo" value="Corte"/><input type="hidden" name="dataNasc" value={today}/>
           </div>
@@ -638,7 +682,7 @@ export default function App() {
       {modalType === 'vacina' && (
         <Modal title={editingItem ? 'Editar Tratamento' : 'Sanidade Lote'} icon={ShieldAlert} formId="f_vac" onClose={closeModal} onSubmit={handleSaveForm}>
           <Input label="Medicamento / Vacina" name="vacina" req def={editingItem?.vacina}/>
-          <div className="grid grid-cols-2 gap-4"><Select label="Lote Alvo" name="lote" def={editingItem?.lote||'Todo o Rebanho'} options={[{val:'Todo o Rebanho', lbl:'Rebanho Todo'}, ...appData.lotes.map(l=>({val:l.nome, lbl:l.nome}))]}/><Input label="Cabeças" name="qtdAnimais" type="number" req def={editingItem?.qtdAnimais||1}/></div>
+          <div className="grid grid-cols-2 gap-4"><Select label="Lote Alvo" name="lote" def={editingItem?.lote||'Todo o Rebanho'} options={[{val:'Todo o Rebanho', lbl:'Rebanho Todo'}, ...cLotes.map(l=>({val:l.nome, lbl:l.nome}))]}/><Input label="Cabeças" name="qtdAnimais" type="number" req def={editingItem?.qtdAnimais||1}/></div>
           <div className="grid grid-cols-2 gap-4"><Input label="Data Aplicação" name="dataAplicacao" type="date" req def={editingItem?.dataAplicacao||today}/><Input label="Carência Leite/Corte (Dias)" name="carenciaDias" type="number" req def={editingItem?.carenciaDias||0}/></div>
         </Modal>
       )}
