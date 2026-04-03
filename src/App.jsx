@@ -43,7 +43,7 @@ const defaultData = {
   ]
 };
 
-// --- COMPONENTES UI REUTILIZÁVEIS (Evita Código Repetitivo) ---
+// --- COMPONENTES UI REUTILIZÁVEIS E BLINDADOS ---
 const Input = ({ label, name, type = "text", req = false, def = "", ...props }) => (
   <div>
     <label className="block text-sm font-bold text-gray-700 mb-1.5">{label} {req && <span className="text-red-500">*</span>}</label>
@@ -55,7 +55,11 @@ const Select = ({ label, name, req = false, def = "", options, ...props }) => (
   <div>
     <label className="block text-sm font-bold text-gray-700 mb-1.5">{label} {req && <span className="text-red-500">*</span>}</label>
     <select name={name} required={req} defaultValue={def} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-green-500 font-medium transition-all appearance-none" {...props}>
-      {options.map((o, i) => <option key={i} value={o.val !== undefined ? o.val : o}>{o.lbl !== undefined ? o.lbl : o}</option>)}
+      {options.map((o, i) => {
+        const val = typeof o === 'object' ? o.val : o;
+        const lbl = typeof o === 'object' ? o.lbl : o;
+        return <option key={i} value={val}>{lbl}</option>;
+      })}
     </select>
   </div>
 );
@@ -78,6 +82,7 @@ const Modal = ({ title, icon: Icon, onClose, onSubmit, formId, submitText = "Sal
   </div>
 );
 
+// Cabeçalhos agora são apenas strings limpas para evitar o crash do React Elements
 const Table = ({ headers, children }) => (
   <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden w-full">
     <div className="overflow-x-auto w-full custom-scrollbar max-h-[60vh]">
@@ -117,22 +122,27 @@ export default function App() {
   const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('bovigest_ai_key') || '');
   const [selectedAnimaisIds, setSelectedAnimaisIds] = useState([]); 
 
-  // Modais de Edição/Criação
+  // Gestão unificada de Modais
   const [selectedAnimal, setSelectedAnimal] = useState(null);
-  const [modalType, setModalType] = useState(null); // 'animal', 'batch', 'pesagem', 'lote', etc
+  const [modalType, setModalType] = useState(null); 
   const [editingItem, setEditingItem] = useState(null);
   const [consumoItem, setConsumoItem] = useState(null);
 
-  // Estados
   const [aiInsights, setAiInsights] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [chatMessages, setChatMessages] = useState([{ role: 'model', text: 'Olá! Sou o seu Consultor Agro IA.' }]);
+  const [chatMessages, setChatMessages] = useState([{ role: 'model', text: 'Olá! Sou o seu Consultor Agro IA. Como posso ajudar?' }]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [dietaAtual, setDietaAtual] = useState([]);
   const [insumoSelecionado, setInsumoSelecionado] = useState("");
+  const [emailModalData, setEmailModalData] = useState(null);
+  const [sanidadeTab, setSanidadeTab] = useState('registos');
 
+  const [nutriAlvoPeso, setNutriAlvoPeso] = useState(400);
+  const [nutriAlvoGPD, setNutriAlvoGPD] = useState(1.2);
+
+  // --- NUVEM & PERSISTÊNCIA FIREBASE ---
   const [appData, setAppData] = useState(() => {
     const saved = localStorage.getItem('bovigest_data_v1');
     return saved ? { ...defaultData, ...JSON.parse(saved) } : defaultData;
@@ -143,7 +153,6 @@ export default function App() {
 
   const today = new Date().toISOString().split('T')[0];
 
-  // --- EFEITOS E FIREBASE ---
   useEffect(() => {
     signInAnonymously(auth).catch(console.error);
     return onAuthStateChanged(auth, setFirebaseUser);
@@ -171,7 +180,7 @@ export default function App() {
 
   useEffect(() => { localStorage.setItem('bovigest_ai_key', geminiApiKey); }, [geminiApiKey]);
 
-  // --- ACESSO AOS DADOS (Safe Navigation Arrays) ---
+  // --- ACESSO AOS DADOS SEGURO ---
   const d = appData;
   const arr = (v) => Array.isArray(v) ? v : [];
   
@@ -207,7 +216,6 @@ export default function App() {
 
   const femeasArray = cAnimais.filter(a => a.sexo === 'F');
   const gadoDeCorte = cAnimais.filter(a => a.tipo === 'Corte');
-  
   const totalLeiteMes = cLeite.filter(l => l.data && new Date(l.data).getMonth() === new Date().getMonth()).reduce((acc, curr) => acc + (Number(curr.litros)||0), 0);
 
   const getGPD = (brinco) => {
@@ -221,8 +229,7 @@ export default function App() {
   // --- HANDLERS E FUNÇÕES ---
   const openModal = (type, item = null) => { setEditingItem(item); setModalType(type); };
   const closeModal = () => { setModalType(null); setEditingItem(null); setConsumoItem(null); };
-  
-  const handleDel = (coll, id) => { if(confirm('Confirmar remoção?')) updateApp(p => ({ ...p, [coll]: arr(p[coll]).filter(x => x.id !== id) })); };
+  const handleDel = (coll, id) => { if(confirm('Confirmar remoção permanente?')) updateApp(p => ({ ...p, [coll]: arr(p[coll]).filter(x => x.id !== id) })); };
   
   const handleLogin = async (e) => {
     e.preventDefault(); setIsLoginLoading(true);
@@ -252,7 +259,7 @@ export default function App() {
     if (modalType === 'animal') { d.peso = Number(d.peso); d.ativo = true; updateApp(p => ({...p, animais: editingItem ? p.animais.map(x=>x.id===d.id?d:x) : [d, ...p.animais]})); }
     if (modalType === 'batch') { 
       const n = []; const pref = d.prefixo||''; const qtd = Number(d.quantidade); const ini = Number(d.inicio);
-      for(let i=0; i<qtd; i++) n.push({ ...d, id: Date.now()+i, brinco: `${pref}${(ini+i).toString().padStart(3,'0')}`, peso: Number(d.peso), ativo: true});
+      for(let i=0; i<qtd; i++) n.push({ ...d, id: Date.now()+i, brinco: `${pref}${(ini+i).toString().padStart(3,'0')}`, nome: "-", sexo: fd.get('sexo'), categoria: fd.get('categoria'), tipo: fd.get('tipo'), raca: fd.get('raca'), dataNasc: fd.get('dataNasc'), peso: Number(d.peso), ativo: true});
       updateApp(p => ({...p, animais: [...n, ...p.animais]})); 
     }
     if (modalType === 'lote') { d.capacidade = Number(d.capacidade); updateApp(p => ({...p, lotes: editingItem ? p.lotes.map(x=>x.id===d.id?d:x) : [d, ...p.lotes]})); }
@@ -281,10 +288,46 @@ export default function App() {
     }
     if (modalType === 'calendario') { d.obrigatorio = d.obrigatorio === 'true'; updateApp(p => ({...p, calendarioSanitario: editingItem ? p.calendarioSanitario.map(x=>x.id===d.id?d:x) : [d, ...p.calendarioSanitario]})); }
     if (modalType === 'anotacao') { d.status = 'aberto'; d.data = new Date().toLocaleDateString('pt-BR'); updateApp(p => ({...p, anotacoes: [d, ...p.anotacoes]})); }
+    if (modalType === 'propriedade') { d.area_ha = Number(d.area_ha); updateApp(p => ({...p, propriedades: editingItem ? p.propriedades.map(x=>x.id===d.id?d:x) : [d, ...p.propriedades]})); }
+    if (modalType === 'usuario') { updateApp(p => ({...p, usuarios: editingItem ? p.usuarios.map(x=>x.id===d.id?d:x) : [d, ...p.usuarios]})); if (!editingItem) setEmailModalData(d); }
 
     closeModal();
   };
 
+  // --- SELEÇÃO MÚLTIPLA ---
+  const toggleAnimalSelection = (id) => setSelectedAnimaisIds(p => p.includes(id) ? p.filter(x=>x!==id) : [...p, id]);
+  const toggleAllAnimais = () => setSelectedAnimaisIds(selectedAnimaisIds.length === filtAnimais.length ? [] : filtAnimais.map(a=>a.id));
+  const handleDeleteMultipleAnimais = () => {
+    if (confirm(`Atenção: Deseja remover permanentemente ${selectedAnimaisIds.length} animais?`)) {
+      updateApp(p => ({ ...p, animais: arr(p.animais).filter(a => !selectedAnimaisIds.includes(a.id)) }));
+      setSelectedAnimaisIds([]);
+    }
+  };
+
+  // --- IA E EXPORTAÇÕES ---
+  const handleAnalyzeFarm = async () => {
+    setIsAnalyzing(true);
+    const ctx = `Rebanho: ${cAnimais.length}. Peso Médio: ${pesoMedio}kg. Saldo: ${formatCurrency(saldoAtual)}.`;
+    setAiInsights(await callGemini("Resumo executivo de indicadores positivos e sugestão de lucro: " + ctx, "Consultor agronegócio PT-PT.", geminiApiKey));
+    setIsAnalyzing(false);
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault(); if (!chatInput.trim()) return;
+    const txt = chatInput; setChatMessages(p => [...p, { role: 'user', text: txt }]); setChatInput(""); setIsChatLoading(true);
+    const ctx = `Animais: ${cAnimais.length}. Lotes: ${cLotes.length}.`;
+    const hist = chatMessages.map(m => `${m.role}: ${m.text}`).join("\n");
+    const aiResponse = await callGemini(`Contexto: ${ctx}\nHistórico:\n${hist}\nUser: ${txt}`, "Assistente pecuário.", geminiApiKey);
+    setChatMessages(p => [...p, { role: 'model', text: aiResponse }]);
+    setIsChatLoading(false);
+  };
+
+  const exportCSV = (name, hdrs, rows) => { 
+    const blob = new Blob([[hdrs.join(','), ...rows.map(r=>r.map(i=>`"${i}"`).join(','))].join('\n')], { type: 'text/csv;charset=utf-8;' }); 
+    const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = name; l.click(); 
+  };
+
+  // --- MENU ---
   const navs = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Painel Central' }, { id: 'animais', icon: Beef, label: 'Rebanho' }, { id: 'gado_corte', icon: Target, label: 'Engorda' }, { id: 'leite', icon: Droplets, label: 'Leite' }, { id: 'pastagens', icon: LayoutGrid, label: 'Lotes' }, { id: 'reproducao', icon: HeartPulse, label: 'Reprodução' }, { id: 'nascimentos', icon: Baby, label: 'Nascimentos' }, { id: 'pesagens', icon: Scale, label: 'Pesagens' }, { id: 'sanidade', icon: ShieldAlert, label: 'Sanidade' }, { id: 'nutricao', icon: Wheat, label: 'Nutrição' }, { id: 'insumos', icon: Archive, label: 'Insumos' }, { id: 'financeiro', icon: DollarSign, label: 'Financeiro' }, { id: 'anotacoes', icon: NotebookPen, label: 'Anotações' }, { id: 'ai-assistant', icon: Sparkles, label: 'Assistente IA' }, { id: 'propriedades', icon: MapPin, label: 'Propriedades' }, { id: 'configuracoes', icon: Settings, label: 'Configurações' }
   ];
@@ -333,6 +376,11 @@ export default function App() {
             )
           })}
         </nav>
+        <div className="p-6 border-t border-slate-800/50 shrink-0">
+          <button onClick={() => { setIsLoggedIn(false); setCurrentUser(null); }} className="flex items-center justify-center w-full px-4 py-3 text-slate-400 border border-slate-700/50 hover:text-red-400 hover:bg-slate-900 rounded-xl font-bold text-sm">
+            <LogOut className="mr-2 h-4 w-4" /> Terminar Sessão
+          </button>
+        </div>
       </aside>
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -375,7 +423,7 @@ export default function App() {
                   )}
                 </div>
               </div>
-              <Table headers={[<button onClick={toggleAllAnimais} className="text-gray-400"><CheckSquare/></button>, 'Animal', 'Lote', 'Peso', 'Ações']}>
+              <Table headers={['Sel.', 'Animal', 'Lote', 'Peso', 'Ações']}>
                 {filtAnimais.map(a => (
                   <tr key={a.id} className={selectedAnimaisIds.includes(a.id) ? 'bg-green-50' : 'hover:bg-gray-50'}>
                     <td className="px-5 py-4 text-center"><input type="checkbox" checked={selectedAnimaisIds.includes(a.id)} onChange={()=>toggleAnimalSelection(a.id)} className="w-4 h-4 text-green-600"/></td>
@@ -399,7 +447,7 @@ export default function App() {
           {currentView === 'leite' && (
             <div className="space-y-6">
               <div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><Droplets className="mr-3 text-cyan-500"/> Leite</h3><button onClick={()=>openModal('leite')} className="bg-cyan-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Ordenha</button></div>
-              <div className="grid grid-cols-2 gap-4"><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{totalLeiteMes} <span className="text-gray-400 text-xl">L</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Neste Mês</p></div><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{mediaLitrosVaca} <span className="text-gray-400 text-xl">L/dia</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Média Diária</p></div></div>
+              <div className="grid grid-cols-2 gap-4"><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{totalLeiteMes} <span className="text-gray-400 text-xl">L</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Neste Mês</p></div><div className="bg-white border p-6 rounded-3xl text-center shadow-sm"><h3 className="text-4xl font-black">{cLeite.length===0?0:(totalLeiteMes/cLeite.length).toFixed(1)} <span className="text-gray-400 text-xl">L/dia</span></h3><p className="text-xs font-bold text-gray-400 uppercase mt-2">Média Diária</p></div></div>
               <Table headers={['Data/Turno', 'Matriz', 'Volume', 'Ações']}>{cLeite.map(l => (<tr key={l.id} className="hover:bg-cyan-50/50"><td className="px-5 py-4"><span className="font-black block">{l.data}</span><span className="text-xs font-bold text-gray-500">{l.turno}</span></td><td className="px-5 py-4 font-bold"><span className="bg-gray-100 px-3 py-1.5 rounded-lg">{l.brincoMatriz==='TODAS'?'Rebanho (Total)':`Vaca ${l.brincoMatriz}`}</span></td><td className="px-5 py-4 text-right font-black text-cyan-600 text-lg">{l.litros} L</td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('leite', l)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('producaoLeite', l.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table>
             </div>
           )}
@@ -511,7 +559,7 @@ export default function App() {
         </div>
       )}
 
-      {/* --- MODAIS DE FORMULÁRIO (COMPONENTIZADOS) --- */}
+      {/* --- MODAIS DE FORMULÁRIO --- */}
       {modalType === 'animal' && (
         <Modal title={editingItem ? 'Editar Animal' : 'Novo Animal'} icon={Beef} formId="f_ani" onClose={closeModal} onSubmit={handleSaveForm} wide>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
