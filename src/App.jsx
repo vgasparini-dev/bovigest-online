@@ -152,6 +152,7 @@ export default function App() {
   });
   
   const [isCloudReady, setIsCloudReady] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState('connecting'); // ADICIONADO AQUI
   const [firebaseUser, setFirebaseUser] = useState(null);
 
   const today = new Date().toISOString().split('T')[0];
@@ -167,6 +168,10 @@ export default function App() {
     const unsub = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) setAppData(prev => ({ ...defaultData, ...docSnap.data() }));
       setIsCloudReady(true);
+      setCloudStatus('online'); // ATUALIZAR STATUS DA NUVEM
+    }, (err) => { 
+      console.error(err); 
+      setCloudStatus('error'); 
     });
     return () => unsub();
   }, [firebaseUser, isLoggedIn, currentUser]);
@@ -230,10 +235,7 @@ export default function App() {
     return null;
   };
 
-  const isEmCarencia = (lote) => { 
-    const v = cVac.find(x => x.lote === lote || x.lote === "Todo o Rebanho"); 
-    return (v && v.dataLiberacao && new Date() < new Date(v.dataLiberacao)) ? v : false; 
-  };
+  const isEmCarencia = (lote) => { const v = cVac.find(x => x.lote === lote || x.lote === "Todo o Rebanho"); return (v && v.dataLiberacao && new Date() < new Date(v.dataLiberacao)) ? v : false; };
 
   // --- HANDLERS E FUNÇÕES ---
   const openModal = (type, item = null) => { setEditingItem(item); setModalType(type); };
@@ -550,19 +552,6 @@ export default function App() {
             </div>
           )}
 
-          {currentView === 'nutricao' && (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-r from-emerald-800 to-green-700 rounded-3xl p-8 text-white shadow-lg"><h2 className="text-3xl font-black mb-2 flex items-center"><Wheat className="mr-3"/> Formulação (NASEM 2021)</h2><p className="text-emerald-100 font-medium">Balanço Nutricional</p></div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-6">
-                  <div className="bg-white rounded-3xl border shadow-sm p-6"><h3 className="font-black text-lg mb-4 text-blue-900"><Target className="inline mr-2"/> Perfil Alvo</h3><div className="grid grid-cols-2 gap-4"><Input label="Peso(kg)" type="number" value={nutriAlvoPeso} onChange={e=>setNutriAlvoPeso(Number(e.target.value))} /><Input label="GPD(kg/d)" type="number" step="0.1" value={nutriAlvoGPD} onChange={e=>setNutriAlvoGPD(Number(e.target.value))} /></div></div>
-                  <div className="bg-white rounded-3xl border shadow-sm p-6"><h3 className="font-black text-lg mb-4 text-orange-900"><Archive className="inline mr-2"/> Dieta</h3><div className="flex gap-2 mb-4"><select value={insumoSelecionado} onChange={(e)=>setInsumoSelecionado(e.target.value)} className="flex-1 px-4 py-3 bg-gray-50 border rounded-xl outline-none font-bold"><option value="">Ingrediente...</option>{appData.bibliotecaAlimentos.filter(a => !dietaAtual.find(d => d.idInsumo === a.id)).map(a => (<option key={a.id} value={a.id}>{a.nome}</option>))}</select><button onClick={handleAddInsumoDieta} className="bg-orange-600 text-white px-5 rounded-xl font-bold"><Plus size={18}/></button></div><div className="space-y-2">{dietaAtual.map(i => { const a = appData.bibliotecaAlimentos.find(x=>x.id===i.idInsumo); return (<div key={i.idInsumo} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border"><span className="font-bold text-sm truncate w-1/2">{a?.nome}</span><div className="flex items-center"><input type="number" step="0.1" value={i.kgMN} onChange={(e)=>handleUpdateKgMN(i.idInsumo, e.target.value)} className="w-16 p-2 text-right border rounded bg-white font-bold mr-2" /><button onClick={()=>handleRemoveInsumoDieta(i.idInsumo)} className="text-red-500"><Trash2 size={16}/></button></div></div>) })}</div>{dietaAtual.length>0 && <div className="mt-4 p-4 bg-green-50 font-black text-green-800 rounded-xl">Custo Dia: {formatCurrency(nutricaoFornecida.custoDiario)}</div>}</div>
-                </div>
-                <div className="bg-white rounded-3xl border shadow-sm p-8"><h3 className="text-2xl font-black mb-8"><Activity className="inline text-green-500 mr-2"/> Balanço</h3><div className="space-y-8">{[{l:"Matéria Seca (kg)",v:nutricaoFornecida.cms,t:exigenciasTarget.cms,c:"orange"},{l:"Energia (Mcal)",v:nutricaoFornecida.elg,t:exigenciasTarget.elg,c:"red"},{l:"Proteína (g)",v:nutricaoFornecida.pm,t:exigenciasTarget.pm,c:"blue"}].map((b,i)=>{ const pct = Math.min((b.v/b.t)*100, 150)||0; return (<div key={i}><div className="flex justify-between font-bold mb-2"><span>{b.l}</span><span className={`text-xl font-black text-${b.c}-600`}>{b.v.toFixed(1)} <span className="text-sm text-gray-400">/ {b.t.toFixed(1)}</span></span></div><div className="w-full bg-gray-100 h-4 rounded-full overflow-hidden relative"><div className={`h-full bg-${b.c}-500`} style={{width:`${pct}%`}}></div><div className="absolute top-0 bottom-0 border-l-2 border-black opacity-50" style={{left:'100%'}}></div></div></div>) })}</div></div>
-              </div>
-            </div>
-          )}
-
           {currentView === 'propriedades' && (
              <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><MapPin className="mr-3 text-blue-500"/> Fazendas</h3><button onClick={()=>openModal('propriedade')} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Fazenda</button></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-6">{appData.propriedades.map((p) => (<div key={p.id} className={`bg-white p-6 rounded-3xl border shadow-sm ${activePropriedadeId === p.id ? 'ring-2 ring-green-500' : ''}`}><div className="flex justify-between"><h4 className="font-black text-2xl">{p.nome}</h4><button onClick={()=>openModal('propriedade', p)} className="text-blue-500 p-2"><Edit size={18}/></button></div><p className="text-sm font-bold text-gray-500 mt-2">{p.cidade} - {p.estado}</p><button onClick={() => setActivePropriedadeId(p.id)} disabled={activePropriedadeId === p.id} className={`w-full py-3 mt-6 rounded-xl font-bold transition-all ${activePropriedadeId === p.id ? 'bg-gray-100 text-gray-400' : 'bg-gray-900 text-white'}`}>{activePropriedadeId === p.id ? 'Em Uso' : 'Entrar'}</button></div>))}</div></div>
           )}
@@ -571,7 +560,7 @@ export default function App() {
             <div className="space-y-6">
               <div className="bg-white rounded-3xl border p-8 shadow-sm"><div className="flex justify-between mb-6"><h3 className="font-black text-xl"><Users className="inline mr-2 text-indigo-600"/> Utilizadores</h3><button onClick={()=>openModal('usuario')} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold">Novo Acesso</button></div><Table headers={['Nome', 'Email', 'Role', 'Ações']}>{appData.usuarios.map((u) => (<tr key={u.id} className="hover:bg-gray-50"><td className="px-5 py-4 font-black">{u.nome}</td><td className="px-5 py-4 font-medium text-gray-600">{u.email}</td><td className="px-5 py-4"><span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">{u.role}</span></td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('usuario', u)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('usuarios', u.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table></div>
               <div className="bg-slate-900 rounded-3xl p-8 shadow-lg text-white"><h3 className="font-black text-xl mb-4"><Sparkles className="inline text-green-400 mr-2"/> API Gemini (IA)</h3><input type="password" value={geminiApiKey} onChange={(e) => setGeminiApiKey(e.target.value)} placeholder="Cole a sua API Key do Google AI Studio..." className="w-full max-w-lg p-4 bg-slate-950/50 border border-slate-700 rounded-xl outline-none font-mono focus:ring-2 focus:ring-green-500 text-sm" /></div>
-              <div className="bg-white rounded-3xl border p-8 text-center shadow-sm"><FileSpreadsheet size={48} className="mx-auto text-green-600 mb-4" /><h3 className="font-black text-2xl mb-6">Exportar Dados (.csv)</h3><div className="flex justify-center gap-4"><button onClick={exportToCSV} className="bg-green-50 text-green-800 font-bold px-6 py-3.5 rounded-xl shadow-sm flex items-center"><Download size={18} className="mr-2"/> Rebanho Completo</button></div></div>
+              <div className="bg-white rounded-3xl border p-8 text-center shadow-sm"><FileSpreadsheet size={48} className="mx-auto text-green-600 mb-4" /><h3 className="font-black text-2xl mb-6">Exportar Dados (.csv)</h3><div className="flex justify-center gap-4"><button onClick={exportRebanho} className="bg-green-50 text-green-800 font-bold px-6 py-3.5 rounded-xl shadow-sm flex items-center"><Download size={18} className="mr-2"/> Rebanho Completo</button></div></div>
             </div>
           )}
 
