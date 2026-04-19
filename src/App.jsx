@@ -556,13 +556,58 @@ export default function App() {
              <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><MapPin className="mr-3 text-blue-500"/> Fazendas</h3><button onClick={()=>openModal('propriedade')} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Fazenda</button></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-6">{appData.propriedades.map((p) => (<div key={p.id} className={`bg-white p-6 rounded-3xl border shadow-sm ${activePropriedadeId === p.id ? 'ring-2 ring-green-500' : ''}`}><div className="flex justify-between"><h4 className="font-black text-2xl">{p.nome}</h4><button onClick={()=>openModal('propriedade', p)} className="text-blue-500 p-2"><Edit size={18}/></button></div><p className="text-sm font-bold text-gray-500 mt-2">{p.cidade} - {p.estado}</p><button onClick={() => setActivePropriedadeId(p.id)} disabled={activePropriedadeId === p.id} className={`w-full py-3 mt-6 rounded-xl font-bold transition-all ${activePropriedadeId === p.id ? 'bg-gray-100 text-gray-400' : 'bg-gray-900 text-white'}`}>{activePropriedadeId === p.id ? 'Em Uso' : 'Entrar'}</button></div>))}</div></div>
           )}
 
-          {currentView === 'configuracoes' && (
-            <div className="space-y-6">
-              <div className="bg-white rounded-3xl border p-8 shadow-sm"><div className="flex justify-between mb-6"><h3 className="font-black text-xl"><Users className="inline mr-2 text-indigo-600"/> Utilizadores</h3><button onClick={()=>openModal('usuario')} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold">Novo Acesso</button></div><Table headers={['Nome', 'Email', 'Role', 'Ações']}>{appData.usuarios.map((u) => (<tr key={u.id} className="hover:bg-gray-50"><td className="px-5 py-4 font-black">{u.nome}</td><td className="px-5 py-4 font-medium text-gray-600">{u.email}</td><td className="px-5 py-4"><span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">{u.role}</span></td><td className="px-5 py-4 text-right"><button onClick={()=>openModal('usuario', u)} className="text-blue-500 p-2"><Edit size={18}/></button><button onClick={()=>handleDel('usuarios', u.id)} className="text-red-500 p-2"><Trash2 size={18}/></button></td></tr>))}</Table></div>
-              <div className="bg-slate-900 rounded-3xl p-8 shadow-lg text-white"><h3 className="font-black text-xl mb-4"><Sparkles className="inline text-green-400 mr-2"/> API Gemini (IA)</h3><input type="password" value={geminiApiKey} onChange={(e) => setGeminiApiKey(e.target.value)} placeholder="Cole a sua API Key do Google AI Studio..." className="w-full max-w-lg p-4 bg-slate-950/50 border border-slate-700 rounded-xl outline-none font-mono focus:ring-2 focus:ring-green-500 text-sm" /></div>
-              <div className="bg-white rounded-3xl border p-8 text-center shadow-sm"><FileSpreadsheet size={48} className="mx-auto text-green-600 mb-4" /><h3 className="font-black text-2xl mb-6">Exportar Dados (.csv)</h3><div className="flex justify-center gap-4"><button onClick={exportRebanho} className="bg-green-50 text-green-800 font-bold px-6 py-3.5 rounded-xl shadow-sm flex items-center"><Download size={18} className="mr-2"/> Rebanho Completo</button></div></div>
+{currentView === 'configuracoes' && (
+          <div className="space-y-6">
+            {/* Cabeçalho */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-black text-gray-900 flex items-center"><Settings className="mr-3 text-green-600" size={28}/> Configurações do Sistema</h2>
             </div>
-          )}
+
+            {/* Configurações da Fazenda */}
+            <div className="bg-white rounded-3xl border p-8 shadow-sm">
+              <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center"><Tractor className="mr-3 text-green-600" size={22}/> Dados da Propriedade Ativa</h3>
+              {propriedades.filter(p => p.id === activePropriedadeId).map(p => (
+                <div key={p.id} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div><label className="block text-sm font-bold text-gray-700 mb-1">Nome da Fazenda</label><p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.nome}</p></div>
+                  <div><label className="block text-sm font-bold text-gray-700 mb-1">Responsável</label><p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.responsavel || '-'}</p></div>
+                  <div><label className="block text-sm font-bold text-gray-700 mb-1">Cidade</label><p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.cidade || '-'}</p></div>
+                  <div><label className="block text-sm font-bold text-gray-700 mb-1">Estado</label><p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.estado || '-'}</p></div>
+                </div>
+              ))}
+            </div>
+
+            {/* Configuração da IA */}
+            <div className="bg-slate-900 rounded-3xl p-8 shadow-lg text-white">
+              <h3 className="font-black text-xl mb-2 flex items-center"><Sparkles className="inline text-green-400 mr-2"/> Configuração do Assistente IA</h3>
+              <p className="text-slate-400 text-sm mb-6">Insira sua chave de API do Google Gemini para ativar o Assistente IA. Sua chave é salva apenas localmente no seu navegador.</p>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <label className="block text-sm font-bold text-slate-300 mb-2">Chave de API do Google Gemini</label>
+                  <input
+                    type="password"
+                    placeholder="Cole sua chave API aqui (AIza...)"
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+                <button
+                  onClick={() => { localStorage.setItem('bovigest_ai_key', geminiApiKey); alert('Chave salva com sucesso!'); }}
+                  className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-xl transition-colors flex items-center gap-2"
+                ><Save size={18}/> Salvar</button>
+              </div>
+              {geminiApiKey && <p className="mt-3 text-green-400 text-sm flex items-center gap-1"><CheckCircle2 size={16}/> Chave configurada. O Assistente IA está ativo.</p>}
+            </div>
+
+            {/* Informações do Sistema */}
+            <div className="bg-white rounded-3xl border p-8 text-center shadow-sm">
+              <Tractor size={48} className="mx-auto text-green-600 mb-4" />
+              <h3 className="font-black text-xl text-gray-900">BoviGest PRO</h3>
+              <p className="text-gray-500 mt-1">Versão 1.0 &mdash; Gestão Pecuária Inteligente</p>
+              <p className="text-gray-400 text-sm mt-2">Desenvolvido para pecuaristas modernos</p>
+            </div>
+          </div>
+        )}
 
           {currentView === 'ai-assistant' && (
             <div className="flex flex-col h-[calc(100vh-140px)] min-h-[500px] bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
