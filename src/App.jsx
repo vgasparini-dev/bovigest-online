@@ -604,7 +604,7 @@ export default function App() {
             <div className="bg-white rounded-3xl border p-8 text-center shadow-sm">
               <Tractor size={48} className="mx-auto text-green-600 mb-4" />
               <h3 className="font-black text-xl text-gray-900">BoviGest PRO</h3>
-              <p className="text-gray-500 mt-1">Versão 1.0 &mdash; Gestão Pecuária Inteligente</p>
+              <p className="text-gray-500 mt-1">Versão 1.0 — Gestão Pecuária Inteligente</p>
               <p className="text-gray-400 text-sm mt-2">Desenvolvido para pecuaristas modernos</p>
             </div>
           </div>
