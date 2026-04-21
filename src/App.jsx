@@ -561,26 +561,51 @@ export default function App() {
           <div className="space-y-6">
             {/* Cabeçalho */}
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black text-gray-900 flex items-center"><Settings className="mr-3 text-green-600" size={28}/> Configurações do Sistema</h2>
+              {currentView === 'configuracoes' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+                <Settings className="text-green-600" size={28}/>
+                Configuracoes do Sistema
+              </h2>
             </div>
 
-            {/* Configurações da Fazenda */}
             <div className="bg-white rounded-3xl border p-8 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center"><Tractor className="mr-3 text-green-600" size={22}/> Dados da Propriedade Ativa</h3>
+              <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
+                <Tractor className="text-green-600" size={22}/>
+                Propriedade Ativa
+              </h3>
               {propriedades.filter(p => p.id === activePropriedadeId).map(p => (
                 <div key={p.id} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><label className="block text-sm font-bold text-gray-700 mb-1">Nome da Fazenda</label><p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.nome}</p></div>
-                  <div><label className="block text-sm font-bold text-gray-700 mb-1">Responsável</label><p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.responsavel || '-'}</p></div>
-                  <div><label className="block text-sm font-bold text-gray-700 mb-1">Cidade</label><p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.cidade || '-'}</p></div>
-                  <div><label className="block text-sm font-bold text-gray-700 mb-1">Estado</label><p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.estado || '-'}</p></div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Nome da Fazenda</label>
+                    <p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.nome}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Responsavel</label>
+                    <p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.responsavel || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Cidade</label>
+                    <p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.cidade || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Estado</label>
+                    <p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.estado || '-'}</p>
+                  </div>
                 </div>
               ))}
             </div>
 
-            {/* Configuração da IA */}
             <div className="bg-slate-900 rounded-3xl p-8 shadow-lg text-white">
-              <h3 className="font-black text-xl mb-2 flex items-center"><Sparkles className="inline text-green-400 mr-2"/> Configuração do Assistente IA</h3>
-              <p className="text-slate-400 text-sm mb-6">Insira sua chave de API do Google Gemini para ativar o Assistente IA. Sua chave é salva apenas localmente no seu navegador.</p>
+              <h3 className="font-black text-xl mb-2 flex items-center gap-2">
+                <Sparkles className="text-green-400" size={22}/>
+                Assistente IA - Google Gemini
+              </h3>
+              <p className="text-slate-400 text-sm mb-6">
+                Insira sua chave de API do Google Gemini para ativar o Assistente IA.
+                Sua chave e salva apenas localmente no navegador.
+              </p>
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
                   <label className="block text-sm font-bold text-slate-300 mb-2">Chave de API do Google Gemini</label>
@@ -593,23 +618,27 @@ export default function App() {
                   />
                 </div>
                 <button
-                  onClick={() => { localStorage.setItem('bovigest_ai_key', geminiApiKey); alert('Chave salva com sucesso!'); }}
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-xl transition-colors flex items-center gap-2"
-                ><Save size={18}/> Salvar</button>
+                  onClick={() => { localStorage.setItem('bovigest_ai_key', geminiApiKey); alert('Chave salva!'); }}
+                  className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2"
+                >
+                  <Save size={18}/> Salvar
+                </button>
               </div>
-              {geminiApiKey && <p className="mt-3 text-green-400 text-sm flex items-center gap-1"><CheckCircle2 size={16}/> Chave configurada. O Assistente IA está ativo.</p>}
+              {geminiApiKey ? (
+                <p className="mt-3 text-green-400 text-sm flex items-center gap-1">
+                  <CheckCircle2 size={16}/> Chave configurada. Assistente IA ativo.
+                </p>
+              ) : null}
             </div>
 
-            {/* Informações do Sistema */}
             <div className="bg-white rounded-3xl border p-8 text-center shadow-sm">
               <Tractor size={48} className="mx-auto text-green-600 mb-4" />
               <h3 className="font-black text-xl text-gray-900">BoviGest PRO</h3>
-              <p className="text-gray-500 mt-1">Versão 1.0 — Gestão Pecuária Inteligente</p>
+              <p className="text-gray-500 mt-1">Versao 1.0 - Gestao Pecuaria Inteligente</p>
               <p className="text-gray-400 text-sm mt-2">Desenvolvido para pecuaristas modernos</p>
             </div>
           </div>
         )}
-
           {currentView === 'ai-assistant' && (
             <div className="flex flex-col h-[calc(100vh-140px)] min-h-[500px] bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-6 border-b bg-slate-900 text-white flex items-center"><Bot size={28} className="mr-3 text-green-400" /><div><h2 className="font-extrabold text-xl">Consultor IA</h2><p className="text-slate-400 text-xs mt-1 font-medium">BoviGest PRO</p></div></div>
