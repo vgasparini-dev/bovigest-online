@@ -119,6 +119,9 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState('');
+    const [farmName, setFarmName] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [farmLocation, setFarmLocation] = useState('');
   const [activePropriedadeId, setActivePropriedadeId] = useState(1);
   const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('bovigest_ai_key') || '');
   const [selectedAnimaisIds, setSelectedAnimaisIds] = useState([]); 
@@ -557,88 +560,88 @@ export default function App() {
              <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><MapPin className="mr-3 text-blue-500"/> Fazendas</h3><button onClick={()=>openModal('propriedade')} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Fazenda</button></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-6">{appData.propriedades.map((p) => (<div key={p.id} className={`bg-white p-6 rounded-3xl border shadow-sm ${activePropriedadeId === p.id ? 'ring-2 ring-green-500' : ''}`}><div className="flex justify-between"><h4 className="font-black text-2xl">{p.nome}</h4><button onClick={()=>openModal('propriedade', p)} className="text-blue-500 p-2"><Edit size={18}/></button></div><p className="text-sm font-bold text-gray-500 mt-2">{p.cidade} - {p.estado}</p><button onClick={() => setActivePropriedadeId(p.id)} disabled={activePropriedadeId === p.id} className={`w-full py-3 mt-6 rounded-xl font-bold transition-all ${activePropriedadeId === p.id ? 'bg-gray-100 text-gray-400' : 'bg-gray-900 text-white'}`}>{activePropriedadeId === p.id ? 'Em Uso' : 'Entrar'}</button></div>))}</div></div>
           )}
 
-{currentView === 'configuracoes' && (
-          <div className="space-y-6">
-            {/* Cabeçalho */}
-            <div className="flex justify-between items-center">
-              {currentView === 'configuracoes' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
-                <Settings className="text-green-600" size={28}/>
-                Configuracoes do Sistema
-              </h2>
-            </div>
+      {currentView === 'configuracoes' && (
+        <div className="space-y-6">
+          {/* Cabecalho */}
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+              <Settings className="text-green-600" size={28}/>
+              Configuracoes do Sistema
+            </h2>
+          </div>
 
-            <div className="bg-white rounded-3xl border p-8 shadow-sm">
-              <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
-                <Tractor className="text-green-600" size={22}/>
-                Propriedade Ativa
-              </h3>
-              {propriedades.filter(p => p.id === activePropriedadeId).map(p => (
-                <div key={p.id} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Nome da Fazenda</label>
-                    <p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.nome}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Responsavel</label>
-                    <p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.responsavel || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Cidade</label>
-                    <p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.cidade || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Estado</label>
-                    <p className="bg-gray-50 rounded-xl p-3 text-gray-900 font-semibold">{p.estado || '-'}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-slate-900 rounded-3xl p-8 shadow-lg text-white">
-              <h3 className="font-black text-xl mb-2 flex items-center gap-2">
-                <Sparkles className="text-green-400" size={22}/>
-                Assistente IA - Google Gemini
-              </h3>
-              <p className="text-slate-400 text-sm mb-6">
-                Insira sua chave de API do Google Gemini para ativar o Assistente IA.
-                Sua chave e salva apenas localmente no navegador.
-              </p>
-              <div className="flex gap-3 items-end">
-                <div className="flex-1">
-                  <label className="block text-sm font-bold text-slate-300 mb-2">Chave de API do Google Gemini</label>
-                  <input
-                    type="password"
-                    placeholder="Cole sua chave API aqui (AIza...)"
-                    value={geminiApiKey}
-                    onChange={(e) => setGeminiApiKey(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400"
-                  />
-                </div>
-                <button
-                  onClick={() => { localStorage.setItem('bovigest_ai_key', geminiApiKey); alert('Chave salva!'); }}
-                  className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2"
-                >
-                  <Save size={18}/> Salvar
-                </button>
+          {/* Dados da Fazenda */}
+          <div className="bg-white rounded-3xl border p-8 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Dados da Fazenda</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Fazenda</label>
+                <input
+                  type="text"
+                  value={farmName}
+                  onChange={(e) => setFarmName(e.target.value)}
+                  placeholder="Ex: Fazenda Boa Vista"
+                  className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
               </div>
-              {geminiApiKey ? (
-                <p className="mt-3 text-green-400 text-sm flex items-center gap-1">
-                  <CheckCircle2 size={16}/> Chave configurada. Assistente IA ativo.
-                </p>
-              ) : null}
-            </div>
-
-            <div className="bg-white rounded-3xl border p-8 text-center shadow-sm">
-              <Tractor size={48} className="mx-auto text-green-600 mb-4" />
-              <h3 className="font-black text-xl text-gray-900">BoviGest PRO</h3>
-              <p className="text-gray-500 mt-1">Versao 1.0 - Gestao Pecuaria Inteligente</p>
-              <p className="text-gray-400 text-sm mt-2">Desenvolvido para pecuaristas modernos</p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Proprietario</label>
+                <input
+                  type="text"
+                  value={ownerName}
+                  onChange={(e) => setOwnerName(e.target.value)}
+                  placeholder="Nome do proprietario"
+                  className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Localizacao</label>
+                <input
+                  type="text"
+                  value={farmLocation}
+                  onChange={(e) => setFarmLocation(e.target.value)}
+                  placeholder="Cidade / Estado"
+                  className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Chave API Gemini */}
+          <div className="bg-white rounded-3xl border p-8 shadow-sm">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Assistente IA (Gemini)</h3>
+            <p className="text-sm text-gray-500 mb-4">Insira sua chave de API do Google Gemini para ativar o assistente de IA.</p>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                placeholder="Cole sua chave API aqui (AIza...)"
+                value={geminiApiKey}
+                onChange={(e) => setGeminiApiKey(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+              <button
+                onClick={() => { localStorage.setItem('bovigest_ai_key', geminiApiKey); alert('Chave salva!'); }}
+                className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2"
+              >
+                <Save size={18}/> Salvar
+              </button>
+            </div>
+            {geminiApiKey ? (
+              <p className="mt-3 text-green-400 text-sm flex items-center gap-1">
+                <CheckCircle2 size={16}/> Chave configurada. Assistente IA ativo.
+              </p>
+            ) : null}
+          </div>
+
+          {/* Versao */}
+          <div className="bg-white rounded-3xl border p-8 text-center shadow-sm">
+            <Tractor size={48} className="mx-auto text-green-600 mb-4" />
+            <h3 className="font-black text-xl text-gray-900">BoviGest PRO</h3>
+            <p className="text-gray-500 mt-1">Versao 1.0 - Gestao Pecuaria Inteligente</p>
+            <p className="text-gray-400 text-sm mt-2">Desenvolvido para pecuaristas modernos</p>
+          </div>
+        </div>
+      )}
           {currentView === 'ai-assistant' && (
             <div className="flex flex-col h-[calc(100vh-140px)] min-h-[500px] bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-6 border-b bg-slate-900 text-white flex items-center"><Bot size={28} className="mr-3 text-green-400" /><div><h2 className="font-extrabold text-xl">Consultor IA</h2><p className="text-slate-400 text-xs mt-1 font-medium">BoviGest PRO</p></div></div>
