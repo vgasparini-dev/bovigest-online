@@ -98,6 +98,7 @@ const Table = ({ headers, children }) => (
 
 // --- IA E UTILITÁRIOS ---
 const callGemini = async (prompt, sys, userApiKey) => {
+      userApiKey = userApiKey || localStorage.getItem('bovigest_ai_key') || '';
   if (!userApiKey) return "⚠️ Chave API do Gemini não configurada em Configurações.";
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${userApiKey.trim()}`, {
