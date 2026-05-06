@@ -247,7 +247,7 @@ export default function App() {
   const closeModal = () => { setModalType(null); setEditingItem(null); setConsumoItem(null); };
   const handleDel = (coll, id) => { if(confirm('Confirmar remoção permanente?')) updateApp(p => ({ ...p, [coll]: arr(p[coll]).filter(x => x.id !== id) })); };
   
-  const handleLogin = async (e) => {
+  const handleLogin = async (e) => {   // Garante autenticação anônima antes de acessar Firestore   if (!auth.currentUser) { try { await signInAnonymously(auth); } catch(e) {} }
     e.preventDefault(); setIsLoginLoading(true); setLoginError("");
     const email = e.target.email.value.trim().toLowerCase(); const senha = e.target.senha.value;
     try {
