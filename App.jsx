@@ -322,10 +322,16 @@ export default function App() {
       d.area_ha = Number(d.area_ha); 
       updateApp(p => ({...p, propriedades: editingItem ? arr(p.propriedades).map(x=>x.id===d.id?d:x) : [d, ...arr(p.propriedades)]})); 
     }
-    if (modalType === 'usuario') { 
-      updateApp(p => ({...p, usuarios: editingItem ? arr(p.usuarios).map(x=>x.id===d.id?d:x) : [d, ...arr(p.usuarios)]})); 
-      if (!editingItem) setEmailModalData(d); 
-    }
+    if (modalType === 'usuario') {
+        d.status = d.status || 'Ativo';
+        updateApp(p => ({...p, usuarios: editingItem ? arr(p.usuarios).map(x=>x.id===d.id?d:x) : [d, ...arr(p.usuarios)]}));
+        if (!editingItem) {
+          // Cria documento Firebase para o novo usuario poder fazer login
+          const novoUserData = { ...appData, usuarios: [{ ...d }], _ownerEmail: currentUser.email, _role: d.role };
+          setDoc(doc(db, 'bovigest_users', d.email.trim().toLowerCase()), novoUserData).catch(console.error);
+          setEmailModalData(d);
+        }
+      }
 
     closeModal();
   };
@@ -624,7 +630,45 @@ export default function App() {
             ) : null}
           </div>
 
-          {/* Versao */}
+          {/* Gerenciamento de Usuarios - Admin Only */}
+            {currentUser?.role === 'Admin' && (
+              <div className="bg-white rounded-3xl border p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Users size={20} className="text-blue-600" />
+                    <h3 className="font-black text-gray-900">Gerenciar Usuarios</h3>
+                  </div>
+                  <button onClick={() => openModal('usuario')} className="bg-blue-600 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm hover:bg-blue-700">
+                    <Plus size={16}/> Novo Usuario
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mb-4">Gerencie quem tem acesso ao BoviGest. Cada usuario faz login com seu proprio email e senha.</p>
+                <div className="space-y-2">
+                  {arr(d.usuarios).map(u => (
+                    <div key={u.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-700 text-sm">{(u.nome||u.email||'U')[0].toUpperCase()}</div>
+                        <div>
+                          <p className="font-bold text-sm text-gray-900">{u.nome}</p>
+                          <p className="text-xs text-gray-500">{u.email} &bull; <span className={u.role==='Admin'?'text-purple-600 font-bold':'text-green-600 font-bold'}>{u.role}</span></p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${u.status==='Ativo'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>{u.status||'Ativo'}</span>
+                        {u.email !== currentUser?.email && (
+                          <>
+                            <button onClick={() => openModal('usuario', u)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg"><Edit size={15}/></button>
+                            <button onClick={() => handleDel('usuarios', u.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg"><Trash2 size={15}/></button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Versao */}
           <div className="bg-white rounded-3xl border p-8 text-center shadow-sm">
             <Tractor size={48} className="mx-auto text-green-600 mb-4" />
             <h3 className="font-black text-xl text-gray-900">BoviGest PRO</h3>
