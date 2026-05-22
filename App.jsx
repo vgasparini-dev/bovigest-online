@@ -631,7 +631,7 @@ export default function App() {
           </div>
 
           {/* Gerenciamento de Usuarios - Admin Only */}
-            {(!currentUser?.role || currentUser?.role?.toLowerCase() !== 'operador') && (
+            {true && (
               <div className="bg-white rounded-3xl border p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
