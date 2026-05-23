@@ -627,11 +627,11 @@ export default function App() {
               <p className="mt-3 text-green-400 text-sm flex items-center gap-1">
                 <CheckCircle2 size={16}/> Chave configurada. Assistente IA ativo.
               </p>
-            ) : null}
+            ) : null}true && (
           </div>
 
           {/* Gerenciamento de Usuarios - Admin Only */}
-            {true && (
+            {(!currentuser?.role || currentuser?.role?.tolowercase() !== 'operador') && (
               <div className="bg-white rounded-3xl border p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
