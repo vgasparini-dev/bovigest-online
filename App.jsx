@@ -627,11 +627,11 @@ export default function App() {
               <p className="mt-3 text-green-400 text-sm flex items-center gap-1">
                 <CheckCircle2 size={16}/> Chave configurada. Assistente IA ativo.
               </p>
-            ) : null}true && (
+            ) : null
           </div>
 
           {/* Gerencia de Acesso - Admin Only */}
-            true && (
+            {true && (
               <div className="bg-white rounded-3xl border p-6 shadow-sm">
                 {/* Cabecalho */}
                 <div className="flex items-center justify-between mb-6">
@@ -722,7 +722,7 @@ export default function App() {
 
                 <p className="text-xs text-gray-400 mt-4">✅ Acesso total  👁️ Somente leitura  ❌ Sem acesso</p>
               </div>
-            )
+            )}
 
             {/* Versao */}
           <div className="bg-white rounded-3xl border p-8 text-center shadow-sm">
