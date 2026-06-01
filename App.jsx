@@ -628,7 +628,6 @@ export default function App() {
                 <CheckCircle2 size={16}/> Chave configurada. Assistente IA ativo.
               </p>
             ) : null
-          </div>
 
           {/* Gerencia de Acesso - Admin Only */}
             {true && (
