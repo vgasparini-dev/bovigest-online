@@ -10,13 +10,7 @@ import {
   Cloud, CloudOff, MinusCircle, Menu, Droplets, CheckSquare
 } from 'lucide-react';
 
-import { db } from './services/firebase'; // importa o db do nosso serviço
-import { collection, getDocs, addDoc, ... } from 'firebase/firestore'; // mantenha as funções que usa
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+import { auth, db, signInAnonymously, onAuthStateChanged, doc, setDoc, getDoc, onSnapshot, collection, getDocs, addDoc } from './services/firebase';
 
 const defaultData = {
   propriedades: [{ id: 1, nome: "Minha Fazenda", responsavel: "Gestor", cidade: "Local", estado: "BR", area_ha: 100, ie: "" }],
