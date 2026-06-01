@@ -630,43 +630,99 @@ export default function App() {
             ) : null}true && (
           </div>
 
-          {/* Gerenciamento de Usuarios - Admin Only */}
-            
+          {/* Gerencia de Acesso - Admin Only */}
+            true && (
               <div className="bg-white rounded-3xl border p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Users size={20} className="text-blue-600" />
-                    <h3 className="font-black text-gray-900">Gerenciar Usuarios</h3>
+                {/* Cabecalho */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                      <Users size={20} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-gray-900">Gerência de Acesso</h3>
+                      <p className="text-xs text-gray-500">{arr(d.usuarios).length} usuário(s) cadastrado(s)</p>
+                    </div>
                   </div>
-                  <button onClick={() => openModal('usuario')} className="bg-blue-600 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm hover:bg-blue-700">
-                    <Plus size={16}/> Novo Usuario
+                  <button onClick={() => openModal('usuario')} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-2 text-sm">
+                    <Plus size={16}/> Convidar Usuário
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mb-4">Gerencie quem tem acesso ao BoviGest. Cada usuario faz login com seu proprio email e senha.</p>
+
+                {/* Legenda de Perfis */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+                  {[{role:'Admin',color:'bg-red-100 text-red-700',desc:'Acesso total'},{role:'Gerente',color:'bg-orange-100 text-orange-700',desc:'Sem config'},{role:'Operador',color:'bg-blue-100 text-blue-700',desc:'Dados básicos'},{role:'Visualizador',color:'bg-gray-100 text-gray-600',desc:'Somente leitura'}].map(p => (
+                    <div key={p.role} className="p-2 rounded-xl border text-center">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${p.color}`}>{p.role}</span>
+                      <p className="text-xs text-gray-400 mt-1">{p.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Lista de Usuarios */}
                 <div className="space-y-2">
                   {arr(d.usuarios).map(u => (
-                    <div key={u.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border">
+                    <div key={u.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border hover:border-blue-200 transition-all">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-700 text-sm">{(u.nome||u.email||'U')[0].toUpperCase()}</div>
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-black text-blue-700 text-sm">
+                          {(u.nome||u.email||'U')[0].toUpperCase()}
+                        </div>
                         <div>
                           <p className="font-bold text-sm text-gray-900">{u.nome}</p>
-                          <p className="text-xs text-gray-500">{u.email} &bull; <span className={u.role==='Admin'?'text-purple-600 font-bold':'text-green-600 font-bold'}>{u.role}</span></p>
+                          <p className="text-xs text-gray-500">{u.email}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${u.status==='Ativo'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>{u.status||'Ativo'}</span>
+                        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+                          u.role==='Admin'?'bg-red-100 text-red-700':
+                          u.role==='Gerente'?'bg-orange-100 text-orange-700':
+                          u.role==='Operador'?'bg-blue-100 text-blue-700':
+                          'bg-gray-100 text-gray-600'
+                        }`}>{u.role||'Operador'}</span>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${(u.status||'Ativo')==='Ativo'?'bg-green-100 text-green-700':'bg-red-100 text-red-600'}`}>{u.status||'Ativo'}</span>
                         {u.email !== currentUser?.email && (
                           <>
-                            <button onClick={() => openModal('usuario', u)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg"><Edit size={15}/></button>
-                            <button onClick={() => handleDel('usuarios', u.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg"><Trash2 size={15}/></button>
+                            <button onClick={() => openModal('usuario', u)} className="text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg"><Edit size={14}/></button>
+                            <button onClick={() => handleDel('usuarios', u.id)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg"><Trash2 size={14}/></button>
                           </>
+                        )}
+                        {u.email === currentUser?.email && (
+                          <span className="text-xs text-gray-400 italic">Você</span>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {/* Tabela de Permissoes */}
+                <details className="mt-6">
+                  <summary className="cursor-pointer text-sm font-bold text-gray-600 hover:text-blue-600 mb-3">Ver tabela de permissões por perfil ▾</summary>
+                  <div className="overflow-x-auto mt-3">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="text-left p-2 font-bold text-gray-700">Módulo</th>
+                          <th className="p-2 text-center font-bold text-red-700">Admin</th>
+                          <th className="p-2 text-center font-bold text-orange-700">Gerente</th>
+                          <th className="p-2 text-center font-bold text-blue-700">Operador</th>
+                          <th className="p-2 text-center font-bold text-gray-600">Visualizador</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[['Rebanho','✅','✅','✅','👁️'],['Financeiro','✅','👁️','❌','❌'],['Sanidade','✅','✅','✅','👁️'],['Nutrição','✅','✅','👁️','👁️'],['Configurações','✅','❌','❌','❌'],['Usuários','✅','❌','❌','❌']].map(([mod,...perms]) => (
+                          <tr key={mod} className="border-b hover:bg-gray-50">
+                            <td className="p-2 font-bold text-gray-700">{mod}</td>
+                            {perms.map((p,i) => <td key={i} className="p-2 text-center">{p}</td>)}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+
+                <p className="text-xs text-gray-400 mt-4">✅ Acesso total  👁️ Somente leitura  ❌ Sem acesso</p>
               </div>
-            )}
+            )
 
             {/* Versao */}
           <div className="bg-white rounded-3xl border p-8 text-center shadow-sm">
@@ -842,7 +898,8 @@ export default function App() {
           <Input label="Nome Completo" name="nome" req def={editingItem?.nome}/>
           <Input label="Email de Login" name="email" type="email" req def={editingItem?.email}/>
           <Input label="Senha de Acesso" name="senha" req def={editingItem?.senha} placeholder="Defina uma senha..." />
-          <Select label="Nível de Permissão" name="role" def={editingItem?.role||'Operador'} options={['Operador', 'Admin']} />
+          <Select label="Perfil de Acesso" name="role" def={editingItem?.role||'Operador'} options={['Admin','Gerente','Operador','Visualizador']} />
+                  <Select label="Status" name="status" def={editingItem?.status||'Ativo'} options={['Ativo','Inativo']} />
         </Modal>
       )}
 
