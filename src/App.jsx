@@ -845,17 +845,20 @@ export default function App() {
             <p className="text-gray-400 text-sm mt-2">Desenvolvido para pecuaristas modernos</p>
           </div>
         </div>
-      )}
+      ))
           {currentView === 'ai-assistant' && (
             <div className="flex flex-col h-[calc(100vh-140px)] min-h-[500px] bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-6 border-b bg-slate-900 text-white flex items-center"><Bot size={28} className="mr-3 text-green-400" /><div><h2 className="font-extrabold text-xl">Consultor IA</h2><p className="text-slate-400 text-xs mt-1 font-medium">BoviGest PRO</p></div></div>
               <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50">{chatMessages.map((msg, idx) => (<div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-5 py-4 shadow-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-none' : 'bg-white border rounded-bl-none'} whitespace-pre-wrap font-medium leading-relaxed`}>{msg.text}</div></div>))}{isChatLoading && <div className="flex justify-start"><div className="bg-white border rounded-2xl rounded-bl-none px-5 py-4 shadow-sm flex items-center space-x-2"><div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce"></div><div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce delay-75"></div><div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce delay-150"></div></div></div>}</div>
               <div className="p-4 bg-white border-t"><form onSubmit={handleSendMessage} className="relative flex items-center"><input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Pergunte-me algo sobre a fazenda..." className="w-full pl-6 pr-14 py-4 bg-gray-50 border rounded-full outline-none focus:ring-2 focus:ring-green-500 font-medium shadow-inner" disabled={isChatLoading} /><button type="submit" disabled={!chatInput.trim() || isChatLoading} className="absolute right-2 p-3 bg-green-600 text-white rounded-full hover:bg-green-700 disabled:opacity-50 shadow-md"><Send size={18}/></button></form></div>
             </div>
-        )}
-        </div>
-      </main>
+                  </form>
+    </div>
+  </div>
+</div>
+        ))
 
+      </main>
       {/* --- MODAIS DE DETALHES --- */}
       {selectedAnimal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
