@@ -773,6 +773,7 @@ export default function App() {
   </div>
 )}
 
+      {currentView === 'configuracoes' && (
           {/* Dados da Fazenda */}
           <div className="bg-white rounded-3xl border p-8 shadow-sm">
             <h3 className="text-lg font-bold text-gray-900 mb-4">Dados da Fazenda</h3>
