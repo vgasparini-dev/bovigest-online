@@ -594,7 +594,6 @@ export default function App() {
         Gestão de Usuários
       </button>
     </div>
-
     {configTab === 'sistema' && (
       <div className="space-y-6">
         <div className="bg-white rounded-3xl border p-8 shadow-sm">
@@ -810,7 +809,7 @@ export default function App() {
               </div>
             </div>
           </div>
-
+                )}
           {/* Chave API Gemini */}
           <div className="bg-white rounded-3xl border p-8 shadow-sm">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Assistente IA (Gemini)</h3>
