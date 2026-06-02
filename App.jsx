@@ -735,7 +735,7 @@ export default function App() {
       </main>
 
       {/* --- MODAIS DE DETALHES --- */}
-      {selectedAnimal && (
+      
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[95vh]">
             <div className={`bg-gradient-to-r ${isEmCarencia(selectedAnimal.lote) ? 'from-red-700 to-red-600' : 'from-slate-800 to-slate-700'} p-8 flex justify-between items-start text-white shrink-0`}>
