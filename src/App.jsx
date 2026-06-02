@@ -112,6 +112,7 @@ const callGemini = async (prompt, sys, userApiKey) => {
 };
 
 export default function App() {
+  const [configTab, setConfigTab] = useState('sistema');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [isLoginLoading, setIsLoginLoading] = useState(false);
@@ -561,15 +562,217 @@ export default function App() {
              <div className="space-y-6"><div className="flex justify-between"><h3 className="text-2xl font-black flex items-center"><MapPin className="mr-3 text-blue-500"/> Fazendas</h3><button onClick={()=>openModal('propriedade')} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center"><Plus size={18} className="mr-2"/> Fazenda</button></div><div className="grid grid-cols-1 sm:grid-cols-2 gap-6">{appData.propriedades.map((p) => (<div key={p.id} className={`bg-white p-6 rounded-3xl border shadow-sm ${activePropriedadeId === p.id ? 'ring-2 ring-green-500' : ''}`}><div className="flex justify-between"><h4 className="font-black text-2xl">{p.nome}</h4><button onClick={()=>openModal('propriedade', p)} className="text-blue-500 p-2"><Edit size={18}/></button></div><p className="text-sm font-bold text-gray-500 mt-2">{p.cidade} - {p.estado}</p><button onClick={() => setActivePropriedadeId(p.id)} disabled={activePropriedadeId === p.id} className={`w-full py-3 mt-6 rounded-xl font-bold transition-all ${activePropriedadeId === p.id ? 'bg-gray-100 text-gray-400' : 'bg-gray-900 text-white'}`}>{activePropriedadeId === p.id ? 'Em Uso' : 'Entrar'}</button></div>))}</div></div>
           )}
 
-      {currentView === 'configuracoes' && (
-        <div className="space-y-6">
-          {/* Cabecalho */}
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
-              <Settings className="text-green-600" size={28}/>
-              Configuracoes do Sistema
-            </h2>
+          {currentView === 'configuracoes' && (
+  <div className="space-y-6">
+    <div className="flex justify-between items-center">
+      <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+        <Settings className="text-green-600" size={28} />
+        Configuracoes do Sistema
+      </h2>
+    </div>
+
+    <div className="flex gap-2 flex-wrap">
+      <button
+        onClick={() => setConfigTab('sistema')}
+        className={`px-4 py-2 rounded-xl border text-sm font-bold transition ${
+          configTab === 'sistema'
+            ? 'bg-green-600 text-white border-green-600'
+            : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+        }`}
+      >
+        Sistema
+      </button>
+
+      <button
+        onClick={() => setConfigTab('usuarios')}
+        className={`px-4 py-2 rounded-xl border text-sm font-bold transition ${
+          configTab === 'usuarios'
+            ? 'bg-green-600 text-white border-green-600'
+            : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+        }`}
+      >
+        Gestão de Usuários
+      </button>
+    </div>
+
+    {configTab === 'sistema' && (
+      <div className="space-y-6">
+        <div className="bg-white rounded-3xl border p-8 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Dados da Fazenda</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Fazenda</label>
+              <input
+                type="text"
+                value={farmName}
+                onChange={(e) => setFarmName(e.target.value)}
+                placeholder="Ex: Fazenda Boa Vista"
+                className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Proprietario</label>
+              <input
+                type="text"
+                value={ownerName}
+                onChange={(e) => setOwnerName(e.target.value)}
+                placeholder="Nome do proprietario"
+                className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Localizacao</label>
+              <input
+                type="text"
+                value={farmLocation}
+                onChange={(e) => setFarmLocation(e.target.value)}
+                placeholder="Cidade / Estado"
+                className="w-full bg-white border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
           </div>
+        </div>
+
+        <div className="bg-white rounded-3xl border p-8 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-900 mb-2">Assistente IA (Gemini)</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Insira sua chave de API do Google Gemini para ativar o assistente de IA.
+          </p>
+
+          <div className="flex gap-2">
+            <input
+              type="password"
+              placeholder="Cole sua chave API aqui (AIza...)"
+              value={geminiApiKey}
+              onChange={(e) => setGeminiApiKey(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+            <button
+              onClick={() => {
+                localStorage.setItem('bovigest_ai_key', geminiApiKey);
+                alert('Chave salva!');
+              }}
+              className="bg-green-500 hover:bg-green-600 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2"
+            >
+              <Save size={18} /> Salvar
+            </button>
+          </div>
+
+          {geminiApiKey ? (
+            <p className="mt-3 text-green-400 text-sm flex items-center gap-1">
+              <CheckCircle2 size={16} /> Chave configurada. Assistente IA ativo.
+            </p>
+          ) : null}
+        </div>
+
+        <div className="bg-white rounded-3xl border p-8 text-center shadow-sm">
+          <Tractor size={48} className="mx-auto text-green-600 mb-4" />
+          <h3 className="font-black text-xl text-gray-900">BoviGest PRO</h3>
+          <p className="text-gray-500 mt-1">Versao 1.0 - Gestao Pecuaria Inteligente</p>
+          <p className="text-gray-400 text-sm mt-2">Desenvolvido para pecuaristas modernos</p>
+        </div>
+      </div>
+    )}
+
+    {configTab === 'usuarios' && (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between gap-4 sm:items-center">
+          <div>
+            <h3 className="text-xl font-black text-gray-900">Gestão de Usuários</h3>
+            <p className="text-sm text-gray-500">
+              Gerencie acessos de administrador e operador do sistema.
+            </p>
+          </div>
+
+          <button
+            onClick={() => openModal('usuario')}
+            className="bg-green-600 text-white font-bold px-6 py-3 rounded-2xl flex items-center justify-center"
+          >
+            <Plus size={18} className="mr-2" />
+            Novo Usuário
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-3xl border p-6 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 uppercase">Total</p>
+            <p className="text-3xl font-black text-gray-900 mt-2">{usuariosSistema.length}</p>
+          </div>
+
+          <div className="bg-white rounded-3xl border p-6 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 uppercase">Administradores</p>
+            <p className="text-3xl font-black text-purple-600 mt-2">
+              {usuariosSistema.filter((u) => u.role === 'Admin').length}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-3xl border p-6 shadow-sm">
+            <p className="text-xs font-bold text-gray-400 uppercase">Operadores</p>
+            <p className="text-3xl font-black text-blue-600 mt-2">
+              {usuariosSistema.filter((u) => u.role === 'Operador').length}
+            </p>
+          </div>
+        </div>
+
+        <Table headers={['Nome', 'Email', 'Permissão', 'Status', 'Ações']}>
+          {usuariosSistema.map((u) => (
+            <tr key={u.id} className="hover:bg-gray-50">
+              <td className="px-5 py-4">
+                <div className="font-black text-sm text-gray-900">{u.nome}</div>
+              </td>
+
+              <td className="px-5 py-4">
+                <div className="text-sm font-medium text-gray-600">{u.email}</div>
+              </td>
+
+              <td className="px-5 py-4">
+                <span
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                    u.role === 'Admin'
+                      ? 'bg-purple-100 text-purple-700'
+                      : 'bg-blue-100 text-blue-700'
+                  }`}
+                >
+                  {u.role}
+                </span>
+              </td>
+
+              <td className="px-5 py-4">
+                <span
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                    u.status === 'Ativo'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-red-100 text-red-700'
+                  }`}
+                >
+                  {u.status}
+                </span>
+              </td>
+
+              <td className="px-5 py-4 text-right">
+                <button
+                  onClick={() => openModal('usuario', u)}
+                  className="text-blue-500 p-2 hover:bg-blue-50 rounded-lg"
+                >
+                  <Edit size={18} />
+                </button>
+
+                <button
+                  onClick={() => handleDel('usuarios', u.id)}
+                  className="text-red-500 p-2 hover:bg-red-50 rounded-lg"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </Table>
+      </div>
+    )}
+  </div>
+)}
 
           {/* Dados da Fazenda */}
           <div className="bg-white rounded-3xl border p-8 shadow-sm">
