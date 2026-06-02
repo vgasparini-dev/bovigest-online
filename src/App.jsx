@@ -846,6 +846,7 @@ export default function App() {
           </div>
         </div>
       ))
+      </main>
           {/* {currentView === 'ai-assistant' && (
             <div className="flex flex-col h-[calc(100vh-140px)] min-h-[500px] bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-6 border-b bg-slate-900 text-white flex items-center"><Bot size={28} className="mr-3 text-green-400" /><div><h2 className="font-extrabold text-xl">Consultor IA</h2><p className="text-slate-400 text-xs mt-1 font-medium">BoviGest PRO</p></div></div>
